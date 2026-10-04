@@ -1,0 +1,31 @@
+name: km-to-steps iOS build
+
+on:
+  push:
+    paths: ["km-to-steps/**", ".github/workflows/km-to-steps-ios.yml"]
+  pull_request:
+    paths: ["km-to-steps/**", ".github/workflows/km-to-steps-ios.yml"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: km-to-steps
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: km-to-steps/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npx cap sync ios
+      - name: Build for iOS simulator
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App \
+            -sdk iphonesimulator -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build
