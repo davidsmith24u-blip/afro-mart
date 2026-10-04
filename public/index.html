@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Afro Mart</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<header><h1>Afro Mart</h1>
+<span><input id="q" placeholder="Search products"> <select id="cat"><option value="">All categories</option></select></span>
+<span id="acct"></span></header>
+<main>
+<p id="msg" class="err"></p>
+<section><div id="products" class="grid"></div></section>
+<section><h2>Cart</h2><table id="cart"></table><p>Total: <strong id="total">$0.00</strong></p>
+<input id="addr" placeholder="Shipping address"> <button id="checkout">Place order</button></section>
+<section id="auth"><h2>Account</h2>
+<input id="name" placeholder="Name (register only)"> <input id="email" placeholder="Email" type="email">
+<input id="pw" placeholder="Password (8+ chars)" type="password">
+<button id="login">Log in</button> <button id="register">Register</button></section>
+<section id="orders"></section>
+</main>
+<script src="/app.js" type="module"></script></body></html>

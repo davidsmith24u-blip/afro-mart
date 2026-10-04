@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Afro Mart – Staff dashboard</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<header><h1>Afro Mart Staff</h1><a href="/">Storefront</a></header>
+<main>
+<p id="msg" class="err"></p>
+<section id="login"><input id="email" placeholder="Email"> <input id="pw" type="password" placeholder="Password"> <button id="go">Log in</button></section>
+<div id="dash" hidden>
+<section><h2>Summary</h2><div id="summary" class="grid"></div></section>
+<section><h2>Orders</h2><div id="orders"></div></section>
+<section><h2>Low stock</h2><button id="reorder">Create purchase orders for low stock</button><div id="low"></div></section>
+<section><h2>Purchase orders</h2><div id="pos"></div></section>
+<section><h2>Inventory</h2><div id="inv"></div></section>
+<section><h2>Suppliers</h2><div id="sups"></div></section>
+</div>
+</main>
+<script src="/admin.js" type="module"></script></body></html>
