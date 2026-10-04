@@ -13,7 +13,7 @@ Errors: `{ "error": "message" }` with 400/401/403/404/409/413.
 | GET `/api/products?category=&q=` | public | Active products (staff also see cost/supplier/inactive) |
 | GET `/api/products/:id` | public | One product |
 | POST `/api/products`, PUT `/api/products/:id` | staff | `sku,name,description,category_id,supplier_id,price_cents,cost_cents,stock,reorder_level,reorder_quantity,expiry_date,active` |
-| POST `/api/orders` `{items:[{product_id,quantity}],shipping_address}` | user | Place order; decrements stock, awards points |
+| POST `/api/orders` `{items:[{product_id,quantity}],shipping_address,delivery_service?,shipping_country?}` | user | Place order; decrements stock, awards points; courier is Germany-only |
 | GET `/api/orders`, GET `/api/orders/:id` | user | Own orders (staff: all) |
 | PATCH `/api/orders/:id/status` `{status}` | staff | `pending,paid,packed,shipped,delivered,cancelled` |
 | GET/POST `/api/suppliers`, PUT `/api/suppliers/:id` | staff | Supplier management |

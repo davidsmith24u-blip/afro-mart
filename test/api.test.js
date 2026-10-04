@@ -42,13 +42,29 @@ test('full shop flow: catalog, order, stock, loyalty, reorder, reports', async (
 
   assert.equal((await call('GET', '/api/products')).data.length, 1);
   assert.equal((await call('GET', '/api/products')).data[0].cost_cents, undefined);
+  assert.equal((await call('GET', '/api/payment-methods')).status, 404);
+  assert.equal((await call('GET', `/api/products/${prod.id}`)).data.stock, 12);
 
+  const invalidCarrier = await call('POST', '/api/orders', {
+    shipping_address: 'x', delivery_service: 'fedex', items: [{ product_id: prod.id, quantity: 1 }],
+  }, cust);
+  assert.equal(invalidCarrier.status, 400);
+  const outsideGermany = await call('POST', '/api/orders', {
+    shipping_address: 'x', shipping_country: 'FR', items: [{ product_id: prod.id, quantity: 1 }],
+  }, cust);
+  assert.equal(outsideGermany.status, 400);
   const over = await call('POST', '/api/orders', { shipping_address: 'x', items: [{ product_id: prod.id, quantity: 99 }] }, cust);
   assert.equal(over.status, 409);
 
-  const ord = await call('POST', '/api/orders', { shipping_address: '1 Main St', items: [{ product_id: prod.id, quantity: 8 }] }, cust);
+  const ord = await call('POST', '/api/orders', {
+    shipping_address: '1 Main St', delivery_service: 'dpd', shipping_country: 'DE',
+    items: [{ product_id: prod.id, quantity: 8 }],
+  }, cust);
   assert.equal(ord.status, 201);
   assert.equal(ord.data.total_cents, 8000);
+  assert.equal(ord.data.delivery_service, 'dpd');
+  assert.equal(ord.data.shipping_country, 'DE');
+  assert.equal((await call('GET', '/api/orders', undefined, cust)).data[0].delivery_service, 'dpd');
   assert.equal((await call('GET', '/api/me', null, cust)).data.loyalty_points, 80);
 
   assert.equal((await call('GET', '/api/inventory/low-stock', null, cust)).status, 403);
@@ -85,4 +101,25 @@ test('serves storefront', async () => {
   const res = await fetch(base + '/');
   assert.equal(res.status, 200);
   assert.match(await res.text(), /Afro Mart/);
+});
+
+test('serves installable app assets', async () => {
+  const manifest = await fetch(base + '/manifest.webmanifest');
+  assert.equal(manifest.status, 200);
+  assert.match(manifest.headers.get('content-type'), /application\/manifest\+json/);
+  assert.equal((await manifest.json()).name, 'Afro Mart');
+
+  const icon = await fetch(base + '/app-icon.svg');
+  assert.equal(icon.status, 200);
+  assert.match(icon.headers.get('content-type'), /image\/svg\+xml/);
+
+  const worker = await fetch(base + '/sw.js');
+  assert.equal(worker.status, 200);
+  assert.match(await worker.text(), /addEventListener\('fetch'/);
+
+  for (const photo of ['produce', 'african-drinks', 'staples', 'coca-cola', 'pepsi', 'spices', 'wine']) {
+    const image = await fetch(`${base}/products/${photo}.jpg`);
+    assert.equal(image.status, 200, `${photo} photo should be served`);
+    assert.match(image.headers.get('content-type'), /image\/jpeg/);
+  }
 });

@@ -6,9 +6,17 @@ import { transaction } from './db.js';
 import { hashPassword, verifyPassword, signToken, verifyToken } from './auth.js';
 
 const PUBLIC_DIR = resolve(fileURLToPath(new URL('../public', import.meta.url)));
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css' };
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.svg': 'image/svg+xml',
+  '.jpg': 'image/jpeg',
+  '.webmanifest': 'application/manifest+json',
+};
 const MAX_BODY = 1_000_000;
 const ORDER_STATUSES = ['pending', 'paid', 'packed', 'shipped', 'delivered', 'cancelled'];
+const DELIVERY_SERVICES = ['dhl', 'dpd', 'hermes'];
 
 class HttpError extends Error {
   constructor(status, message) {
@@ -86,12 +94,18 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     return out;
   };
 
-  const orderWithItems = (o) => ({
-    ...o,
-    items: all(
+  const orderWithItems = (o) => {
+    const order = { ...o };
+    delete order.payment_method;
+    delete order.payment_status;
+    delete order.payment_reference;
+    return {
+      ...order,
+      items: all(
       `SELECT oi.product_id, p.name, oi.quantity, oi.unit_price_cents
        FROM order_items oi JOIN products p ON p.id = oi.product_id WHERE oi.order_id = ?`, o.id),
-  });
+    };
+  };
 
   const routes = [];
   const route = (method, path, handler) => {
@@ -204,6 +218,10 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   route('POST', '/api/orders', (ctx) => {
     const user = requireUser(ctx);
     const address = str(ctx.body.shipping_address, 'shipping_address', { max: 500 });
+    const deliveryService = str(ctx.body.delivery_service ?? 'dhl', 'delivery_service', { max: 16 }).toLowerCase();
+    if (!DELIVERY_SERVICES.includes(deliveryService)) throw bad(`delivery_service must be one of ${DELIVERY_SERVICES.join(', ')}`);
+    const country = str(ctx.body.shipping_country ?? 'DE', 'shipping_country', { max: 2 }).toUpperCase();
+    if (country !== 'DE') throw bad('Courier services are currently available within Germany only');
     const items = ctx.body.items;
     if (!Array.isArray(items) || !items.length || items.length > 100) throw bad('items must be a non-empty array');
     const wanted = new Map();
@@ -224,7 +242,8 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       }
       const points = Math.floor(total / 100);
       const { lastInsertRowid: oid } = run(
-        'INSERT INTO orders (user_id, total_cents, points_earned, shipping_address) VALUES (?,?,?,?)', user.id, total, points, address);
+        'INSERT INTO orders (user_id, total_cents, points_earned, shipping_address, delivery_service, shipping_country) VALUES (?,?,?,?,?,?)',
+        user.id, total, points, address, deliveryService, country);
       for (const { p, qty } of lines) {
         run('INSERT INTO order_items (order_id, product_id, quantity, unit_price_cents) VALUES (?,?,?,?)', oid, p.id, qty, p.price_cents);
         run('UPDATE products SET stock = stock - ? WHERE id = ?', qty, p.id);
@@ -232,6 +251,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       run('UPDATE users SET loyalty_points = loyalty_points + ? WHERE id = ?', points, user.id);
       return get('SELECT * FROM orders WHERE id = ?', oid);
     });
+
     return reply(201, orderWithItems(order));
   });
 
@@ -428,7 +448,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     res.writeHead(status, {
       'Content-Type': typeof data === 'string' || Buffer.isBuffer(data) ? headers['Content-Type'] : 'application/json',
       'X-Content-Type-Options': 'nosniff',
-      'Content-Security-Policy': "default-src 'self'",
+      'Content-Security-Policy': "default-src 'self'; img-src 'self' https://images.unsplash.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com",
       'Referrer-Policy': 'same-origin',
       ...headers,
     });

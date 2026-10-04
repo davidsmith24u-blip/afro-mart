@@ -38,7 +38,7 @@ Docker: `AUTH_SECRET=... docker compose up --build`.
 
 ## Security notes
 Parameterised SQL everywhere, input validation, body size limit, CSP and `nosniff` headers, DOM rendering via `textContent`.
-Run behind HTTPS (e.g. a reverse proxy). Payment is not integrated: orders start as `pending` and staff mark them `paid`;
-add a payment provider and rate limiting before going live.
+Run behind HTTPS (e.g. a reverse proxy). Payment processing is not integrated: staff manage order payment status manually.
+Add a payment provider and rate limiting before going live.
 
 See [docs/API.md](docs/API.md) for the API and the schema in `src/db.js`.

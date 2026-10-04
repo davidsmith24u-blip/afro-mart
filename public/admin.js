@@ -36,8 +36,8 @@ const load = guard(async () => {
     Customers: s.customers, 'Low stock items': s.low_stock_count, 'Inventory value': money(s.inventory_value_cents),
   }).map(([k, v]) => { const c = el('div', '', { className: 'card' }); c.append(el('small', k), el('h3', String(v))); return c; }));
 
-  const orders = (await api('/api/orders')).map((o) => ({ ...o, total: money(o.total_cents) }));
-  $('orders').replaceChildren(table(['id', 'created_at', 'status', 'total'], orders, (o) => {
+  const orders = (await api('/api/orders')).map((o) => ({ ...o, delivery_service: o.delivery_service.toUpperCase(), total: money(o.total_cents) }));
+  $('orders').replaceChildren(table(['id', 'created_at', 'status', 'delivery_service', 'total'], orders, (o) => {
     if (o.status === 'cancelled' || o.status === 'delivered') return null;
     const next = { pending: 'paid', paid: 'packed', packed: 'shipped', shipped: 'delivered' }[o.status];
     const b = el('button', `Mark ${next}`);

@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS orders (
   total_cents INTEGER NOT NULL,
   points_earned INTEGER NOT NULL DEFAULT 0,
   shipping_address TEXT NOT NULL,
+  delivery_service TEXT NOT NULL DEFAULT 'dhl' CHECK (delivery_service IN ('dhl','dpd','hermes')),
+  shipping_country TEXT NOT NULL DEFAULT 'DE' CHECK (shipping_country = 'DE'),
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS order_items (
@@ -75,6 +77,13 @@ export function openDb(path = ':memory:') {
   const db = new DatabaseSync(path);
   db.exec('PRAGMA foreign_keys = ON');
   db.exec(SCHEMA);
+  const orderColumns = db.prepare('PRAGMA table_info(orders)').all().map((column) => column.name);
+  if (!orderColumns.includes('delivery_service')) {
+    db.exec("ALTER TABLE orders ADD COLUMN delivery_service TEXT NOT NULL DEFAULT 'dhl' CHECK (delivery_service IN ('dhl','dpd','hermes'))");
+  }
+  if (!orderColumns.includes('shipping_country')) {
+    db.exec("ALTER TABLE orders ADD COLUMN shipping_country TEXT NOT NULL DEFAULT 'DE' CHECK (shipping_country = 'DE')");
+  }
   return db;
 }
 
