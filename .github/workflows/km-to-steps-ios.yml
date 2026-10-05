@@ -28,4 +28,16 @@ jobs:
           xcodebuild -project ios/App/App.xcodeproj -scheme App \
             -sdk iphonesimulator -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath ios/App/build/DerivedData \
             CODE_SIGNING_ALLOWED=NO build
+      - name: Package simulator app
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            ios/App/build/DerivedData/Build/Products/Debug-iphonesimulator/App.app \
+            km-to-steps-ios-simulator.zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: km-to-steps-ios-simulator
+          path: km-to-steps/km-to-steps-ios-simulator.zip
+          if-no-files-found: error
+          retention-days: 14
