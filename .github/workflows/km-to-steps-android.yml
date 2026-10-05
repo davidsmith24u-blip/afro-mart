@@ -1,0 +1,36 @@
+name: km-to-steps Android build
+
+on:
+  push:
+    paths: ["km-to-steps/**", ".github/workflows/km-to-steps-android.yml"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: km-to-steps
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: km-to-steps/package-lock.json
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm test
+      - run: npx cap sync android
+      - name: Build debug APK
+        working-directory: km-to-steps/android
+        run: ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v7
+        with:
+          name: km-to-steps-android-debug-apk
+          path: km-to-steps/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

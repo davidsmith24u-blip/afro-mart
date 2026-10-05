@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Km to Steps</string>
+    <string name="title_activity_main">Km to Steps</string>
+    <string name="package_name">com.example.kmtosteps</string>
+    <string name="custom_url_scheme">com.example.kmtosteps</string>
+</resources>
