@@ -1,0 +1,19 @@
+{
+  "name": "km-to-steps",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test test/convert.test.js",
+    "add:ios": "cap add ios && cap sync ios",
+    "add:android": "cap add android && cap sync android",
+    "sync": "cap sync"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@capgo/capacitor-health": "^8.11.4"
+  }
+}

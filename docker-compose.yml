@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    ports: ["3000:3000"]
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:?set a long random secret}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    volumes: ["afromart-data:/data"]
+volumes:
+  afromart-data:

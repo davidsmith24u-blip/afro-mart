@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<meta name="theme-color" content="#ad2535">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<title>Afro Mart | Good food, close to home</title>
+	<link rel="manifest" href="/manifest.webmanifest">
+	<link rel="icon" href="/app-icon.svg" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="/app-icon.svg">
+	<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+	<div class="announcement">A little taste of home, delivered to your door <span aria-hidden="true">✳</span></div>
+	<header class="site-header">
+		<a class="brand" href="/" aria-label="Afro Mart home">
+			<span class="brand-mark" aria-hidden="true">A</span>
+			<span>afro<span class="brand-light">mart</span><small>THE AFRICAN PANTRY</small></span>
+		</a>
+		<label class="search-box">
+			<span class="sr-only">Search the store</span>
+			<span class="search-icon" aria-hidden="true">⌕</span>
+			<input id="q" placeholder="Find something delicious" autocomplete="off">
+			<kbd>SEARCH</kbd>
+		</label>
+		<div class="header-actions">
+			<button id="install-app" class="install-app" type="button" aria-label="Install Afro Mart app" hidden><span aria-hidden="true">↓</span> Install app</button>
+			<span id="acct"></span>
+			<a class="cart-link" href="#shopping-cart">Bag <span id="cart-count">0</span></a>
+		</div>
+	</header>
+	<nav class="category-nav" aria-label="Shop categories">
+		<div class="category-nav-inner">
+			<button class="category-shortcut is-active" data-category="">Everything</button>
+			<div id="category-links"></div>
+			<label class="category-select-label">Browse <select id="cat" aria-label="Filter products by category"><option value="">All categories</option></select></label>
+		</div>
+	</nav>
+	<main>
+		<p id="msg" class="message" role="status" aria-live="polite"></p>
+		<section class="hero" aria-labelledby="hero-title">
+			<img class="hero-image" src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=2200&q=85" alt="Fresh produce arranged at a neighborhood market" fetchpriority="high">
+			<div class="hero-shade"></div>
+			<div class="hero-copy">
+				<p class="eyebrow">YOUR NEIGHBORHOOD AFRICAN MARKET</p>
+				<h1 id="hero-title">Afro Mart</h1>
+				<p>Good food, close to home. Find the flavors you grew up with, from everyday pantry staples to market favorites.</p>
+				<a class="hero-cta" href="#shop">Shop the market <span aria-hidden="true">↘</span></a>
+			</div>
+			<p class="hero-note"><span aria-hidden="true">✳</span> ROOTED IN CULTURE. MADE FOR EVERY DAY.</p>
+		</section>
+		<section id="shop" class="shop-section" aria-labelledby="shop-title">
+			<div class="section-heading">
+				<div><p class="eyebrow">A GOOD PLACE TO START</p><h2 id="shop-title">From our market</h2></div>
+				<p class="shop-caption">A little something for the pantry, the pot, and the people around your table.</p>
+				<span id="product-count" class="product-count" aria-live="polite"></span>
+			</div>
+			<div id="products" class="product-grid" aria-live="polite"></div>
+		</section>
+		<div class="shopping-layout">
+			<section id="shopping-cart" class="cart-section" aria-labelledby="cart-title">
+				<div class="section-heading compact-heading"><div><p class="eyebrow">YOUR SELECTION</p><h2 id="cart-title">Your market bag</h2></div><span id="cart-summary">Ready when you are</span></div>
+				<div class="cart-table-wrap"><table id="cart"><caption class="sr-only">Items in your market bag</caption></table></div>
+				<div class="cart-bottom">
+					<label for="addr">Delivery address</label>
+					<input id="addr" placeholder="Street, city, postal code" autocomplete="street-address">
+					<fieldset class="courier-fieldset">
+						<legend>Courier service <span>Germany only</span></legend>
+						<div class="courier-options">
+							<label class="courier-option"><input type="radio" name="delivery_service" value="dhl" checked><span class="courier-tile"><strong>DHL</strong><small>Deutsche Post</small></span></label>
+							<label class="courier-option"><input type="radio" name="delivery_service" value="dpd"><span class="courier-tile"><strong>DPD</strong><small>Parcel delivery</small></span></label>
+							<label class="courier-option"><input type="radio" name="delivery_service" value="hermes"><span class="courier-tile"><strong>Hermes</strong><small>Home delivery</small></span></label>
+						</div>
+					</fieldset>
+					<p class="delivery-note">Courier delivery is currently available within Germany.</p>
+					<div class="cart-total"><span>Order total</span><strong id="total">$0.00</strong></div>
+					<button id="checkout" class="checkout-button">Continue to checkout <span aria-hidden="true">→</span></button>
+					<p class="checkout-note">You'll need an account to place your order.</p>
+				</div>
+			</section>
+			<section id="auth" class="account-section" aria-labelledby="account-title">
+				<p class="eyebrow">COME ON IN</p><h2 id="account-title">Your account</h2>
+				<p class="account-intro">Sign in to check out and keep your orders in one place.</p>
+				<label for="name">Your name <span>(for a new account)</span></label>
+				<input id="name" placeholder="Name" autocomplete="name">
+				<label for="email">Email address</label>
+				<input id="email" placeholder="you@example.com" type="email" autocomplete="email">
+				<label for="pw">Password</label>
+				<input id="pw" placeholder="At least 8 characters" type="password" autocomplete="current-password">
+				<div class="account-actions"><button id="login" class="secondary-button">Log in</button><button id="register" class="text-button">Create account <span aria-hidden="true">→</span></button></div>
+			</section>
+		</div>
+		<section id="orders" class="orders-section"></section>
+	</main>
+	<footer><a class="brand footer-brand" href="/" aria-label="Afro Mart home"><span class="brand-mark" aria-hidden="true">A</span><span>afro<span class="brand-light">mart</span><small>THE AFRICAN PANTRY</small></span></a><p>Good food, generous tables, and a little taste of home.</p><span>© Afro Mart</span></footer>
+	<script src="/app.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driving Distance to Walking Steps</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:420px;margin:2rem auto;padding:0 1rem;color:#222}
+  label{display:block;margin:1rem 0 .25rem;font-weight:600}
+  input,select{width:100%;padding:.6rem;font-size:1rem;box-sizing:border-box}
+  #result{margin-top:1.5rem;font-size:1.6rem;font-weight:700;text-align:center}
+  small{color:#666}
+</style>
+</head>
+<body>
+<h1>🚗 Km → 👣 Steps</h1>
+<label for="dist">Distance driven</label>
+<input id="dist" type="number" min="0" step="any" value="10">
+<label for="unit">Unit</label>
+<select id="unit"><option value="km">Kilometers</option><option value="mi">Miles</option></select>
+<label for="step">Step length (cm)</label>
+<input id="step" type="number" min="1" step="any" value="76">
+<small>Average adult step ≈ 76 cm. Or enter height (cm) to estimate: <input id="height" type="number" min="0" placeholder="Height in cm" style="margin-top:.4rem"></small>
+<div id="result"></div>
+<button id="log" style="width:100%;padding:.7rem;margin-top:1rem;font-size:1rem">Log trip</button>
+<h3>Logged trips (<span id="total">0</span> steps)</h3>
+<ul id="list"></ul>
+<button id="csv">Export CSV</button> <button id="json">Export JSON</button> <button id="sync" hidden>Sync to Health</button> <button id="share">Share</button> <button id="clear">Clear</button>
+<p id="syncmsg"></p>
+<p><small>On iOS/Android the native app can sync directly to Apple Health / Health Connect. Otherwise, import the file into your step-tracking app (Apple Health via Shortcuts, or Health Connect-compatible apps). Browsers can't write to Apple Health/Google Fit directly.</small></p>
+<script src="convert.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+function update(){
+  const steps = kmToSteps(+$("dist").value, +$("step").value, $("unit").value);
+  $("result").textContent = isNaN(steps) ? "Enter valid numbers" : steps.toLocaleString() + " steps";
+}
+$("height").addEventListener("input", e => {
+  if (+e.target.value > 0) $("step").value = (e.target.value * 0.414).toFixed(1);
+  update();
+});
+["dist","unit","step"].forEach(id => $(id).addEventListener("input", update));
+update();
+let trips = JSON.parse(localStorage.getItem("trips") || "[]");
+function render(){
+  localStorage.setItem("trips", JSON.stringify(trips));
+  $("list").innerHTML = "";
+  trips.forEach(t => { const li = document.createElement("li"); li.textContent = `${t.date}: ${t.distanceKm} km → ${t.steps.toLocaleString()} steps`; $("list").appendChild(li); });
+  $("total").textContent = trips.reduce((a,t)=>a+t.steps,0).toLocaleString();
+}
+function download(name, text, type){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], {type}));
+  a.download = name; a.click();
+}
+$("log").onclick = () => {
+  const unit = $("unit").value, d = +$("dist").value, sl = +$("step").value;
+  const steps = kmToSteps(d, sl, unit);
+  if (isNaN(steps)) return;
+  trips.push({date: new Date().toISOString(), distanceKm: +(unit==="mi"?d*1.609344:d).toFixed(3), stepLengthCm: sl, steps});
+  render();
+};
+$("csv").onclick = () => download("steps.csv", toCSV(trips), "text/csv");
+$("json").onclick = () => download("steps.json", toJSON(trips), "application/json");
+$("share").onclick = () => navigator.share ? navigator.share({title:"Steps", text: toJSON(trips)}) : alert("Sharing not supported; use export.");
+$("clear").onclick = () => { trips = []; render(); };
+render();
+const Health = window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()
+  ? Capacitor.registerPlugin("Health") : null;
+if (Health) $("sync").hidden = false;
+$("sync").onclick = async () => {
+  const pending = trips.filter(t => !t.synced);
+  if (!pending.length) { $("syncmsg").textContent = "Nothing to sync."; return; }
+  try {
+    const { available } = await Health.isAvailable();
+    if (!available) throw new Error("Health data not available on this device");
+    const auth = await Health.requestAuthorization({ write: ["steps"] });
+    if (!auth.writeAuthorized.includes("steps")) throw new Error("Steps write permission denied");
+    for (const t of pending) {
+      await Health.saveSample({ dataType: "steps", value: t.steps, unit: "count",
+        startDate: t.date, endDate: t.date, metadata: { source: "km-to-steps" } });
+      t.synced = true;
+    }
+    render();
+    $("syncmsg").textContent = `Synced ${pending.length} trip(s).`;
+  } catch (e) { $("syncmsg").textContent = "Sync failed: " + e.message; }
+};
+</script>
+</body>
+</html>
