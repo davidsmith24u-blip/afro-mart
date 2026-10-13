@@ -9,6 +9,10 @@ import { registerMarketingRoutes, validatePromo, computeDiscount } from './marke
 import { registerAnalyticsRoutes } from './analytics.js';
 import { registerLocationRoutes, adjustStock, stockAt, resolveLocationId, lowStockAt } from './locations.js';
 import { registerBundleRoutes, expandBundle } from './bundles.js';
+import { registerDeliveryRoutes, deliveryFeeFor } from './delivery.js';
+import { registerSubscriptionRoutes } from './subscriptions.js';
+import { registerRecipeRoutes } from './recipes.js';
+import { applyReferral, referralCode, tierFor, lifetimeSpendCents, pointsFor } from './loyalty.js';
 
 const PUBLIC_DIR = resolve(fileURLToPath(new URL('../public', import.meta.url)));
 const MIME = {
@@ -22,6 +26,9 @@ const MIME = {
 const MAX_BODY = 1_000_000;
 const ORDER_STATUSES = ['pending', 'paid', 'packed', 'shipped', 'delivered', 'cancelled'];
 const DELIVERY_SERVICES = ['dhl', 'dpd', 'hermes'];
+const FULFILLMENT_OPTIONS = ['delivery', 'pickup'];
+const PAYMENT_METHODS = ['card', 'paypal', 'klarna', 'invoice', 'manual'];
+const PAYMENT_STATUSES = ['unpaid', 'paid', 'failed', 'refunded'];
 
 class HttpError extends Error {
   constructor(status, message) {
@@ -60,7 +67,14 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   const get = (sql, ...p) => db.prepare(sql).get(...p);
   const run = (sql, ...p) => db.prepare(sql).run(...p);
 
-  const publicUser = (u) => ({ id: u.id, email: u.email, name: u.name, role: u.role, loyalty_points: u.loyalty_points });
+  const publicUser = (u) => {
+    const tier = tierFor(lifetimeSpendCents(db, u.id));
+    return {
+      id: u.id, email: u.email, name: u.name, role: u.role, loyalty_points: u.loyalty_points,
+      referral_code: referralCode(db, u.id),
+      tier: tier.key, tier_label: tier.label, points_multiplier: tier.multiplier,
+    };
+  };
   const tokenFor = (u) => signToken({ sub: u.id, role: u.role }, secret);
 
   const requireUser = (ctx) => {
@@ -99,18 +113,12 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     return out;
   };
 
-  const orderWithItems = (o) => {
-    const order = { ...o };
-    delete order.payment_method;
-    delete order.payment_status;
-    delete order.payment_reference;
-    return {
-      ...order,
-      items: all(
+  const orderWithItems = (o) => ({
+    ...o,
+    items: all(
       `SELECT oi.product_id, p.name, oi.quantity, oi.unit_price_cents
        FROM order_items oi JOIN products p ON p.id = oi.product_id WHERE oi.order_id = ?`, o.id),
-    };
-  };
+  });
 
   const routes = [];
   const route = (method, path, handler) => {
@@ -127,7 +135,12 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     country: 'DE',
     delivery_services: DELIVERY_SERVICES,
     order_statuses: ORDER_STATUSES,
+    fulfillment_options: FULFILLMENT_OPTIONS,
+    payment_methods: PAYMENT_METHODS,
     loyalty_points_per_euro: 1,
+    delivery_fee_default_cents: Math.max(0, Number(process.env.DELIVERY_FEE_DEFAULT_CENTS) || 0),
+    has_payment_gateway: Boolean(process.env.PAYMENTS_WEBHOOK_SECRET),
+    whatsapp_number: process.env.WHATSAPP_NUMBER || null,
   }));
 
   const comms = createCommunications(db);
@@ -137,6 +150,9 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   registerCommunicationsRoutes(api);
   registerLocationRoutes(api);
   registerBundleRoutes(api);
+  registerDeliveryRoutes(api);
+  registerSubscriptionRoutes(api);
+  registerRecipeRoutes(api);
 
   // ---- Auth ----
   route('POST', '/api/auth/register', (ctx) => {
@@ -146,8 +162,12 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const password = str(ctx.body.password, 'password', { max: 200 });
     if (password.length < 8) throw bad('password must be at least 8 characters');
     if (get('SELECT 1 FROM users WHERE email = ?', email)) throw new HttpError(409, 'Email already registered');
-    const { lastInsertRowid } = run('INSERT INTO users (email, name, password_hash) VALUES (?,?,?)', email, name, hashPassword(password));
-    const user = get('SELECT * FROM users WHERE id = ?', lastInsertRowid);
+    const inserted = transaction(db, () => {
+      const { lastInsertRowid } = run('INSERT INTO users (email, name, password_hash) VALUES (?,?,?)', email, name, hashPassword(password));
+      applyReferral(db, ctx.body.ref, lastInsertRowid);
+      return lastInsertRowid;
+    });
+    const user = get('SELECT * FROM users WHERE id = ?', inserted);
     comms.emit('customer.registered', { email: user.email, name: user.name, user_id: user.id });
     return reply(201, { token: tokenFor(user), user: publicUser(user) });
   });
@@ -161,6 +181,18 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   });
 
   route('GET', '/api/me', (ctx) => publicUser(requireUser(ctx)));
+
+  route('GET', '/api/me/referral', (ctx) => {
+    const user = requireUser(ctx);
+    const code = referralCode(db, user.id);
+    return {
+      code,
+      points_per_friend: 200,
+      link: `/?ref=${code}`,
+      referred_by: user.referred_by ?? null,
+      tier: tierFor(lifetimeSpendCents(db, user.id)).key,
+    };
+  });
 
   route('POST', '/api/staff', (ctx) => {
     requireAdmin(ctx);
@@ -245,13 +277,25 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   // ---- Orders ----
   route('POST', '/api/orders', (ctx) => {
     const user = requireUser(ctx);
-    const address = str(ctx.body.shipping_address, 'shipping_address', { max: 500 });
+    const fulfillment = ctx.body.fulfillment === 'pickup' ? 'pickup' : 'delivery';
+    const address = str(ctx.body.shipping_address ?? '', 'shipping_address', { max: 500, required: fulfillment === 'delivery' }) ?? '';
     const deliveryService = str(ctx.body.delivery_service ?? 'dhl', 'delivery_service', { max: 16 }).toLowerCase();
     if (!DELIVERY_SERVICES.includes(deliveryService)) throw bad(`delivery_service must be one of ${DELIVERY_SERVICES.join(', ')}`);
     const country = str(ctx.body.shipping_country ?? 'DE', 'shipping_country', { max: 2 }).toUpperCase();
     if (country !== 'DE') throw bad('Courier services are currently available within Germany only');
-    const locationId = resolveLocationId(db, ctx.body.location_id);
+    let locationId;
+    let pickupLocationId = null;
+    let pickupAt = null;
+    if (fulfillment === 'pickup') {
+      pickupLocationId = ctx.body.pickup_location_id != null ? int(ctx.body.pickup_location_id, 'pickup_location_id', { min: 1 }) : null;
+      locationId = resolveLocationId(db, pickupLocationId ?? ctx.body.location_id);
+      pickupAt = ctx.body.pickup_at ? str(ctx.body.pickup_at, 'pickup_at', { max: 40 }) : null;
+    } else {
+      locationId = resolveLocationId(db, ctx.body.location_id);
+    }
     const promoCode = ctx.body.promo_code ? String(ctx.body.promo_code).toUpperCase() : null;
+    const paymentMethod = str(ctx.body.payment_method ?? 'manual', 'payment_method', { max: 12 }).toLowerCase();
+    if (!PAYMENT_METHODS.includes(paymentMethod)) throw bad(`payment_method must be one of ${PAYMENT_METHODS.join(', ')}`);
     const items = ctx.body.items;
     if (!Array.isArray(items) || !items.length || items.length > 100) throw bad('items must be a non-empty array');
     const wanted = new Map();
@@ -284,12 +328,18 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       }
       const promo = promoCode ? validatePromo(db, promoCode, total) : null;
       const discount = Math.min(total, (promo ? computeDiscount(promo, total) : 0) + bundleDiscount);
-      const payable = total - discount;
+      const deliveryFee = fulfillment === 'delivery' ? deliveryFeeFor(db, address, total) : 0;
+      const payable = total - discount + deliveryFee;
       if (promo) run('UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?', promo.id);
-      const points = Math.floor(payable / 100);
+      const tier = tierFor(lifetimeSpendCents(db, user.id));
+      const points = pointsFor(payable, tier);
+      const paymentReference = `pay_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
       const { lastInsertRowid: oid } = run(
-        'INSERT INTO orders (user_id, total_cents, discount_cents, promo_code, location_id, points_earned, shipping_address, delivery_service, shipping_country) VALUES (?,?,?,?,?,?,?,?,?)',
-        user.id, payable, discount, promoCode, locationId, points, address, deliveryService, country);
+        `INSERT INTO orders (user_id, total_cents, discount_cents, promo_code, location_id, points_earned, shipping_address, delivery_service, shipping_country,
+           fulfillment, pickup_location_id, pickup_at, delivery_fee_cents, payment_status, payment_method, payment_reference)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        user.id, payable, discount, promoCode, locationId, points, address, deliveryService, country,
+        fulfillment, pickupLocationId, pickupAt, deliveryFee, 'unpaid', paymentMethod, paymentReference);
       for (const { p, qty } of lines) {
         run('INSERT INTO order_items (order_id, product_id, quantity, unit_price_cents) VALUES (?,?,?,?)', oid, p.id, qty, p.price_cents);
         adjustStock(db, p.id, locationId, -qty);
@@ -300,7 +350,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
 
     comms.emit('order.placed', {
       email: user.email, name: user.name, order_id: order.id,
-      total_cents: order.total_cents, location_id: order.location_id,
+      total_cents: order.total_cents, location_id: order.location_id, fulfillment: order.fulfillment,
     });
     const lowSelling = all(
       'SELECT id, name, stock, reorder_level FROM products WHERE id IN (SELECT product_id FROM order_items WHERE order_id = ?) AND stock <= reorder_level',
@@ -360,6 +410,45 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       });
     }
     return order;
+  });
+
+  // ---- Payments (integration-ready) ----
+  route('PATCH', '/api/orders/:id/payment', (ctx) => {
+    requireStaff(ctx);
+    const status = str(ctx.body.status, 'status', { max: 12 });
+    if (!PAYMENT_STATUSES.includes(status)) throw bad(`payment status must be one of ${PAYMENT_STATUSES.join(', ')}`);
+    const method = ctx.body.method === undefined ? null : str(ctx.body.method, 'method', { max: 12 });
+    if (method && !PAYMENT_METHODS.includes(method.toLowerCase())) throw bad('Unknown payment method');
+    return transaction(db, () => {
+      const order = get('SELECT * FROM orders WHERE id = ?', ctx.params.id);
+      if (!order) throw notFound();
+      const set = ['payment_status = ?'];
+      const params = [status];
+      if (method) { set.push('payment_method = ?'); params.push(method.toLowerCase()); }
+      if (ctx.body.reference) { set.push('payment_reference = ?'); params.push(str(ctx.body.reference, 'reference', { max: 200 })); }
+      run(`UPDATE orders SET ${set.join(', ')} WHERE id = ?`, ...params, order.id);
+      if (status === 'paid' && order.status === 'pending') run("UPDATE orders SET status = 'paid' WHERE id = ?", order.id);
+      return orderWithItems(get('SELECT * FROM orders WHERE id = ?', order.id));
+    });
+  });
+
+  route('POST', '/api/payments/webhook', (ctx) => {
+    const secret = process.env.PAYMENTS_WEBHOOK_SECRET;
+    if (!secret) throw new HttpError(503, 'Payment gateway not configured');
+    const provided = String(ctx.headers['x-webhook-secret'] ?? '');
+    if (!provided || provided !== secret) throw new HttpError(401, 'Invalid webhook secret');
+    const reference = str(ctx.body.reference, 'reference', { max: 200 });
+    const status = str(ctx.body.status ?? 'paid', 'status', { max: 12 });
+    if (!PAYMENT_STATUSES.includes(status)) throw bad('Unknown payment status');
+    const method = str(ctx.body.method ?? 'card', 'method', { max: 12 }).toLowerCase();
+    if (!PAYMENT_METHODS.includes(method)) throw bad('Unknown payment method');
+    return transaction(db, () => {
+      const order = get('SELECT * FROM orders WHERE payment_reference = ?', reference);
+      if (!order) throw new HttpError(404, 'Unknown payment reference');
+      run('UPDATE orders SET payment_status = ?, payment_method = ? WHERE id = ?', status, method, order.id);
+      if (status === 'paid' && order.status === 'pending') run("UPDATE orders SET status = 'paid' WHERE id = ?", order.id);
+      return { ok: true, order_id: order.id, payment_status: status };
+    });
   });
 
   // ---- Suppliers ----
@@ -584,7 +673,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       }
       if (!matched) throw pathMatched ? new HttpError(405, 'Method not allowed') : notFound();
 
-      const ctx = { params: matched.params, query: url.searchParams, body: {}, user: null };
+      const ctx = { params: matched.params, query: url.searchParams, headers: req.headers, body: {}, user: null };
       const auth = req.headers.authorization;
       if (auth?.startsWith('Bearer ')) {
         const payload = verifyToken(auth.slice(7), secret);

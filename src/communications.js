@@ -1,7 +1,7 @@
 // Communications automation: templates, event-triggered automations and an outbox.
 // Delivery uses a pluggable transport (defaults to a webhook via COMMS_WEBHOOK_URL, or a log line).
 const EVENTS = ['customer.registered', 'order.placed', 'order.status_changed', 'inventory.low_stock'];
-const CHANNELS = ['email', 'sms', 'push', 'webhook'];
+const CHANNELS = ['email', 'sms', 'whatsapp', 'push', 'webhook'];
 
 export async function defaultTransport(message) {
   const url = process.env.COMMS_WEBHOOK_URL;

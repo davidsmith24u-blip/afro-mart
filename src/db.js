@@ -177,6 +177,48 @@ CREATE TABLE IF NOT EXISTS bundle_items (
   quantity INTEGER NOT NULL CHECK (quantity > 0),
   PRIMARY KEY (bundle_id, product_id)
 );
+CREATE TABLE IF NOT EXISTS delivery_areas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  city TEXT,
+  postal_prefixes TEXT NOT NULL DEFAULT '',
+  fee_cents INTEGER NOT NULL DEFAULT 0 CHECK (fee_cents >= 0),
+  min_order_cents INTEGER NOT NULL DEFAULT 0 CHECK (min_order_cents >= 0),
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  bundle_id INTEGER NOT NULL REFERENCES bundles(id),
+  fulfillment TEXT NOT NULL DEFAULT 'delivery' CHECK (fulfillment IN ('delivery','pickup')),
+  shipping_address TEXT,
+  pickup_location_id INTEGER REFERENCES locations(id),
+  pickup_at TEXT,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','paused','cancelled')),
+  next_run_on TEXT NOT NULL,
+  last_run_on TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS recipes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  prep_minutes INTEGER NOT NULL DEFAULT 30 CHECK (prep_minutes > 0),
+  servings INTEGER NOT NULL DEFAULT 4 CHECK (servings > 0),
+  emoji TEXT NOT NULL DEFAULT '🍽️',
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS recipe_ingredients (
+  recipe_id INTEGER NOT NULL REFERENCES recipes(id),
+  product_id INTEGER REFERENCES products(id),
+  bundle_id INTEGER REFERENCES bundles(id),
+  quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+  note TEXT,
+  CHECK ((product_id IS NOT NULL) OR (bundle_id IS NOT NULL)),
+  PRIMARY KEY (recipe_id, product_id, bundle_id)
+);
 `;
 
 export function openDb(path = ':memory:') {
@@ -199,15 +241,44 @@ export function openDb(path = ':memory:') {
   if (!orderColumns.includes('discount_cents')) {
     db.exec('ALTER TABLE orders ADD COLUMN discount_cents INTEGER NOT NULL DEFAULT 0');
   }
+  if (!orderColumns.includes('fulfillment')) {
+    db.exec("ALTER TABLE orders ADD COLUMN fulfillment TEXT NOT NULL DEFAULT 'delivery' CHECK (fulfillment IN ('delivery','pickup'))");
+  }
+  if (!orderColumns.includes('pickup_location_id')) {
+    db.exec('ALTER TABLE orders ADD COLUMN pickup_location_id INTEGER REFERENCES locations(id)');
+  }
+  if (!orderColumns.includes('pickup_at')) {
+    db.exec('ALTER TABLE orders ADD COLUMN pickup_at TEXT');
+  }
+  if (!orderColumns.includes('delivery_fee_cents')) {
+    db.exec('ALTER TABLE orders ADD COLUMN delivery_fee_cents INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!orderColumns.includes('payment_status')) {
+    db.exec("ALTER TABLE orders ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid','paid','failed','refunded'))");
+  }
+  if (!orderColumns.includes('payment_method')) {
+    db.exec("ALTER TABLE orders ADD COLUMN payment_method TEXT NOT NULL DEFAULT 'manual' CHECK (payment_method IN ('card','paypal','klarna','invoice','manual'))");
+  }
+  if (!orderColumns.includes('payment_reference')) {
+    db.exec('ALTER TABLE orders ADD COLUMN payment_reference TEXT');
+  }
   const userColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name);
   if (!userColumns.includes('location_id')) {
     db.exec('ALTER TABLE users ADD COLUMN location_id INTEGER REFERENCES locations(id)');
+  }
+  if (!userColumns.includes('referral_code')) {
+    db.exec('ALTER TABLE users ADD COLUMN referral_code TEXT');
+  }
+  if (!userColumns.includes('referred_by')) {
+    db.exec('ALTER TABLE users ADD COLUMN referred_by TEXT');
   }
   const poColumns = db.prepare('PRAGMA table_info(purchase_orders)').all().map((column) => column.name);
   if (!poColumns.includes('location_id')) {
     db.exec('ALTER TABLE purchase_orders ADD COLUMN location_id INTEGER REFERENCES locations(id)');
   }
   db.exec('CREATE INDEX IF NOT EXISTS idx_orders_location ON orders(location_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(payment_status)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_subscriptions_next ON subscriptions(status, next_run_on)');
   return db;
 }
 

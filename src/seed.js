@@ -234,5 +234,76 @@ for (const b of bundles) {
   for (const [sku, qty] of b.items) insertBundleItem.run(id, skuId[sku], qty);
 }
 
+// Delivery zones: postal prefixes get an express fee; everything else is free
+// unless DELIVERY_FEE_DEFAULT_CENTS is configured.
+const insertArea = db.prepare("INSERT INTO delivery_areas (name, city, postal_prefixes, fee_cents, min_order_cents, active) VALUES (?,?,?,?,?,1)");
+if (!db.prepare("SELECT 1 FROM delivery_areas WHERE name = 'Berlin zone'").get()) insertArea.run('Berlin zone', 'Berlin', '10', 490, 3000);
+if (!db.prepare("SELECT 1 FROM delivery_areas WHERE name = 'Hamburg zone'").get()) insertArea.run('Hamburg zone', 'Hamburg', '20', 490, 3000);
+
+// A ready-to-use WhatsApp template for order updates.
+db.prepare(
+  "INSERT INTO message_templates (name, channel, subject, body) VALUES ('WhatsApp order update', 'whatsapp', 'Order {{order_id}}', 'Hi {{name}}! Your Afro Mart order {{order_id}} (€{{total_cents}}) is now {{status}}. Got questions? Just reply here.') ON CONFLICT(name) DO NOTHING").run();
+
+// Recipe-driven shopping: dishes linking straight to products and packs.
+const bundleIdBySku = {};
+for (const row of db.prepare('SELECT id, sku FROM bundles').all()) bundleIdBySku[row.sku] = row.id;
+const recipes = [
+  {
+    title: 'Smoky Party Jollof', emoji: '🍛', prep_minutes: 60, servings: 6,
+    description: 'The one-pot showstopper: smoky, spicy party rice cooked low and slow.',
+    items: [['RIC-001', 1, 'long-grain aromatic rice'], ['JOL-001', 2, 'party jollof seasoning'], ['PPR-002', 1, 'five-pepper blend'], ['ONG-001', 2, 'beef cubes'], ['GND-001', 1, 'peppered garnish']],
+  },
+  {
+    title: 'Rich Egusi Soup Night', emoji: '🥘', prep_minutes: 45, servings: 4,
+    description: 'Everything egusi: seeds, palm oil, stockfish and greens — with melt-in-the-mouth goat meat and fufu.',
+    items: [['@EGS-BND', 1, 'Egusi Soup Starter Kit'], ['GOA-001', 1, 'goat meat, cubed'], ['FUF-001', 1, 'for the swallow']],
+  },
+  {
+    title: 'Fufu & Ogbono Draw Soup', emoji: '🍲', prep_minutes: 40, servings: 4,
+    description: 'A glossy, comforting draw soup to scoop up with smooth fufu.',
+    items: [['FUF-001', 2], ['OGB-001', 1], ['CRY-001', 1], ['DPP-001', 1], ['PAL-001', 1], ['STK-001', 1]],
+  },
+  {
+    title: 'Pounded Yam & Oha Vegetable Pot', emoji: '🍠', prep_minutes: 35, servings: 4,
+    description: 'Silky pounded yam with an oha, uziza and iru leaf pot.',
+    items: [['YAM-002', 2], ['OHA-001', 1], ['UZI-001', 1], ['IRU-001', 1], ['CRY-001', 1], ['STK-001', 1]],
+  },
+  {
+    title: 'Zobo Cooler & Market Snacks', emoji: '🧃', prep_minutes: 15, servings: 4,
+    description: 'Chilled zobo with roasted maize, chin chin and plantain chips for a relaxed afternoon.',
+    items: [['ZOB-001', 2], ['RMC-001', 1], ['GND-001', 1], ['CHI-001', 1], ['PLC-001', 1]],
+  },
+  {
+    title: 'Braai Evening', emoji: '🍷', prep_minutes: 25, servings: 4,
+    description: 'Fire up the grill: braai box, marinated goat and fresh plantain, with a glass of Pinotage.',
+    items: [['@BRA-BND', 1, 'Braai & Wine Box'], ['GOA-001', 1, 'marinate & grill'], ['PLN-001', 1, 'grilled plantain']],
+  },
+];
+const insertRecipe = db.prepare('INSERT INTO recipes (title, description, prep_minutes, servings, emoji, active) VALUES (?,?,?,?,?,1)');
+const insertRecipeIngredient = db.prepare('INSERT INTO recipe_ingredients (recipe_id, product_id, bundle_id, quantity, note) VALUES (?,?,?,?,?)');
+let addedRecipes = 0;
+const skippedRecipes = [];
+for (const r of recipes) {
+  if (db.prepare('SELECT 1 FROM recipes WHERE title = ?').get(r.title)) continue;
+  const parts = [];
+  let missing = false;
+  for (const [key, qty, note] of r.items) {
+    if (key.startsWith('@')) {
+      const bid = bundleIdBySku[key.slice(1)];
+      if (!bid) { missing = true; break; }
+      parts.push({ product_id: null, bundle_id: bid, quantity: qty, note: note ?? null });
+    } else {
+      const pid = skuId[key];
+      if (!pid) { missing = true; break; }
+      parts.push({ product_id: pid, bundle_id: null, quantity: qty, note: note ?? null });
+    }
+  }
+  if (missing) { skippedRecipes.push(r.title); continue; }
+  const id = Number(insertRecipe.run(r.title, r.description, r.prep_minutes, r.servings, r.emoji).lastInsertRowid);
+  for (const part of parts) insertRecipeIngredient.run(id, part.product_id, part.bundle_id, part.quantity, part.note);
+  addedRecipes++;
+}
+
 console.log(`Seeded ${added} new products (${products.length - added} existing SKUs); refreshed descriptions on ${refreshed} existing SKUs.`);
 console.log(`Bundles: ${addedBundles} created.${skippedBundles.length ? ` Skipped ${skippedBundles.length} due to missing SKUs: ${skippedBundles.join('; ')}` : ''}`);
+console.log(`Recipes: ${addedRecipes} created.${skippedRecipes.length ? ` Skipped ${skippedRecipes.length} (missing ingredients): ${skippedRecipes.join('; ')}` : ''}`);
