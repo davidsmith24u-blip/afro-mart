@@ -160,6 +160,23 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 CREATE INDEX IF NOT EXISTS idx_inventory_location ON inventory(location_id);
 CREATE INDEX IF NOT EXISTS idx_messages_status ON messages(status);
+CREATE TABLE IF NOT EXISTS bundles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sku TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  bundle_type TEXT NOT NULL DEFAULT 'meal_pack'
+    CHECK (bundle_type IN ('meal_pack','starter_pack','party_pack','gift_box','taste_box')),
+  savings_percent INTEGER NOT NULL DEFAULT 10 CHECK (savings_percent >= 0 AND savings_percent <= 100),
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS bundle_items (
+  bundle_id INTEGER NOT NULL REFERENCES bundles(id),
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  quantity INTEGER NOT NULL CHECK (quantity > 0),
+  PRIMARY KEY (bundle_id, product_id)
+);
 `;
 
 export function openDb(path = ':memory:') {

@@ -15,7 +15,7 @@ Errors: `{ "error": "message" }` with 400/401/403/404/409/413.
 | GET `/api/products?category=&q=&limit=&offset=` | public | Active products (staff also see cost/supplier/inactive) |
 | GET `/api/products/:id` | public | One product |
 | POST `/api/products`, PUT `/api/products/:id` | staff | `sku,name,description,category_id,supplier_id,price_cents,cost_cents,stock,reorder_level,reorder_quantity,expiry_date,active` |
-| POST `/api/orders` `{items:[{product_id,quantity}],shipping_address,delivery_service?,shipping_country?,location_id?,promo_code?}` | user | Place order; decrements stock (per location), awards points, applies promo discount; courier is Germany-only |
+| POST `/api/orders` `{items:[{product_id,quantity} | {bundle_id,quantity}],shipping_address,delivery_service?,shipping_country?,location_id?,promo_code?}` | user | Place order; bundle lines expand into stock-checked components, decrements stock (per location), awards points, applies bundle + promo discounts; courier is Germany-only |
 | GET `/api/orders`, GET `/api/orders/:id` | user | Own orders (staff: all, limit/offset pagination) |
 | PATCH `/api/orders/:id/status` `{status}` | staff | `pending,paid,packed,shipped,delivered,cancelled`; fires status-change automations |
 | GET/POST `/api/suppliers`, PUT `/api/suppliers/:id` | staff | Supplier management |
@@ -64,8 +64,18 @@ Errors: `{ "error": "message" }` with 400/401/403/404/409/413.
 | PUT `/api/locations/:id/inventory/:productId` `{stock,reorder_level?,reorder_quantity?}` | staff | Set a location's allocation (product total stays in sync) |
 | POST `/api/locations/transfer` `{product_id,from_location_id,to_location_id,quantity}` | staff | Move stock between locations |
 
+### Bundles (curated packs & gift boxes)
+Bundle price = contents subtotal − `savings_percent` (`meal_pack | starter_pack | party_pack | gift_box | taste_box`).
+| Method & path | Access | Description |
+|---|---|---|
+| GET `/api/bundles` | public | Active bundles with expanded items, `subtotal_cents`, `savings_cents`, `price_cents` (staff can pass `?all=1`) |
+| GET `/api/bundles/:id` | public | One bundle (staff can read inactive) |
+| POST `/api/bundles`, PUT `/api/bundles/:id` | staff | `{sku,name,description,bundle_type,active,savings_percent,items:[{product_id,quantity}]}` (each product once per bundle) |
+| DELETE `/api/bundles/:id` | staff | Remove a bundle |
+
 API versioning: every `/api/...` route also works under the versioned prefix `/api/v1/...` (e.g. `/api/v1/products`).
 
 ## Schema
 Tables: `users`, `categories`, `suppliers`, `products`, `orders`, `order_items`, `purchase_orders`, `purchase_order_items`,
-`locations`, `inventory`, `subscribers`, `promo_codes`, `campaigns`, `message_templates`, `automations`, `messages` (see `src/db.js`).
+`locations`, `inventory`, `subscribers`, `promo_codes`, `campaigns`, `message_templates`, `automations`, `messages`,
+`bundles`, `bundle_items` (see `src/db.js`).

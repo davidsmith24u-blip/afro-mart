@@ -1,7 +1,7 @@
 import { openDb } from './db.js';
 
 const db = openDb(process.env.DB_PATH || 'afromart.db');
-const categoryNames = ['Dry Goods', 'Fresh Produce', 'Beverages', 'Spices', 'Frozen', 'Snacks', 'Oils & Condiments'];
+const categoryNames = ['Dry Goods', 'Fresh Produce', 'Beverages', 'Spices', 'Frozen', 'Snacks', 'Oils & Condiments', 'Rice & Grains', 'Meat & Fish', 'Health & Beauty'];
 const insertCategory = db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)');
 const cats = {};
 for (const name of categoryNames) {
@@ -71,6 +71,40 @@ const products = [
   ['SHI-001', 'South African Shiraz 750ml', 'Full-bodied South African red wine', 'Beverages', 1299, 870, 10, 4, 16],
   ['MAN-001', 'Mango nectar 1L', 'Smooth tropical mango fruit drink', 'Beverages', 399, 240, 20, 7, 28],
   ['KOL-001', 'Kola nut soft drink 330ml', 'African-inspired sparkling kola nut beverage', 'Beverages', 349, 210, 18, 6, 24],
+  // ---- Rice & Grains ----
+  ['RIC-001', 'Perfumed long-grain rice 5kg', 'Aromatic long-grain rice, the base of party-size jollof', 'Rice & Grains', 1599, 1100, 24, 8, 30],
+  ['RIC-002', 'Long-grain rice 2kg', 'Versatile everyday long-grain rice', 'Rice & Grains', 799, 540, 30, 10, 40],
+  ['MLP-001', 'Millet & sorghum pap mix 1kg', 'Soft porridge mix for Ghanaian-style koko', 'Rice & Grains', 699, 450, 16, 6, 24],
+  ['BNK-001', 'Banku corn & cassava mix 1kg', 'Fermented Ghanaian banku and kenkey blend', 'Rice & Grains', 799, 520, 15, 5, 22],
+  // ---- Meat & Fish ----
+  ['STK-001', 'Stockfish (dry cod) 250g', 'Dried cod for deeply savory soups and stews', 'Meat & Fish', 1599, 1000, 10, 4, 16],
+  ['CRO-001', 'Smoked croaker 300g', 'Whole smoked croaker, ready for soups and stews', 'Meat & Fish', 999, 650, 12, 4, 18],
+  ['SHR-001', 'Dried prawns 100g', 'Dried prawns to lift soups, rice and stews', 'Meat & Fish', 799, 500, 14, 5, 20],
+  ['GOA-001', 'Frozen goat meat 1kg', 'Cubed goat meat for pepper soup and rich stews', 'Meat & Fish', 1899, 1400, 12, 4, 18],
+  ['SNA-001', 'Frozen red snapper 800g', 'Whole frozen red snapper for grilling or soup', 'Meat & Fish', 1499, 1050, 10, 4, 16],
+  ['BIL-001', 'Biltong (spiced dried beef) 100g', 'South African-style spiced air-dried beef', 'Meat & Fish', 699, 450, 15, 5, 20],
+  ['SARD-001', 'Sardines in tomato sauce 125g', 'Canned sardines, a pantry staple for snacks and jollof', 'Meat & Fish', 399, 230, 30, 10, 40],
+  // ---- Soup bases & greens ----
+  ['PNC-001', 'Palmnut cream 800g', 'Palm soup base for Ghanaian palmnut and banga-style soups', 'Oils & Condiments', 649, 420, 18, 6, 24],
+  ['OHA-001', 'Dried oha leaves 100g', 'Local leaves for oha soup', 'Dry Goods', 599, 380, 14, 5, 20],
+  ['UZI-001', 'Dried uziza leaves 100g', 'Peppery herb leaves for soups and stews', 'Dry Goods', 599, 380, 14, 5, 20],
+  ['BTL-001', 'Dried bitterleaf 100g', 'Bitterleaf for ofe onugbu and rich stews', 'Dry Goods', 549, 350, 16, 6, 22],
+  ['DSP-001', 'Dehydrated spinach (ugu / efo) 100g', 'Rehydrates into fresh-tasting leaves for soups', 'Dry Goods', 499, 310, 20, 7, 26],
+  ['ACH-001', 'Achi thickener 100g', 'Natural soup thickener for a silky draw', 'Dry Goods', 399, 250, 18, 6, 24],
+  // ---- Seasonings ----
+  ['ONG-001', 'Seasoning cubes (beef) 8-pack', 'Beef-flavored seasoning cubes for everyday cooking', 'Spices', 249, 140, 36, 12, 48],
+  ['DPP-001', 'Ground dried pepper (hot) 100g', 'Fiery ground dried pepper for soups and rice', 'Spices', 399, 240, 20, 7, 28],
+  ['PPR-002', 'Jollof pepper mix 100g', 'Five-pepper blend for party-style jollof rice', 'Spices', 499, 300, 18, 6, 24],
+  // ---- More drinks & snacks ----
+  ['CHP-002', 'Chapman syrup 750ml', 'Sweet-tart cocktail syrup for a showstopping pitcher of Chapman', 'Beverages', 699, 450, 15, 5, 22],
+  ['CHM-001', 'Chocolate malt drink 330ml', 'Chocolate-flavored malt beverage', 'Beverages', 349, 220, 18, 6, 24],
+  ['RMC-001', 'Roasted maize (corn) 200g', 'Golden roasted corn kernels for snacking', 'Snacks', 349, 200, 20, 7, 28],
+  // ---- Health & Beauty ----
+  ['SHE-001', 'Raw shea butter 250g', 'Unrefined shea butter for skin and hair', 'Health & Beauty', 899, 550, 20, 7, 28],
+  ['BSO-001', 'African black soap 300g', 'Traditional black soap bar for face and body', 'Health & Beauty', 599, 380, 15, 5, 22],
+  ['COC-001', 'Virgin coconut oil 250ml', 'Cold-pressed virgin coconut oil for hair and skin', 'Health & Beauty', 799, 520, 14, 5, 20],
+  ['HAI-001', 'Hair & edge growth butter 200g', 'Nourishing butter for natural hair and edges', 'Health & Beauty', 999, 640, 12, 4, 18],
+  ['BTR-001', 'Shea & cocoa body butter 200g', 'Whipped shea and cocoa body butter for dry skin', 'Health & Beauty', 899, 580, 15, 5, 22],
 ];
 let added = 0;
 for (const [sku, name, description, category, price, cost, stock, level, quantity] of products) {
@@ -89,4 +123,78 @@ if (welcomeTemplate.changes) {
 }
 db.prepare("INSERT OR IGNORE INTO promo_codes (code, discount_type, value, min_total_cents, max_uses, active) VALUES ('WELCOME10', 'percent', 10, 2000, 500, 1)").run();
 
+// Phase 3.5: curated meal packs & gift boxes backed by the catalog above.
+const skuId = {};
+for (const row of db.prepare('SELECT id, sku FROM products').all()) skuId[row.sku] = row.id;
+const bundles = [
+  {
+    sku: 'EGS-BND', name: 'Egusi Soup Starter Kit', type: 'starter_pack', savings: 12,
+    description: 'Everything for a rich egusi soup — ground egusi, red palm oil, stockfish, crayfish, spinach and seasonings.',
+    items: [['EGU-001', 2], ['PAL-001', 1], ['CRY-001', 1], ['DSP-001', 1], ['DPP-001', 1], ['ONG-001', 1], ['STK-001', 1], ['IRU-001', 1]],
+  },
+  {
+    sku: 'JOL-BND', name: 'Jollof Rice Party Pack', type: 'party_pack', savings: 10,
+    description: 'Stock up for the party: perfumed rice, jollof seasoning, pepper mix, crayfish, cubes, palm oil and groundnuts.',
+    items: [['RIC-001', 1], ['JOL-001', 2], ['PPR-002', 1], ['CRY-001', 1], ['ONG-001', 2], ['PAL-001', 1], ['GND-001', 1]],
+  },
+  {
+    sku: 'FUF-BND', name: 'Fufu & Ogbono Night In', type: 'meal_pack', savings: 12,
+    description: 'A classic draw-soup night: cassava fufu, ogbono, crayfish, pepper, palm oil and stockfish.',
+    items: [['FUF-001', 2], ['OGB-001', 1], ['CRY-001', 1], ['DPP-001', 1], ['PAL-001', 1], ['STK-001', 1]],
+  },
+  {
+    sku: 'YAM-BND', name: 'Pounded Yam & Vegetable Pot', type: 'meal_pack', savings: 12,
+    description: 'Pounded yam flour with dried oha leaves, iru, crayfish, stockfish and spinach for a hearty vegetable pot.',
+    items: [['YAM-002', 2], ['OHA-001', 1], ['IRU-001', 1], ['CRY-001', 1], ['STK-001', 1], ['DSP-001', 1]],
+  },
+  {
+    sku: 'BRK-BND', name: 'Afro Breakfast Box', type: 'gift_box', savings: 10,
+    description: 'A cheerful morning box: malt drink, Chapman, chin chin, groundnuts, plantain chips and zobo tea.',
+    items: [['MAL-001', 1], ['CHP-001', 1], ['CHI-001', 1], ['GND-001', 1], ['PLC-001', 1], ['HIB-001', 1]],
+  },
+  {
+    sku: 'BRA-BND', name: 'South African Braai & Wine Box', type: 'gift_box', savings: 10,
+    description: 'A taste of the garden route: Pinotage, Chenin Blanc, biltong, suya spice and roasted groundnuts.',
+    items: [['PIN-001', 1], ['BIL-001', 1], ['SPC-001', 1], ['CHW-001', 1], ['GND-001', 1]],
+  },
+  {
+    sku: 'GHA-BND', name: 'Ghana Banku & Pepper Box', type: 'meal_pack', savings: 12,
+    description: 'Banku mix, ground pepper sauce staples, stockfish, dried prawns, crayfish and palm oil.',
+    items: [['BNK-001', 2], ['PSP-001', 1], ['STK-001', 1], ['CRY-001', 1], ['SHR-001', 1], ['PAL-001', 1]],
+  },
+  {
+    sku: 'JWAR-BND', name: 'Jollof Rice Wars Box (NG vs GH)', type: 'taste_box', savings: 15,
+    description: 'Settle the debate at home: Nigerian-style jollof base, Ghanaian-style jollof base, two rices, pepper and dried prawns.',
+    items: [['RIC-001', 1], ['RIC-002', 1], ['JOL-001', 1], ['JOL-002', 1], ['PPR-002', 1], ['SHR-001', 1], ['KNR-001', 1]],
+  },
+  {
+    sku: 'VEG-BND', name: 'Vegan Soups & Stews Box', type: 'meal_pack', savings: 12,
+    description: '100% plant-based comfort: egusi, palmnut cream, oha, uziza, dehydrated spinach, palm oil, jollof base and plantain.',
+    items: [['EGU-001', 1], ['PNC-001', 1], ['OHA-001', 1], ['UZI-001', 1], ['DSP-001', 1], ['PAL-001', 1], ['JOL-001', 1], ['PLN-001', 1]],
+  },
+  {
+    sku: 'GLW-BND', name: 'Glow Up: Shea & Hair Care Kit', type: 'gift_box', savings: 10,
+    description: 'Self-care from the village to your vanity: raw shea, black soap, hair butter, coconut oil and body butter.',
+    items: [['SHE-001', 1], ['BSO-001', 1], ['HAI-001', 1], ['COC-001', 1], ['BTR-001', 1]],
+  },
+];
+const insertBundle = db.prepare('INSERT OR IGNORE INTO bundles (sku, name, description, bundle_type, savings_percent, active) VALUES (?,?,?,?,?,1)');
+const insertBundleItem = db.prepare('INSERT OR IGNORE INTO bundle_items (bundle_id, product_id, quantity) VALUES (?,?,?)');
+let addedBundles = 0;
+const skippedBundles = [];
+for (const b of bundles) {
+  const missing = b.items.filter(([sku]) => !skuId[sku]).map(([sku]) => sku);
+  if (missing.length) {
+    skippedBundles.push(`${b.sku} (missing: ${missing.join(', ')})`);
+    continue;
+  }
+  let id = db.prepare('SELECT id FROM bundles WHERE sku = ?').get(b.sku)?.id;
+  if (!id) {
+    id = Number(insertBundle.run(b.sku, b.name, b.description, b.type, b.savings).lastInsertRowid);
+    addedBundles++;
+  }
+  for (const [sku, qty] of b.items) insertBundleItem.run(id, skuId[sku], qty);
+}
+
 console.log(`Seeded ${added} new products (${products.length - added} existing SKUs left unchanged).`);
+console.log(`Bundles: ${addedBundles} created.${skippedBundles.length ? ` Skipped ${skippedBundles.length} due to missing SKUs: ${skippedBundles.join('; ')}` : ''}`);

@@ -55,6 +55,17 @@ const load = guard(async () => {
   const prods = (await api('/api/products')).map((p) => ({ ...p, price: money(p.price_cents) }));
   $('inv').replaceChildren(table(['sku', 'name', 'category', 'price', 'stock'], prods));
   $('sups').replaceChildren(table(['id', 'name', 'country', 'contact_name', 'email', 'phone'], await api('/api/suppliers')));
+  const rawBundles = await api('/api/bundles?all=1');
+  const bundleRows = rawBundles.map((b) => ({
+    id: b.id, sku: b.sku, name: b.name, type: b.type_label, items: `${b.item_count} items`,
+    price: money(b.price_cents), savings: `save ${b.savings_percent}%`, state: b.active ? 'Active' : 'Hidden',
+  }));
+  $('bundles').replaceChildren(table(['sku', 'name', 'type', 'items', 'price', 'savings', 'state'], bundleRows, (r) => {
+    const real = rawBundles.find((b) => b.id === r.id);
+    const btn = el('button', real.active ? 'Hide' : 'Show');
+    btn.onclick = guard(async () => { await api(`/api/bundles/${real.id}`, { method: 'PUT', body: { active: real.active ? false : true } }); await load(); });
+    return btn;
+  }));
 });
 
 $('go').onclick = guard(async () => {

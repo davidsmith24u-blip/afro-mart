@@ -189,3 +189,77 @@ test('mobile-ready API: health, config, versioning, CORS and pagination', async 
   assert.equal((await call('GET', '/api/analytics/overview')).status, 401);
   assert.equal((await call('DELETE', '/api/communications/automations/9999')).status, 401);
 });
+
+test('bundles: meal packs, pricing, order expansion and permissions', async () => {
+  const admin = (await call('POST', '/api/auth/login', { email: 'boss@x.com', password: 'adminpass1' })).data.token;
+  const cat = (await call('POST', '/api/categories', { name: 'Bundle Test Cat' }, admin)).data;
+  const sup = (await call('POST', '/api/suppliers', { name: 'Bundle Supplier' }, admin)).data;
+  const mk = async (sku, price, stock) => (await call('POST', '/api/products', {
+    sku, name: sku, price_cents: price, cost_cents: Math.floor(price / 2), stock,
+    reorder_level: 2, reorder_quantity: 10, category_id: cat.id, supplier_id: sup.id,
+  }, admin)).data;
+
+  const rice = await mk('B-RIC', 1000, 50);
+  const base = await mk('B-BASE', 400, 50);
+
+  // Staff only.
+  assert.equal((await call('POST', '/api/bundles', { sku: 'B-X', name: 'x', items: [] })).status, 401);
+
+  const bundle = (await call('POST', '/api/bundles', {
+    sku: 'B-RICE-PACK', name: 'Jollof Pack', description: 'Rice plus base', bundle_type: 'meal_pack',
+    savings_percent: 10, active: true, items: [{ product_id: rice.id, quantity: 2 }, { product_id: base.id, quantity: 1 }],
+  }, admin)).data;
+  assert.equal(bundle.subtotal_cents, 2400); // 1000*2 + 400
+  assert.equal(bundle.savings_cents, 240);
+  assert.equal(bundle.price_cents, 2160);
+  assert.equal(bundle.item_count, 2);
+  assert.equal(bundle.type_label, 'Meal pack');
+
+  // Public list only shows active bundles.
+  assert.ok((await call('GET', '/api/bundles')).data.some((b) => b.id === bundle.id));
+  assert.equal((await call('GET', `/api/bundles/${bundle.id}`)).data.price_cents, 2160);
+
+  // Duplicate bundle SKU and empty item lists are rejected.
+  assert.equal((await call('POST', '/api/bundles', { sku: 'B-RICE-PACK', name: 'x', items: [{ product_id: rice.id, quantity: 1 }] }, admin)).status, 409);
+  assert.equal((await call('POST', '/api/bundles', { sku: 'B-EMPTY', name: 'x', items: [] }, admin)).status, 400);
+
+  // Ordering a bundle expands into its components and applies the bundle discount.
+  const reg = await call('POST', '/api/auth/register', { email: 'c4@x.com', name: 'Tola', password: 'password1' });
+  const cust = reg.data.token;
+  const ord = await call('POST', '/api/orders', {
+    shipping_address: '4 Main St', items: [{ bundle_id: bundle.id, quantity: 1 }],
+  }, cust);
+  assert.equal(ord.status, 201);
+  assert.equal(ord.data.total_cents, 2160);
+  assert.equal(ord.data.discount_cents, 240);
+  assert.equal(ord.data.items.length, 2);
+  assert.equal(ord.data.items.find((i) => i.product_id === rice.id).quantity, 2);
+  assert.equal((await call('GET', '/api/products')).data.find((p) => p.id === rice.id).stock, 48, 'component stock decremented');
+
+  // Insufficient component stock at the fulfilment location blocks a bundle order.
+  const primary = (await call('GET', '/api/locations', null, admin)).data.find((l) => l.is_primary === 1);
+  await call('PUT', `/api/locations/${primary.id}/inventory/${rice.id}`, { stock: 0 }, admin);
+  assert.equal((await call('POST', '/api/orders', {
+    shipping_address: 'x', items: [{ bundle_id: bundle.id, quantity: 1 }],
+  }, cust)).status, 409);
+
+  // Deactivating hides it from buyers but not staff.
+  await call('PUT', `/api/bundles/${bundle.id}`, { active: false, savings_percent: 5 }, admin);
+  assert.equal((await call('GET', '/api/bundles')).data.some((b) => b.id === bundle.id), false);
+  assert.equal((await call('GET', `/api/bundles/${bundle.id}`)).status, 404);
+  assert.equal((await call('GET', `/api/bundles/${bundle.id}`, null, admin)).status, 200);
+
+  // Replacing the contents recalculates the bundle price (and reactivates it).
+  const updated = (await call('PUT', `/api/bundles/${bundle.id}`, { active: true, items: [{ product_id: base.id, quantity: 4 }] }, admin)).data;
+  assert.equal(updated.price_cents, 1600 - Math.floor((1600 * 5) / 100));
+
+  // A bundle can be combined with plain products on the same order.
+  const ord2 = await call('POST', '/api/orders', {
+    shipping_address: 'x', items: [{ bundle_id: bundle.id, quantity: 1 }, { product_id: base.id, quantity: 1 }],
+  }, cust);
+  assert.equal(ord2.status, 201);
+  assert.equal(ord2.data.total_cents, updated.price_cents + 400);
+
+  assert.equal((await call('DELETE', `/api/bundles/${bundle.id}`, null, admin)).status, 204);
+  assert.equal((await call('GET', `/api/bundles/${bundle.id}`)).status, 404);
+});

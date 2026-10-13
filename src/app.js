@@ -8,6 +8,7 @@ import { createCommunications, registerCommunicationsRoutes } from './communicat
 import { registerMarketingRoutes, validatePromo, computeDiscount } from './marketing.js';
 import { registerAnalyticsRoutes } from './analytics.js';
 import { registerLocationRoutes, adjustStock, stockAt, resolveLocationId, lowStockAt } from './locations.js';
+import { registerBundleRoutes, expandBundle } from './bundles.js';
 
 const PUBLIC_DIR = resolve(fileURLToPath(new URL('../public', import.meta.url)));
 const MIME = {
@@ -135,6 +136,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   registerMarketingRoutes(api);
   registerCommunicationsRoutes(api);
   registerLocationRoutes(api);
+  registerBundleRoutes(api);
 
   // ---- Auth ----
   route('POST', '/api/auth/register', (ctx) => {
@@ -253,10 +255,22 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const items = ctx.body.items;
     if (!Array.isArray(items) || !items.length || items.length > 100) throw bad('items must be a non-empty array');
     const wanted = new Map();
+    let bundleDiscount = 0;
     for (const it of items) {
-      const pid = int(it?.product_id, 'product_id', { min: 1 });
       const qty = int(it?.quantity, 'quantity', { min: 1 });
-      wanted.set(pid, (wanted.get(pid) ?? 0) + qty);
+      if (it?.bundle_id != null) {
+        const bundleId = int(it.bundle_id, 'bundle_id', { min: 1 });
+        const bundle = get('SELECT * FROM bundles WHERE id = ? AND active = 1', bundleId);
+        if (!bundle) throw bad(`Bundle ${bundleId} is not available`);
+        const { lines, discount_cents } = expandBundle(db, bundle, qty);
+        for (const line of lines) {
+          wanted.set(line.product_id, (wanted.get(line.product_id) ?? 0) + line.quantity);
+        }
+        bundleDiscount += discount_cents;
+      } else {
+        const pid = int(it?.product_id, 'product_id', { min: 1 });
+        wanted.set(pid, (wanted.get(pid) ?? 0) + qty);
+      }
     }
     const order = transaction(db, () => {
       let total = 0;
@@ -269,7 +283,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
         lines.push({ p, qty });
       }
       const promo = promoCode ? validatePromo(db, promoCode, total) : null;
-      const discount = promo ? computeDiscount(promo, total) : 0;
+      const discount = Math.min(total, (promo ? computeDiscount(promo, total) : 0) + bundleDiscount);
       const payable = total - discount;
       if (promo) run('UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?', promo.id);
       const points = Math.floor(payable / 100);

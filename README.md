@@ -26,6 +26,11 @@ Zero npm dependencies: Node.js ≥ 22.13 (built-in `node:http`, `node:sqlite`, `
 - Multi-location: store/warehouse locations with per-location inventory, stock transfers and per-location low stock; orders and staff can be assigned to a location
 - Mobile-ready API: `/api/health`, `/api/config`, `/api/v1` versioned prefix, CORS, pagination on list endpoints
 
+**Curated bundles & catalog depth**
+- Meal packs, starter kits, party packs, gift boxes and taste boxes (Egusi Soup Starter Kit, Jollof Rice Party Pack, Jollof Rice Wars Box NG vs GH, Glow Up shea & hair kit, ...) — priced as their contents minus a percentage, orderable as one line, and expanded into stock-checked component products at checkout
+- A resident-curated catalog spanning 10 categories — pantry staples, rice & grains, fresh & frozen, meat & fish, drinks (incl. South African wines), spices and health & beauty (raw shea, African black soap, natural hair care)
+- Storefront "Packs & bundles" section showcases bundles with savings vs. buying items separately
+
 The REST API is mobile-app friendly: a React Native / Expo app can reuse every endpoint as-is.
 
 ## Installable web app (PWA)

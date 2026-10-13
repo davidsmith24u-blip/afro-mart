@@ -100,6 +100,8 @@ main { max-width: 1320px; padding: 0 40px; margin: 0 auto; }
 .product-buy { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
 .product-price { font-size: 13px; font-weight: 700; }
 .stock-label { color: #81867e; font-size: 10px; }
+.bundle-items-line { margin: 7px 0 0; color: var(--muted); font-size: 10px; }
+.strike { margin-right: 5px; color: var(--muted); font-size: 11px; font-weight: 400; text-decoration: line-through; }
 .add-button, .checkout-button { min-height: 37px; padding: 0 12px; border: 0; background: var(--forest); color: white; font-size: 11px; font-weight: 700; transition: background .2s ease, transform .2s ease; }
 .add-button:hover, .checkout-button:hover { background: var(--forest-deep); }
 .add-button:hover, .checkout-button:hover { transform: translateY(-1px); }

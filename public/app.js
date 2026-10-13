@@ -4,6 +4,8 @@ let token = localStorage.getItem('token');
 let user = null;
 let products = [];
 const productCatalog = new Map();
+let bundles = [];
+const bundleCatalog = new Map();
 const cart = JSON.parse(localStorage.getItem('cart') || '{}');
 
 function el(tag, text, attrs = {}) {
@@ -30,7 +32,7 @@ async function loadProducts() {
   if ($('cat').value) p.set('category', $('cat').value);
   products = await api(`/api/products?${p}`);
   products.forEach((product) => productCatalog.set(product.id, product));
-  const glyphs = { 'dry goods': '🌾', 'fresh produce': '🥬', beverages: '🫖', spices: '🌶️', frozen: '❄️', snacks: '🥜', 'oils & condiments': '🫘' };
+  const glyphs = { 'dry goods': '🌾', 'fresh produce': '🥬', beverages: '🫖', spices: '🌶️', frozen: '❄️', snacks: '🥜', 'oils & condiments': '🫘', 'rice & grains': '🍚', 'meat & fish': '🍖', 'health & beauty': '🧴' };
   const productGlyph = (product) => {
     const name = product.name.toLowerCase();
     if (name.includes('wine')) return '🍷';
@@ -41,6 +43,12 @@ async function loadProducts() {
     if (name.includes('ponmo')) return '🥘';
     if (name.includes('iru') || name.includes('groundnut')) return '🫘';
     if (name.includes('tigernut')) return '🥛';
+    if (name.includes('stockfish') || name.includes('croaker') || name.includes('snapper') || name.includes('sardine') || name.includes('fish')) return '🐟';
+    if (name.includes('prawn')) return '🦐';
+    if (name.includes('goat') || name.includes('biltong') || name.includes('beef')) return '🍖';
+    if (name.includes('rice') || name.includes('banku') || name.includes('millet') || name.includes('sorghum') || name.includes('pap')) return '🍚';
+    if (name.includes('maize')) return '🌽';
+    if (name.includes('shea') || name.includes('soap') || name.includes('coconut oil') || name.includes('hair') || name.includes('butter')) return '🧴';
     return glyphs[(product.category || '').toLowerCase()] || '🧺';
   };
   const productPhoto = (product) => {
@@ -95,14 +103,65 @@ async function loadProducts() {
   $('product-count').textContent = `${products.length} ${products.length === 1 ? 'product' : 'products'}`;
   renderCart();
 }
+async function loadBundles() {
+  const data = await api('/api/bundles');
+  bundles = data;
+  bundles.forEach((bundle) => bundleCatalog.set(bundle.id, bundle));
+  const glyph = { meal_pack: '🍲', starter_pack: '🥘', party_pack: '🎉', gift_box: '🎁', taste_box: '⚖️' };
+  $('bundle-grid').replaceChildren(...(bundles.length ? bundles.map((bundle, index) => {
+    const card = el('article', undefined, { className: 'product-card bundle-card' });
+    const art = el('div', undefined, { className: 'product-art' });
+    art.dataset.tone = 'pantry';
+    art.append(el('span', glyph[bundle.bundle_type] || '🛍️', { ariaHidden: 'true' }));
+    const info = el('div', undefined, { className: 'product-info' });
+    info.append(el('p', bundle.type_label || 'Bundle', { className: 'product-category' }));
+    info.append(el('h3', bundle.name));
+    info.append(el('p', bundle.description, { className: 'product-description' }));
+    info.append(el('p', `${bundle.item_count} items · you save ${bundle.savings_percent}%`, { className: 'bundle-items-line' }));
+    const buy = el('div', undefined, { className: 'product-buy' });
+    const price = el('strong', undefined, { className: 'product-price' });
+    price.append(el('span', money(bundle.subtotal_cents), { className: 'strike' }), ' ', money(bundle.price_cents));
+    const add = el('button', 'Add to bag +', { className: 'add-button', type: 'button', title: 'Add ' + bundle.name + ' to bag' });
+    add.onclick = () => { cart[`b${bundle.id}`] = Math.min((cart[`b${bundle.id}`] || 0) + 1, 10); saveCart(); };
+    buy.append(price, add);
+    info.append(buy);
+    card.append(art, info);
+    return card;
+  }) : [el('p', 'Bundles are being assembled at our warehouse — check back soon.', { className: 'empty-state' })]));
+}
 function saveCart() { localStorage.setItem('cart', JSON.stringify(cart)); renderCart(); }
 function clearCart() { for (const key of Object.keys(cart)) delete cart[key]; saveCart(); }
 function renderCart() {
   let total = 0;
   let itemCount = 0;
   const rows = [];
-  for (const [id, qty] of Object.entries(cart)) {
-    const p = productCatalog.get(Number(id));
+  for (const [key, qty] of Object.entries(cart)) {
+    if (key.startsWith('b')) {
+      const b = bundleCatalog.get(Number(key.slice(1)));
+      if (!b) continue;
+      total += b.price_cents * qty;
+      const tr = el('tr');
+      tr.append(el('td', `${b.name} pack`));
+      const quantityCell = el('td');
+      const controls = el('div', undefined, { className: 'quantity-controls' });
+      const decrease = el('button', '−', { type: 'button', title: 'Decrease quantity', ariaLabel: `Decrease ${b.name} quantity` });
+      decrease.onclick = () => { if (cart[key] <= 1) delete cart[key]; else cart[key] -= 1; saveCart(); };
+      const increase = el('button', '+', { type: 'button', title: 'Increase quantity', ariaLabel: `Increase ${b.name} quantity` });
+      increase.disabled = qty >= 10;
+      increase.onclick = () => { cart[key] = Math.min(cart[key] + 1, 10); saveCart(); };
+      controls.append(decrease, el('span', String(qty)), increase);
+      quantityCell.append(controls);
+      tr.append(quantityCell, el('td', money(b.price_cents * qty)));
+      const removeCell = el('td');
+      const remove = el('button', 'Remove', { className: 'remove-item', type: 'button' });
+      remove.onclick = () => { delete cart[key]; saveCart(); };
+      removeCell.append(remove);
+      tr.append(removeCell);
+      rows.push(tr);
+      itemCount += qty;
+      continue;
+    }
+    const p = productCatalog.get(Number(key));
     if (!p) continue;
     total += p.price_cents * qty;
     const tr = el('tr');
@@ -196,7 +255,9 @@ $('category-links').addEventListener('click', (event) => {
 $('checkout').onclick = async () => {
   try {
     if (!user) throw new Error('Please log in to check out');
-    const items = Object.entries(cart).map(([id, quantity]) => ({ product_id: Number(id), quantity }));
+    const items = Object.entries(cart).map(([key, quantity]) => key.startsWith('b')
+      ? { bundle_id: Number(key.slice(1)), quantity }
+      : { product_id: Number(key), quantity });
     await api('/api/orders', {
       method: 'POST',
       body: {
@@ -259,6 +320,7 @@ if ('serviceWorker' in navigator) {
     if (token) { try { user = await api('/api/me'); } catch { token = null; } }
     renderAccount();
     renderCart();
+    await loadBundles();
     await loadProducts();
     await loadOrders();
   } catch (e) { fail(e); }
