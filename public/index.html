@@ -3,72 +3,156 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<meta name="theme-color" content="#ad2535">
+	<meta name="theme-color" content="#a8401d">
+	<meta name="description" content="Afro Mart — a taste of home. African groceries, spices and everyday staples delivered across Germany.">
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-capable" content="yes">
-	<title>Afro Mart | Good food, close to home</title>
+	<title>Afro Mart | A taste of home, delivered</title>
 	<link rel="manifest" href="/manifest.webmanifest">
 	<link rel="icon" href="/app-icon.svg" type="image/svg+xml">
 	<link rel="apple-touch-icon" href="/app-icon.svg">
 	<link rel="stylesheet" href="/style.css">
 </head>
 <body>
-	<div class="announcement">A little taste of home, delivered to your door <span aria-hidden="true">✳</span></div>
+	<svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">
+		<symbol id="afromart-emblem" viewBox="0 0 48 48">
+			<circle cx="24" cy="24" r="23" fill="#a8401d"/>
+			<circle cx="24" cy="24" r="19.5" fill="#fdf6ea"/>
+			<g stroke="#e0a12f" stroke-width="2.2" stroke-linecap="round">
+				<line x1="24" y1="7.8" x2="24" y2="11"/>
+				<line x1="33.2" y1="10.8" x2="31.1" y2="12.9"/>
+				<line x1="14.8" y1="10.8" x2="16.9" y2="12.9"/>
+				<line x1="35.7" y1="18.2" x2="32.6" y2="18.2"/>
+				<line x1="12.3" y1="18.2" x2="15.4" y2="18.2"/>
+			</g>
+			<circle cx="24" cy="19" r="6.6" fill="#e0a12f"/>
+			<path d="M9 24 C9 34.6 15.7 41.6 24 41.6 C32.3 41.6 39 34.6 39 24 Z" fill="#a8401d"/>
+			<rect x="7" y="21.6" width="34" height="5" rx="2.5" fill="#7d2f12"/>
+		</symbol>
+	</svg>
+
+	<div class="announcement">
+		<div class="announcement-inner">
+			<span aria-hidden="true">✳</span>
+			<span>Welcome home — free delivery on orders over €50 in Berlin &amp; Hamburg</span>
+			<span class="announcement-dot" aria-hidden="true">•</span>
+			<span>Hand-packed with care, from our shelf to your kitchen</span>
+		</div>
+	</div>
+
 	<header class="site-header">
 		<a class="brand" href="/" aria-label="Afro Mart home">
-			<span class="brand-mark" aria-hidden="true">A</span>
-			<span>afro<span class="brand-light">mart</span><small>THE AFRICAN PANTRY</small></span>
+			<svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#afromart-emblem"></use></svg>
+			<span class="brand-words">afro<span class="brand-light">mart</span><small>THE AFRICAN PANTRY</small></span>
 		</a>
 		<label class="search-box">
 			<span class="sr-only">Search the store</span>
 			<span class="search-icon" aria-hidden="true">⌕</span>
-			<input id="q" placeholder="Find something delicious" autocomplete="off">
+			<input id="q" placeholder="What are you cooking today?" autocomplete="off">
 			<kbd>SEARCH</kbd>
 		</label>
 		<div class="header-actions">
 			<button id="install-app" class="install-app" type="button" aria-label="Install Afro Mart app" hidden><span aria-hidden="true">↓</span> Install app</button>
 			<span id="acct"></span>
-			<a class="cart-link" href="#shopping-cart">Bag <span id="cart-count">0</span></a>
+			<a class="cart-link" href="#shopping-cart"><span class="cart-icon" aria-hidden="true">🧺</span> Bag <span id="cart-count">0</span></a>
 		</div>
 	</header>
+
 	<nav class="category-nav" aria-label="Shop categories">
 		<div class="category-nav-inner">
+			<span class="category-label" aria-hidden="true">Shop by aisle</span>
 			<button class="category-shortcut is-active" data-category="">Everything</button>
 			<div id="category-links"></div>
 			<label class="category-select-label">Browse <select id="cat" aria-label="Filter products by category"><option value="">All categories</option></select></label>
 		</div>
 	</nav>
+
+	<section class="hero" aria-labelledby="hero-title">
+		<img class="hero-image" src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=2200&q=85" alt="A colourful market stall piled high with fresh produce" fetchpriority="high">
+		<div class="hero-shade"></div>
+		<div class="hero-pattern" aria-hidden="true"></div>
+		<div class="hero-copy">
+			<p class="eyebrow">Welcome home, family</p>
+			<h1 id="hero-title">Every pot tells a story.</h1>
+			<p>From the market stalls back home to your kitchen in Europe — find the flavours, staples and everyday comforts you grew up with, gathered in one bag.</p>
+			<div class="hero-actions">
+				<a class="hero-cta" href="#shop">Shop the market <span aria-hidden="true">→</span></a>
+				<a class="hero-cta ghost" href="#bundles">Explore bundles</a>
+			</div>
+		</div>
+		<div class="hero-emblem" aria-hidden="true">
+			<svg viewBox="0 0 48 48"><use href="#afromart-emblem"></use></svg>
+			<span>Rooted in Africa</span>
+		</div>
+		<p class="hero-note"><span aria-hidden="true">✳</span> Rooted in Africa. Made for every day.</p>
+	</section>
+
 	<main>
 		<p id="msg" class="message" role="status" aria-live="polite"></p>
-		<section class="hero" aria-labelledby="hero-title">
-			<img class="hero-image" src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=2200&q=85" alt="Fresh produce arranged at a neighborhood market" fetchpriority="high">
-			<div class="hero-shade"></div>
-			<div class="hero-copy">
-				<p class="eyebrow">YOUR NEIGHBORHOOD AFRICAN MARKET</p>
-				<h1 id="hero-title">Afro Mart</h1>
-				<p>Good food, close to home. Find the flavors you grew up with, from everyday pantry staples to market favorites.</p>
-				<a class="hero-cta" href="#shop">Shop the market <span aria-hidden="true">↘</span></a>
+
+		<section class="roots" aria-labelledby="roots-title">
+			<div class="section-heading centered">
+				<p class="eyebrow">The Afro Mart promise</p>
+				<h2 id="roots-title">Like a neighbour who knows your kitchen</h2>
+				<p class="shop-caption">You should not have to cross a continent for a taste of home. So we bring the pantry to your street.</p>
 			</div>
-			<p class="hero-note"><span aria-hidden="true">✳</span> ROOTED IN CULTURE. MADE FOR EVERY DAY.</p>
+			<div class="roots-grid">
+				<article class="root-card">
+					<span class="root-icon" aria-hidden="true">🌾</span>
+					<h3>From home</h3>
+					<p>Ground crayfish, egusi, ofada rice, palm oil and golden garri — the true staples of home cooking, sourced with care.</p>
+				</article>
+				<article class="root-card">
+					<span class="root-icon" aria-hidden="true">🧺</span>
+					<h3>Packed with love</h3>
+					<p>Every order is picked, weighed and hand-packed, then checked twice before it leaves our shelf for your door.</p>
+				</article>
+				<article class="root-card">
+					<span class="root-icon" aria-hidden="true">🏡</span>
+					<h3>At your table</h3>
+					<p>Reliable courier delivery across Germany, so dinner is never far from the people you love most.</p>
+				</article>
+			</div>
 		</section>
+
 		<section id="bundles" class="shop-section bundles-section" aria-labelledby="bundles-title">
 			<div class="section-heading">
-				<div><p class="eyebrow">CURATED FOR YOUR TABLE</p><h2 id="bundles-title">Packs &amp; bundles</h2></div>
-				<p class="shop-caption">Meal packs, starter kits and gift boxes — everything for a dish, a party or a gift, in one bag and for less than buying it separately.</p>
+				<div><p class="eyebrow">Curated for your table</p><h2 id="bundles-title">Packs that feel like home</h2></div>
+				<p class="shop-caption">Meal packs, starter kits and gift boxes — everything for a dish, a party or a gift, in one bag for less.</p>
 			</div>
 			<div id="bundle-grid" class="product-grid" aria-live="polite"></div>
 		</section>
+
 		<section id="shop" class="shop-section" aria-labelledby="shop-title">
 			<div class="section-heading">
-				<div><p class="eyebrow">A GOOD PLACE TO START</p><h2 id="shop-title">From our market</h2></div>
+				<div><p class="eyebrow">A good place to start</p><h2 id="shop-title">From our market</h2></div>
 				<p class="shop-caption">A little something for the pantry, the pot, and the people around your table.</p>
 				<span id="product-count" class="product-count" aria-live="polite"></span>
 			</div>
 			<div id="products" class="product-grid" aria-live="polite"></div>
 		</section>
+
+		<section class="story" aria-labelledby="story-title">
+			<div class="story-inner">
+				<div class="story-copy">
+					<p class="eyebrow">Roots that travel with you</p>
+					<h2 id="story-title">Africa is never far when your kitchen remembers it</h2>
+					<p>Afro Mart began with a simple longing: the smell of a proper jollof, the crunch of fresh chin chin, the comfort of a familiar brand. We carry the aisles of home — West, East, Central and Southern — to your neighbourhood in Europe.</p>
+					<ul class="region-tags">
+						<li>Nigeria</li><li>Ghana</li><li>Kenya</li><li>Ethiopia</li><li>Cameroon</li><li>South Africa</li><li>&amp; more</li>
+					</ul>
+					<a class="hero-cta" href="#shop">Start your basket <span aria-hidden="true">→</span></a>
+				</div>
+				<div class="story-art" aria-hidden="true">
+					<svg viewBox="0 0 48 48"><use href="#afromart-emblem"></use></svg>
+					<div class="story-band"></div>
+				</div>
+			</div>
+		</section>
+
 		<div class="shopping-layout">
 			<section id="shopping-cart" class="cart-section" aria-labelledby="cart-title">
-				<div class="section-heading compact-heading"><div><p class="eyebrow">YOUR SELECTION</p><h2 id="cart-title">Your market bag</h2></div><span id="cart-summary">Ready when you are</span></div>
+				<div class="section-heading compact-heading"><div><p class="eyebrow">Your selection</p><h2 id="cart-title">Your market bag</h2></div><span id="cart-summary">Ready when you are</span></div>
 				<div class="cart-table-wrap"><table id="cart"><caption class="sr-only">Items in your market bag</caption></table></div>
 				<div class="cart-bottom">
 					<label for="addr">Delivery address</label>
@@ -82,14 +166,14 @@
 						</div>
 					</fieldset>
 					<p class="delivery-note">Courier delivery is currently available within Germany.</p>
-					<div class="cart-total"><span>Order total</span><strong id="total">$0.00</strong></div>
+					<div class="cart-total"><span>Order total</span><strong id="total">€0.00</strong></div>
 					<button id="checkout" class="checkout-button">Continue to checkout <span aria-hidden="true">→</span></button>
 					<p class="checkout-note">You'll need an account to place your order.</p>
 				</div>
 			</section>
 			<section id="auth" class="account-section" aria-labelledby="account-title">
-				<p class="eyebrow">COME ON IN</p><h2 id="account-title">Your account</h2>
-				<p class="account-intro">Sign in to check out and keep your orders in one place.</p>
+				<p class="eyebrow">Come on in</p><h2 id="account-title">Your account</h2>
+				<p class="account-intro">Sign in to check out and keep your orders in one place — just like popping into your local shop.</p>
 				<label for="name">Your name <span>(for a new account)</span></label>
 				<input id="name" placeholder="Name" autocomplete="name">
 				<label for="email">Email address</label>
@@ -99,9 +183,19 @@
 				<div class="account-actions"><button id="login" class="secondary-button">Log in</button><button id="register" class="text-button">Create account <span aria-hidden="true">→</span></button></div>
 			</section>
 		</div>
+
 		<section id="orders" class="orders-section"></section>
 	</main>
-	<footer><a class="brand footer-brand" href="/" aria-label="Afro Mart home"><span class="brand-mark" aria-hidden="true">A</span><span>afro<span class="brand-light">mart</span><small>THE AFRICAN PANTRY</small></span></a><p>Good food, generous tables, and a little taste of home.</p><span>© Afro Mart</span></footer>
+
+	<footer>
+		<a class="brand footer-brand" href="/" aria-label="Afro Mart home">
+			<svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#afromart-emblem"></use></svg>
+			<span class="brand-words">afro<span class="brand-light">mart</span><small>THE AFRICAN PANTRY</small></span>
+		</a>
+		<p>Good food, generous tables, and a little taste of home.</p>
+		<span>© Afro Mart</span>
+	</footer>
+
 	<script src="/app.js" type="module"></script>
 </body>
 </html>

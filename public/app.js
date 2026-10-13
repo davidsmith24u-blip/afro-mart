@@ -1,5 +1,5 @@
 const $ = (id) => document.getElementById(id);
-const money = (c) => `$${(c / 100).toFixed(2)}`;
+const money = (c) => (c / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
 let token = localStorage.getItem('token');
 let user = null;
 let products = [];
@@ -48,6 +48,20 @@ async function loadProducts() {
     if (name.includes('goat') || name.includes('biltong') || name.includes('beef')) return '🍖';
     if (name.includes('rice') || name.includes('banku') || name.includes('millet') || name.includes('sorghum') || name.includes('pap')) return '🍚';
     if (name.includes('maize')) return '🌽';
+    if (name.includes('ukwa') || name.includes('breadfruit')) return '🥥';
+    if (name.includes('beans') || name.includes('oloyin')) return '🫘';
+    if (name.includes('semovita') || name.includes('semolina')) return '🥣';
+    if (name.includes('ugba') || name.includes('abacha')) return '🥗';
+    if (name.includes('moi moi')) return '🥘';
+    if (name.includes('akara')) return '🥞';
+    if (name.includes('gbegiri')) return '🍲';
+    if (name.includes('kilishi') || name.includes('dambun') || name.includes('cow foot') || name.includes('nkwobi')) return '🍖';
+    if (name.includes('garden egg')) return '🍆';
+    if (name.includes('okra')) return '🥒';
+    if (name.includes('tatashe') || name.includes('pepper') || name.includes('uziza') || name.includes('ehuru') || name.includes('uda')) return '🌶️';
+    if (name.includes('coconut') && !name.includes('oil')) return '🥥';
+    if (name.includes('palm fruit') || name.includes('banga')) return '🌴';
+    if (name.includes('utazi') || name.includes('scent leaf') || name.includes('okazi') || name.includes('waterleaf') || name.includes('ewedu')) return '🥬';
     if (name.includes('shea') || name.includes('soap') || name.includes('coconut oil') || name.includes('hair') || name.includes('butter')) return '🧴';
     return glyphs[(product.category || '').toLowerCase()] || '🧺';
   };
