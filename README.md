@@ -19,7 +19,14 @@ Zero npm dependencies: Node.js ≥ 22.13 (built-in `node:http`, `node:sqlite`, `
 - Basic financial reporting (revenue, estimated cost/profit, inventory value, top products)
 - Loyalty foundation: 1 point per whole currency unit spent
 
-**Phase 3** (analytics, marketing, communications automation, multi-location, mobile app) is future work; the REST API is designed so a mobile app can reuse it.
+**Phase 3 – Growth & mobile**
+- Analytics: overview (AOV, repeat-rate, profit), daily sales series, top products/customers, category performance — all filterable by store location
+- Marketing: customer segments (new/active/lapsed/VIP), campaign sending, newsletter subscribers, promo codes applied at checkout
+- Communications automation: message templates, event-driven automations (welcome, order placed, status changes, low-stock), queued outbox with pluggable delivery (webhook via `COMMS_WEBHOOK_URL` or log)
+- Multi-location: store/warehouse locations with per-location inventory, stock transfers and per-location low stock; orders and staff can be assigned to a location
+- Mobile-ready API: `/api/health`, `/api/config`, `/api/v1` versioned prefix, CORS, pagination on list endpoints
+
+The REST API is mobile-app friendly: a React Native / Expo app can reuse every endpoint as-is.
 
 ## Installable web app (PWA)
 The storefront is installable and works offline for the app shell. It ships a web app manifest
@@ -39,6 +46,8 @@ npm test
 
 Environment: `PORT` (3000), `DB_PATH` (`afromart.db`), `AUTH_SECRET` (required in production so sessions survive restarts),
 `ADMIN_EMAIL`/`ADMIN_PASSWORD` (creates the first admin if absent). Admins can create staff via `POST /api/staff`.
+`CORS_ORIGIN` (default `*`) controls which origins may call the API from a browser; `COMMS_WEBHOOK_URL` casts the
+messages outbox to a webhook instead of the log transport.
 
 Docker: `AUTH_SECRET=... docker compose up --build`.
 

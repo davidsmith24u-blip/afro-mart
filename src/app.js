@@ -4,6 +4,10 @@ import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { transaction } from './db.js';
 import { hashPassword, verifyPassword, signToken, verifyToken } from './auth.js';
+import { createCommunications, registerCommunicationsRoutes } from './communications.js';
+import { registerMarketingRoutes, validatePromo, computeDiscount } from './marketing.js';
+import { registerAnalyticsRoutes } from './analytics.js';
+import { registerLocationRoutes, adjustStock, stockAt, resolveLocationId, lowStockAt } from './locations.js';
 
 const PUBLIC_DIR = resolve(fileURLToPath(new URL('../public', import.meta.url)));
 const MIME = {
@@ -114,6 +118,24 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     routes.push({ method, re, keys, handler });
   };
 
+  // Mobile-ready public endpoints and Phase 3 feature modules.
+  route('GET', '/api/health', () => ({ status: 'ok', time: new Date().toISOString(), version: '3.0.0' }));
+  route('GET', '/api/config', () => ({
+    app: 'Afro Mart',
+    currency: 'EUR',
+    country: 'DE',
+    delivery_services: DELIVERY_SERVICES,
+    order_statuses: ORDER_STATUSES,
+    loyalty_points_per_euro: 1,
+  }));
+
+  const comms = createCommunications(db);
+  const api = { db, route, all, get, run, transaction, reply, bad, notFound, HttpError, str, int, requireUser, requireStaff, requireAdmin, publicUser, comms };
+  registerAnalyticsRoutes(api);
+  registerMarketingRoutes(api);
+  registerCommunicationsRoutes(api);
+  registerLocationRoutes(api);
+
   // ---- Auth ----
   route('POST', '/api/auth/register', (ctx) => {
     const email = str(ctx.body.email, 'email', { max: 254 }).toLowerCase();
@@ -124,6 +146,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     if (get('SELECT 1 FROM users WHERE email = ?', email)) throw new HttpError(409, 'Email already registered');
     const { lastInsertRowid } = run('INSERT INTO users (email, name, password_hash) VALUES (?,?,?)', email, name, hashPassword(password));
     const user = get('SELECT * FROM users WHERE id = ?', lastInsertRowid);
+    comms.emit('customer.registered', { email: user.email, name: user.name, user_id: user.id });
     return reply(201, { token: tokenFor(user), user: publicUser(user) });
   });
 
@@ -169,11 +192,14 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     if (cat) { where.push('p.category_id = ?'); params.push(Number(cat) || 0); }
     const q = ctx.query.get('q');
     if (q) { where.push('(p.name LIKE ? OR p.description LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
+    const limit = ctx.query.get('limit') ? Math.min(Math.max(Number(ctx.query.get('limit')) || 50, 1), 200) : null;
+    const offset = ctx.query.get('offset') ? Math.max(Number(ctx.query.get('offset')) || 0, 0) : 0;
     return all(
       `SELECT p.id, p.sku, p.name, p.description, p.category_id, c.name AS category, p.price_cents, p.stock,
               p.expiry_date, p.active${staff ? ', p.cost_cents, p.reorder_level, p.reorder_quantity, p.supplier_id' : ''}
        FROM products p LEFT JOIN categories c ON c.id = p.category_id
-       ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY p.name`, ...params);
+       ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY p.name${limit ? ' LIMIT ? OFFSET ?' : ''}`,
+      ...params, ...(limit ? [limit, offset] : []));
   });
 
   route('GET', '/api/products/:id', (ctx) => {
@@ -222,6 +248,8 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     if (!DELIVERY_SERVICES.includes(deliveryService)) throw bad(`delivery_service must be one of ${DELIVERY_SERVICES.join(', ')}`);
     const country = str(ctx.body.shipping_country ?? 'DE', 'shipping_country', { max: 2 }).toUpperCase();
     if (country !== 'DE') throw bad('Courier services are currently available within Germany only');
+    const locationId = resolveLocationId(db, ctx.body.location_id);
+    const promoCode = ctx.body.promo_code ? String(ctx.body.promo_code).toUpperCase() : null;
     const items = ctx.body.items;
     if (!Array.isArray(items) || !items.length || items.length > 100) throw bad('items must be a non-empty array');
     const wanted = new Map();
@@ -236,22 +264,42 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       for (const [pid, qty] of wanted) {
         const p = get('SELECT * FROM products WHERE id = ? AND active = 1', pid);
         if (!p) throw bad(`Product ${pid} not available`);
-        if (p.stock < qty) throw new HttpError(409, `Insufficient stock for ${p.name}`);
+        if (stockAt(db, p.id, locationId) < qty) throw new HttpError(409, `Insufficient stock for ${p.name}`);
         total += p.price_cents * qty;
         lines.push({ p, qty });
       }
-      const points = Math.floor(total / 100);
+      const promo = promoCode ? validatePromo(db, promoCode, total) : null;
+      const discount = promo ? computeDiscount(promo, total) : 0;
+      const payable = total - discount;
+      if (promo) run('UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?', promo.id);
+      const points = Math.floor(payable / 100);
       const { lastInsertRowid: oid } = run(
-        'INSERT INTO orders (user_id, total_cents, points_earned, shipping_address, delivery_service, shipping_country) VALUES (?,?,?,?,?,?)',
-        user.id, total, points, address, deliveryService, country);
+        'INSERT INTO orders (user_id, total_cents, discount_cents, promo_code, location_id, points_earned, shipping_address, delivery_service, shipping_country) VALUES (?,?,?,?,?,?,?,?,?)',
+        user.id, payable, discount, promoCode, locationId, points, address, deliveryService, country);
       for (const { p, qty } of lines) {
         run('INSERT INTO order_items (order_id, product_id, quantity, unit_price_cents) VALUES (?,?,?,?)', oid, p.id, qty, p.price_cents);
-        run('UPDATE products SET stock = stock - ? WHERE id = ?', qty, p.id);
+        adjustStock(db, p.id, locationId, -qty);
       }
       run('UPDATE users SET loyalty_points = loyalty_points + ? WHERE id = ?', points, user.id);
       return get('SELECT * FROM orders WHERE id = ?', oid);
     });
 
+    comms.emit('order.placed', {
+      email: user.email, name: user.name, order_id: order.id,
+      total_cents: order.total_cents, location_id: order.location_id,
+    });
+    const lowSelling = all(
+      'SELECT id, name, stock, reorder_level FROM products WHERE id IN (SELECT product_id FROM order_items WHERE order_id = ?) AND stock <= reorder_level',
+      order.id);
+    if (lowSelling.length) {
+      const adminEmail = get("SELECT email FROM users WHERE role = 'admin' ORDER BY id LIMIT 1")?.email;
+      if (adminEmail) {
+        comms.emit('inventory.low_stock', {
+          email: adminEmail, order_id: order.id,
+          items: lowSelling.map((p) => `${p.name} (${p.stock} left)`).join(', '),
+        });
+      }
+    }
     return reply(201, orderWithItems(order));
   });
 
@@ -259,7 +307,9 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const user = requireUser(ctx);
     const rows = user.role === 'customer'
       ? all('SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC', user.id)
-      : all('SELECT * FROM orders ORDER BY id DESC LIMIT 500');
+      : all(`SELECT * FROM orders ORDER BY id DESC
+              LIMIT ${Math.min(Math.max(Number(ctx.query.get('limit')) || 500, 1), 2000)}
+              OFFSET ${Math.max(Number(ctx.query.get('offset')) || 0, 0)}`);
     return rows.map(orderWithItems);
   });
 
@@ -275,19 +325,27 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const status = ctx.body.status;
     if (!ORDER_STATUSES.includes(status)) throw bad(`status must be one of ${ORDER_STATUSES.join(', ')}`);
     const id = ctx.params.id;
-    return transaction(db, () => {
+    const order = transaction(db, () => {
       const o = get('SELECT * FROM orders WHERE id = ?', id);
       if (!o) throw notFound();
       if (o.status === 'cancelled') throw new HttpError(409, 'Order is already cancelled');
       if (status === 'cancelled') {
         for (const it of all('SELECT * FROM order_items WHERE order_id = ?', id)) {
-          run('UPDATE products SET stock = stock + ? WHERE id = ?', it.quantity, it.product_id);
+          adjustStock(db, it.product_id, o.location_id, +it.quantity);
         }
         run('UPDATE users SET loyalty_points = MAX(0, loyalty_points - ?) WHERE id = ?', o.points_earned, o.user_id);
       }
       run('UPDATE orders SET status = ? WHERE id = ?', status, id);
       return orderWithItems(get('SELECT * FROM orders WHERE id = ?', id));
     });
+    const customer = get('SELECT email, name FROM users WHERE id = ?', order.user_id);
+    if (customer) {
+      comms.emit('order.status_changed', {
+        email: customer.email, name: customer.name,
+        order_id: order.id, status: order.status, total_cents: order.total_cents,
+      });
+    }
+    return order;
   });
 
   // ---- Suppliers ----
@@ -322,7 +380,11 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
      FROM products p LEFT JOIN suppliers s ON s.id = p.supplier_id
      WHERE p.active = 1 AND p.stock <= p.reorder_level ORDER BY p.stock - p.reorder_level, p.name`);
 
-  route('GET', '/api/inventory/low-stock', (ctx) => { requireStaff(ctx); return lowStock(); });
+  route('GET', '/api/inventory/low-stock', (ctx) => {
+    requireStaff(ctx);
+    const locationId = ctx.query.get('location_id') ? Number(ctx.query.get('location_id')) : null;
+    return locationId ? lowStockAt(db, locationId) : lowStock();
+  });
 
   route('POST', '/api/inventory/reorder', (ctx) => {
     requireStaff(ctx);
@@ -368,10 +430,11 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     requireStaff(ctx);
     const sid = int(ctx.body.supplier_id, 'supplier_id', { min: 1 });
     if (!get('SELECT 1 FROM suppliers WHERE id = ?', sid)) throw bad('Unknown supplier');
+    const locationId = resolveLocationId(db, ctx.body.location_id);
     const items = ctx.body.items;
     if (!Array.isArray(items) || !items.length || items.length > 200) throw bad('items must be a non-empty array');
     const po = transaction(db, () => {
-      const { lastInsertRowid: poid } = run('INSERT INTO purchase_orders (supplier_id) VALUES (?)', sid);
+      const { lastInsertRowid: poid } = run('INSERT INTO purchase_orders (supplier_id, location_id) VALUES (?,?)', sid, locationId);
       for (const it of items) {
         const pid = int(it?.product_id, 'product_id', { min: 1 });
         const p = get('SELECT cost_cents FROM products WHERE id = ?', pid);
@@ -392,7 +455,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       if (!po) throw notFound();
       if (po.status !== 'ordered') throw new HttpError(409, `Purchase order is already ${po.status}`);
       for (const it of all('SELECT * FROM purchase_order_items WHERE purchase_order_id = ?', po.id)) {
-        run('UPDATE products SET stock = stock + ? WHERE id = ?', it.quantity, it.product_id);
+        adjustStock(db, it.product_id, po.location_id, +it.quantity);
       }
       run("UPDATE purchase_orders SET status = 'received', received_at = CURRENT_TIMESTAMP WHERE id = ?", po.id);
       return poWithItems(get('SELECT * FROM purchase_orders WHERE id = ?', po.id));
@@ -443,13 +506,26 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     }
   }
 
+  const cors = () => {
+    const origin = process.env.CORS_ORIGIN || '*';
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    };
+  };
+
   const send = (res, status, data, headers = {}) => {
     const body = typeof data === 'string' || Buffer.isBuffer(data) ? data : JSON.stringify(data);
     res.writeHead(status, {
-      'Content-Type': typeof data === 'string' || Buffer.isBuffer(data) ? headers['Content-Type'] : 'application/json',
+      'Content-Type': typeof data === 'string' || Buffer.isBuffer(data)
+        ? (headers['Content-Type'] ?? 'text/plain; charset=utf-8')
+        : 'application/json',
       'X-Content-Type-Options': 'nosniff',
+      'X-API-Version': '1',
       'Content-Security-Policy': "default-src 'self'; img-src 'self' https://images.unsplash.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com",
       'Referrer-Policy': 'same-origin',
+      ...cors(),
       ...headers,
     });
     res.end(body);
@@ -469,14 +545,22 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   return async function handler(req, res) {
     try {
       const url = new URL(req.url, 'http://localhost');
-      if (!url.pathname.startsWith('/api/')) {
+      if (req.method === 'OPTIONS') {
+        send(res, 204, '', cors());
+        return;
+      }
+      let pathname = url.pathname;
+      if (pathname === '/api/v1' || pathname.startsWith('/api/v1/')) {
+        pathname = pathname.replace(/^\/api\/v1/, '/api');
+      }
+      if (!pathname.startsWith('/api/')) {
         if (req.method !== 'GET') throw notFound();
         return await serveStatic(url.pathname, res);
       }
       let matched = null;
       let pathMatched = false;
       for (const r of routes) {
-        const m = r.re.exec(url.pathname);
+        const m = r.re.exec(pathname);
         if (!m) continue;
         pathMatched = true;
         if (r.method === req.method) {
@@ -498,7 +582,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       if (out instanceof Reply) send(res, out.status, out.data);
       else send(res, 200, out);
     } catch (e) {
-      if (e instanceof HttpError) return send(res, e.status, { error: e.message });
+      if (e instanceof HttpError || typeof e?.status === 'number') return send(res, e.status, { error: e.message });
       console.error(e);
       send(res, 500, { error: 'Internal server error' });
     }

@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer','staff','admin')),
   loyalty_points INTEGER NOT NULL DEFAULT 0,
+  location_id INTEGER REFERENCES locations(id),
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS categories (
@@ -48,6 +49,9 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_address TEXT NOT NULL,
   delivery_service TEXT NOT NULL DEFAULT 'dhl' CHECK (delivery_service IN ('dhl','dpd','hermes')),
   shipping_country TEXT NOT NULL DEFAULT 'DE' CHECK (shipping_country = 'DE'),
+  location_id INTEGER REFERENCES locations(id),
+  promo_code TEXT,
+  discount_cents INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS order_items (
@@ -61,6 +65,7 @@ CREATE TABLE IF NOT EXISTS purchase_orders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
   status TEXT NOT NULL DEFAULT 'ordered' CHECK (status IN ('ordered','received','cancelled')),
+  location_id INTEGER REFERENCES locations(id),
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   received_at TEXT
 );
@@ -71,6 +76,90 @@ CREATE TABLE IF NOT EXISTS purchase_order_items (
   quantity INTEGER NOT NULL CHECK (quantity > 0),
   unit_cost_cents INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS locations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  address TEXT,
+  city TEXT,
+  postal_code TEXT,
+  country TEXT NOT NULL DEFAULT 'DE',
+  phone TEXT,
+  active INTEGER NOT NULL DEFAULT 1,
+  is_primary INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS inventory (
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  location_id INTEGER NOT NULL REFERENCES locations(id),
+  stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
+  reorder_level INTEGER NOT NULL DEFAULT 10,
+  reorder_quantity INTEGER NOT NULL DEFAULT 50,
+  PRIMARY KEY (product_id, location_id)
+);
+CREATE TABLE IF NOT EXISTS subscribers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL UNIQUE,
+  name TEXT,
+  source TEXT,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS promo_codes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,
+  discount_type TEXT NOT NULL DEFAULT 'percent' CHECK (discount_type IN ('percent','fixed')),
+  value INTEGER NOT NULL CHECK (value >= 0),
+  min_total_cents INTEGER NOT NULL DEFAULT 0,
+  max_uses INTEGER,
+  used_count INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1,
+  expires_at TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS campaigns (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  channel TEXT NOT NULL DEFAULT 'email',
+  segment TEXT NOT NULL DEFAULT 'all',
+  subject TEXT,
+  body TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','scheduled','sent','cancelled')),
+  scheduled_at TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  sent_at TEXT
+);
+CREATE TABLE IF NOT EXISTS message_templates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  channel TEXT NOT NULL DEFAULT 'email',
+  subject TEXT,
+  body TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS automations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  event TEXT NOT NULL,
+  template_id INTEGER NOT NULL REFERENCES message_templates(id),
+  channel TEXT,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL DEFAULT 'email',
+  recipient TEXT NOT NULL,
+  subject TEXT,
+  body TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','sent','failed')),
+  automation_id INTEGER REFERENCES automations(id),
+  campaign_id INTEGER REFERENCES campaigns(id),
+  error TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  sent_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_inventory_location ON inventory(location_id);
+CREATE INDEX IF NOT EXISTS idx_messages_status ON messages(status);
 `;
 
 export function openDb(path = ':memory:') {
@@ -84,6 +173,24 @@ export function openDb(path = ':memory:') {
   if (!orderColumns.includes('shipping_country')) {
     db.exec("ALTER TABLE orders ADD COLUMN shipping_country TEXT NOT NULL DEFAULT 'DE' CHECK (shipping_country = 'DE')");
   }
+  if (!orderColumns.includes('location_id')) {
+    db.exec('ALTER TABLE orders ADD COLUMN location_id INTEGER REFERENCES locations(id)');
+  }
+  if (!orderColumns.includes('promo_code')) {
+    db.exec('ALTER TABLE orders ADD COLUMN promo_code TEXT');
+  }
+  if (!orderColumns.includes('discount_cents')) {
+    db.exec('ALTER TABLE orders ADD COLUMN discount_cents INTEGER NOT NULL DEFAULT 0');
+  }
+  const userColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name);
+  if (!userColumns.includes('location_id')) {
+    db.exec('ALTER TABLE users ADD COLUMN location_id INTEGER REFERENCES locations(id)');
+  }
+  const poColumns = db.prepare('PRAGMA table_info(purchase_orders)').all().map((column) => column.name);
+  if (!poColumns.includes('location_id')) {
+    db.exec('ALTER TABLE purchase_orders ADD COLUMN location_id INTEGER REFERENCES locations(id)');
+  }
+  db.exec('CREATE INDEX IF NOT EXISTS idx_orders_location ON orders(location_id)');
   return db;
 }
 

@@ -76,4 +76,17 @@ let added = 0;
 for (const [sku, name, description, category, price, cost, stock, level, quantity] of products) {
   added += ins.run(sku, name, description, cats[category], supplier.id, price, cost, stock, level, quantity).changes;
 }
+
+// Phase 3 demo data: a primary store location, a welcome automation and a promo code.
+if (!db.prepare('SELECT 1 FROM locations WHERE is_primary = 1').get()) {
+  db.prepare("INSERT INTO locations (name, address, city, postal_code, country, phone, active, is_primary) VALUES ('Berlin Store', 'Ohlauer Straße 12', 'Berlin', '10999', 'DE', '+49 30 12345678', 1, 1)").run();
+}
+const welcomeTemplate = db.prepare(
+  "INSERT INTO message_templates (name, channel, subject, body) VALUES ('Welcome', 'email', 'Welcome to Afro Mart, {{name}} 🧡', 'Hi {{name}},\\n\\nWelcome to Afro Mart — your neighborhood source for African groceries. Start shopping and get 10% off your first order with code WELCOME10.') ON CONFLICT(name) DO NOTHING").run();
+if (welcomeTemplate.changes) {
+  const templateId = db.prepare("SELECT id FROM message_templates WHERE name = 'Welcome'").get().id;
+  db.prepare("INSERT INTO automations (name, event, template_id, channel, active) VALUES ('Welcome email', 'customer.registered', ?, 'email', 1)").run(templateId);
+}
+db.prepare("INSERT OR IGNORE INTO promo_codes (code, discount_type, value, min_total_cents, max_uses, active) VALUES ('WELCOME10', 'percent', 10, 2000, 500, 1)").run();
+
 console.log(`Seeded ${added} new products (${products.length - added} existing SKUs left unchanged).`);
