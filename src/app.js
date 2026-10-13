@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
-import { extname, join, normalize, resolve } from 'node:path';
+import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { transaction } from './db.js';
 import { hashPassword, verifyPassword, signToken, verifyToken } from './auth.js';
@@ -458,7 +458,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   async function serveStatic(pathname, res) {
     const rel = pathname === '/' ? 'index.html' : pathname === '/admin' ? 'admin.html' : pathname.slice(1);
     const file = normalize(join(PUBLIC_DIR, rel));
-    if (!file.startsWith(PUBLIC_DIR + '/') || !MIME[extname(file)]) throw notFound();
+    if (!file.startsWith(PUBLIC_DIR + sep) || !MIME[extname(file)]) throw notFound();
     try {
       send(res, 200, await readFile(file), { 'Content-Type': MIME[extname(file)] });
     } catch {

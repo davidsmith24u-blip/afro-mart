@@ -1,0 +1,29 @@
+{
+  "name": "Afro Mart",
+  "short_name": "Afro Mart",
+  "description": "Good food, close to home — the African pantry, delivered.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fff8f1",
+  "theme_color": "#ad2535",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["shopping", "food"],
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

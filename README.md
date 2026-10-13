@@ -21,6 +21,12 @@ Zero npm dependencies: Node.js ≥ 22.13 (built-in `node:http`, `node:sqlite`, `
 
 **Phase 3** (analytics, marketing, communications automation, multi-location, mobile app) is future work; the REST API is designed so a mobile app can reuse it.
 
+## Installable web app (PWA)
+The storefront is installable and works offline for the app shell. It ships a web app manifest
+(`public/manifest.webmanifest`), an SVG app icon (`public/app-icon.svg`) and a service worker
+(`public/sw.js`) that caches the shell and product imagery, falling back to the cached shell when
+offline. API requests always go to the network and are never cached.
+
 ## Setup
 
 ```sh
