@@ -325,12 +325,60 @@ footer p, footer > span { margin: 0; color: #c2ac93; font-size: 10px; }
 .admin-page button { min-height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--clay); color: white; font-size: 11px; }
 .admin-page input { min-height: 36px; padding: 0 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
 
+/* ---------- Preferences (language & currency) ---------- */
+.pref-select { display: inline-flex; }
+.pref-select select { min-height: 34px; padding: 0 26px 0 11px; border: 1px solid var(--line); border-radius: 999px; background-color: var(--paper); background-image: linear-gradient(45deg, transparent 50%, var(--clay) 50%), linear-gradient(135deg, var(--clay) 50%, transparent 50%); background-position: calc(100% - 15px) 15px, calc(100% - 10px) 15px; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; color: var(--ink-soft); font-size: 11px; font-weight: 600; appearance: none; }
+
+/* ---------- Discovery bar ---------- */
+.discover-section { padding-bottom: 58px; }
+.discover-bar { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 20px 30px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(180deg, #fffdf8, #fbf0dd); box-shadow: var(--shadow-sm); }
+.discover-group { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.discover-label { color: var(--muted); font-size: 9.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink-soft); font-size: 11px; font-weight: 600; transition: border-color .18s ease, background .18s ease, color .18s ease; }
+.chip:hover { border-color: var(--clay-soft); color: var(--clay); }
+.chip.is-active { border-color: var(--clay); background: var(--clay); color: #fff7ec; }
+.discover-sort { flex-direction: row; align-items: center; gap: 10px; margin-left: auto; }
+.discover-sort select { min-height: 34px; padding: 0 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); font-size: 11px; }
+
+/* ---------- Discovery badges ---------- */
+.badge-row { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 4px; }
+.badge { padding: 3px 8px; border-radius: 999px; font-size: 9px; font-weight: 700; letter-spacing: .04em; }
+.badge-origin { background: #fbe8c9; color: #8a5a12; }
+.badge-cuisine { background: #e2eede; color: var(--green-deep); }
+.badge-diet { background: #e6eef2; color: var(--indigo); text-transform: capitalize; }
+.badge-spice { background: #f7ddd0; color: var(--clay-deep); letter-spacing: 0; }
+.price-wrap { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.wholesale-tag { padding: 2px 7px; border-radius: 999px; background: var(--green); color: #f2f8ef; font-size: 8.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+
+/* ---------- Catering, party & wholesale ---------- */
+.catering-section { padding-bottom: 68px; }
+.catering-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.catering-card { padding: 24px; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); box-shadow: var(--shadow-sm); }
+.catering-card h3 { margin: 0 0 14px; font: 600 20px var(--serif); }
+.party-controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.party-controls input { width: 110px; min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--cream); color: var(--ink); font-size: 13px; }
+.party-results { display: flex; flex-direction: column; gap: 9px; }
+.party-result { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 11px 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--cream); }
+.party-details { flex: 1; min-width: 150px; display: flex; flex-direction: column; }
+.party-details strong { font-size: 12.5px; }
+.party-meta { color: var(--muted); font-size: 10px; }
+.party-packs { color: var(--green); font-size: 11px; font-weight: 700; }
+.party-total { font-size: 13px; }
+.quote-form { display: flex; flex-direction: column; gap: 9px; }
+.quote-form input, .quote-form textarea { width: 100%; min-height: 40px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; outline-color: var(--green); background: var(--cream); color: var(--ink); font-size: 12px; }
+.quote-form textarea { resize: vertical; }
+.quote-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.wholesale-note { margin: 16px 0 0; padding: 12px 14px; border-radius: 12px; background: #eef3ea; color: var(--green-deep); font-size: 11px; }
+.wholesale-note strong { display: block; margin-bottom: 3px; }
+
 @keyframes reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
 
 @media (max-width: 1080px) {
   .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .recipe-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .catering-grid { grid-template-columns: 1fr; }
   .hero-emblem { display: none; }
   .story-inner { grid-template-columns: 1fr; }
   .story-art { min-height: 160px; }
@@ -359,6 +407,8 @@ footer p, footer > span { margin: 0; color: #c2ac93; font-size: 10px; }
   .shopping-layout { grid-template-columns: 1fr; gap: 28px; padding-top: 30px; }
   .account-section { max-width: none; }
   .member-grid { grid-template-columns: 1fr; }
+  .discover-bar { padding: 16px; gap: 14px 20px; }
+  .discover-sort { margin-left: 0; }
   footer { padding: 24px 18px; flex-wrap: wrap; }
 }
 @media (max-width: 480px) {

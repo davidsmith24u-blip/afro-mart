@@ -39,7 +39,19 @@ The app itself has zero npm dependencies: Node.js ≥ 22.13 (built-in `node:http
 - Recipes that link to the exact products and packs needed to cook a dish, each with one-tap "add all ingredients to bag"
 - Payment status on every order (`unpaid`/`paid`/`failed`/`refunded`) with staff settlement and an integration-ready gateway webhook (`POST /api/payments/webhook`, guarded by `PAYMENTS_WEBHOOK_SECRET`)
 - WhatsApp added as a communications channel alongside email, SMS, push and webhook
-- Storefront: an African-inspired brand identity (calabash-and-sun emblem, kente stripe), richer copy across 115 products, euro pricing, and UI for pickup, subscriptions, recipes and referrals
+- Storefront: an African-inspired brand identity (calabash-and-sun emblem, kente stripe), richer copy across 123 products, euro pricing, and UI for pickup, subscriptions, recipes and referrals
+
+**Diaspora discovery & global reach**
+- Every one of the 123 SKUs is classified by origin (Nigeria, Ghana, South Africa, Ethiopia, Kenya, Senegal, Cameroon, DR Congo, Somalia, …), cuisine, diet (halal, vegan, vegetarian, gluten-free) and a 0–5 spice level
+- A discovery filter bar on the storefront — origin and cuisine chips, diet and heat filters, and sort by name/price/heat — backed by `GET /api/discovery/facets`
+- Synonym-aware search that understands everyday diaspora names (*ata rodo* → scotch bonnet, *ugwu* → spinach, *semo* → semovita) on top of the plain text index
+- Multi-language storefront (English, German, French) and display-currency switcher (EUR base, plus GBP/CHF/USD/CAD/NGN/GHS/ZAR/…), both remembered per browser
+
+**Party, catering & wholesale**
+- Recipe scaler: any recipe multiplied for a given number of guests, with per-guest cost (`GET /api/recipes/:id/scale`)
+- Party planner: bundles that cover a headcount, with how many packs are needed and the running total (`GET /api/catering/party`), addable to the bag in one tap
+- Catering quote requests from the storefront, triaged in the staff dashboard (`requested → quoted → confirmed/declined`)
+- Wholesale (B2B) accounts: mark a customer as a `restaurant` and they automatically see and pay wholesale prices on every line
 
 The REST API is mobile-app friendly: a React Native / Expo app can reuse every endpoint as-is.
 

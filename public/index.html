@@ -34,36 +34,44 @@
 	<div class="announcement">
 		<div class="announcement-inner">
 			<span aria-hidden="true">✳</span>
-			<span>Welcome home — free delivery on orders over €50 in Berlin &amp; Hamburg</span>
+			<span data-i18n="announce.1">Welcome home — free delivery on orders over €50 in Berlin &amp; Hamburg</span>
 			<span class="announcement-dot" aria-hidden="true">•</span>
-			<span>Now pick up in store, or set up a monthly pantry pack</span>
+			<span data-i18n="announce.2">Now pick up in store, or set up a monthly pantry pack</span>
 		</div>
 	</div>
 
 	<header class="site-header">
 		<a class="brand" href="/" aria-label="Afro Mart home">
 			<svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#afromart-emblem"></use></svg>
-			<span class="brand-words">afro<span class="brand-light">mart</span><small>THE AFRICAN PANTRY</small></span>
+			<span class="brand-words">afro<span class="brand-light">mart</span><small data-i18n="brand.tagline">THE AFRICAN PANTRY</small></span>
 		</a>
 		<label class="search-box">
 			<span class="sr-only">Search the store</span>
 			<span class="search-icon" aria-hidden="true">⌕</span>
-			<input id="q" placeholder="What are you cooking today?" autocomplete="off">
+			<input id="q" placeholder="What are you cooking today?" autocomplete="off" data-i18n-placeholder="search.placeholder">
 			<kbd>SEARCH</kbd>
 		</label>
 		<div class="header-actions">
-			<button id="install-app" class="install-app" type="button" aria-label="Install Afro Mart app" hidden><span aria-hidden="true">↓</span> Install app</button>
+			<button id="install-app" class="install-app" type="button" aria-label="Install Afro Mart app" hidden><span aria-hidden="true">↓</span> <span data-i18n="nav.install">Install app</span></button>
+			<label class="pref-select">
+				<span class="sr-only" data-i18n="lang.label">Language</span>
+				<select id="lang" aria-label="Language"></select>
+			</label>
+			<label class="pref-select">
+				<span class="sr-only" data-i18n="currency.label">Currency</span>
+				<select id="currency" aria-label="Currency"></select>
+			</label>
 			<span id="acct"></span>
-			<a class="cart-link" href="#shopping-cart"><span class="cart-icon" aria-hidden="true">🧺</span> Bag <span id="cart-count">0</span></a>
+			<a class="cart-link" href="#shopping-cart"><span class="cart-icon" aria-hidden="true">🧺</span> <span data-i18n="nav.bag">Bag</span> <span id="cart-count">0</span></a>
 		</div>
 	</header>
 
 	<nav class="category-nav" aria-label="Shop categories">
 		<div class="category-nav-inner">
-			<span class="category-label" aria-hidden="true">Shop by aisle</span>
-			<button class="category-shortcut is-active" data-category="">Everything</button>
+			<span class="category-label" aria-hidden="true" data-i18n="nav.eyebrow">Shop by aisle</span>
+			<button class="category-shortcut is-active" data-category="" data-i18n="nav.everything">Everything</button>
 			<div id="category-links"></div>
-			<label class="category-select-label">Browse <select id="cat" aria-label="Filter products by category"><option value="">All categories</option></select></label>
+			<label class="category-select-label"><span data-i18n="nav.browse">Browse</span> <select id="cat" aria-label="Filter products by category"><option value="" data-i18n="nav.allCategories">All categories</option></select></label>
 		</div>
 	</nav>
 
@@ -72,19 +80,19 @@
 		<div class="hero-shade"></div>
 		<div class="hero-pattern" aria-hidden="true"></div>
 		<div class="hero-copy">
-			<p class="eyebrow">Welcome home, family</p>
-			<h1 id="hero-title">Every pot tells a story.</h1>
-			<p>From the market stalls back home to your kitchen in Europe — find the flavours, staples and everyday comforts you grew up with, gathered in one bag.</p>
+			<p class="eyebrow" data-i18n="hero.eyebrow">Welcome home, family</p>
+			<h1 id="hero-title" data-i18n="hero.title">Every pot tells a story.</h1>
+			<p data-i18n="hero.body">From the market stalls back home to your kitchen in Europe — find the flavours, staples and everyday comforts you grew up with, gathered in one bag.</p>
 			<div class="hero-actions">
-				<a class="hero-cta" href="#shop">Shop the market <span aria-hidden="true">→</span></a>
-				<a class="hero-cta ghost" href="#bundles">Explore bundles</a>
+				<a class="hero-cta" href="#shop" data-i18n="hero.shop">Shop the market</a>
+				<a class="hero-cta ghost" href="#bundles" data-i18n="hero.bundles">Explore bundles</a>
 			</div>
 		</div>
 		<div class="hero-emblem" aria-hidden="true">
 			<svg viewBox="0 0 48 48"><use href="#afromart-emblem"></use></svg>
-			<span>Rooted in Africa</span>
+			<span data-i18n="hero.emblem">Rooted in Africa</span>
 		</div>
-		<p class="hero-note"><span aria-hidden="true">✳</span> Rooted in Africa. Made for every day.</p>
+		<p class="hero-note"><span aria-hidden="true">✳</span> <span data-i18n="hero.note">Rooted in Africa. Made for every day.</span></p>
 	</section>
 
 	<main>
@@ -92,64 +100,126 @@
 
 		<section class="roots" aria-labelledby="roots-title">
 			<div class="section-heading centered">
-				<p class="eyebrow">The Afro Mart promise</p>
-				<h2 id="roots-title">Like a neighbour who knows your kitchen</h2>
-				<p class="shop-caption">You should not have to cross a continent for a taste of home. So we bring the pantry to your street.</p>
+				<p class="eyebrow" data-i18n="promise.eyebrow">The Afro Mart promise</p>
+				<h2 id="roots-title" data-i18n="promise.title">Like a neighbour who knows your kitchen</h2>
+				<p class="shop-caption" data-i18n="promise.caption">You should not have to cross a continent for a taste of home. So we bring the pantry to your street.</p>
 			</div>
 			<div class="roots-grid">
 				<article class="root-card">
 					<span class="root-icon" aria-hidden="true">🌾</span>
-					<h3>From home</h3>
-					<p>Ground crayfish, egusi, ofada rice, palm oil and golden garri — the true staples of home cooking, sourced with care.</p>
+					<h3 data-i18n="promise.a.title">From home</h3>
+					<p data-i18n="promise.a.body">Ground crayfish, egusi, ofada rice, palm oil and golden garri — the true staples of home cooking, sourced with care.</p>
 				</article>
 				<article class="root-card">
 					<span class="root-icon" aria-hidden="true">🧺</span>
-					<h3>Packed with love</h3>
-					<p>Every order is picked, weighed and hand-packed, then checked twice before it leaves our shelf for your door.</p>
+					<h3 data-i18n="promise.b.title">Packed with love</h3>
+					<p data-i18n="promise.b.body">Every order is picked, weighed and hand-packed, then checked twice before it leaves our shelf for your door.</p>
 				</article>
 				<article class="root-card">
 					<span class="root-icon" aria-hidden="true">🏡</span>
-					<h3>At your table</h3>
-					<p>Reliable courier delivery across Germany, so dinner is never far from the people you love most.</p>
+					<h3 data-i18n="promise.c.title">At your table</h3>
+					<p data-i18n="promise.c.body">Reliable courier delivery across Germany, so dinner is never far from the people you love most.</p>
 				</article>
+			</div>
+		</section>
+
+		<section id="discover" class="shop-section discover-section" aria-labelledby="discover-title">
+			<div class="section-heading">
+				<div><p class="eyebrow" data-i18n="discover.eyebrow">Find your home flavours</p><h2 id="discover-title" data-i18n="discover.title">Shop by cuisine, diet &amp; heat</h2></div>
+				<p class="shop-caption" data-i18n="discover.caption">Search in your own language — try “ata rodo”, “ugwu” or “semo”. Then narrow by cuisine or diet.</p>
+			</div>
+			<div class="discover-bar">
+				<div class="discover-group">
+					<span class="discover-label" data-i18n="discover.origin">Country</span>
+					<div id="origin-chips" class="chip-row"></div>
+				</div>
+				<div class="discover-group">
+					<span class="discover-label" data-i18n="discover.cuisine">Cuisine</span>
+					<div id="cuisine-chips" class="chip-row"></div>
+				</div>
+				<div class="discover-group">
+					<span class="discover-label" data-i18n="discover.diet">Diet</span>
+					<div id="diet-chips" class="chip-row"></div>
+				</div>
+				<div class="discover-group">
+					<span class="discover-label" data-i18n="discover.heat">Heat</span>
+					<div id="spice-chips" class="chip-row"></div>
+				</div>
+				<div class="discover-group discover-sort">
+					<label for="sort" class="discover-label" data-i18n="discover.sort">Sort</label>
+					<select id="sort"></select>
+					<button id="clear-filters" class="text-button" type="button" data-i18n="discover.clear">Clear filters</button>
+				</div>
 			</div>
 		</section>
 
 		<section id="bundles" class="shop-section bundles-section" aria-labelledby="bundles-title">
 			<div class="section-heading">
-				<div><p class="eyebrow">Curated for your table</p><h2 id="bundles-title">Packs that feel like home</h2></div>
-				<p class="shop-caption">Meal packs, starter kits and gift boxes — everything for a dish, a party or a gift, in one bag for less.</p>
+				<div><p class="eyebrow" data-i18n="bundles.eyebrow">Curated for your table</p><h2 id="bundles-title" data-i18n="bundles.title">Packs that feel like home</h2></div>
+				<p class="shop-caption" data-i18n="bundles.caption">Meal packs, starter kits and gift boxes — everything for a dish, a party or a gift, in one bag for less.</p>
 			</div>
 			<div id="bundle-grid" class="product-grid" aria-live="polite"></div>
 		</section>
 
 		<section id="recipes" class="shop-section recipes-section" aria-labelledby="recipes-title">
 			<div class="section-heading">
-				<div><p class="eyebrow">Cook a dish tonight</p><h2 id="recipes-title">Recipes from home</h2></div>
-				<p class="shop-caption">Choose a dish and add every ingredient — staples and packs alike — to your bag in one tap.</p>
+				<div><p class="eyebrow" data-i18n="recipes.eyebrow">Cook a dish tonight</p><h2 id="recipes-title" data-i18n="recipes.title">Recipes from home</h2></div>
+				<p class="shop-caption" data-i18n="recipes.caption">Choose a dish and add every ingredient — staples and packs alike — to your bag in one tap.</p>
 			</div>
 			<div id="recipe-grid" class="recipe-grid" aria-live="polite"></div>
 		</section>
 
 		<section id="shop" class="shop-section" aria-labelledby="shop-title">
 			<div class="section-heading">
-				<div><p class="eyebrow">A good place to start</p><h2 id="shop-title">From our market</h2></div>
-				<p class="shop-caption">A little something for the pantry, the pot, and the people around your table.</p>
+				<div><p class="eyebrow" data-i18n="shop.eyebrow">A good place to start</p><h2 id="shop-title" data-i18n="shop.title">From our market</h2></div>
+				<p class="shop-caption" data-i18n="shop.caption">A little something for the pantry, the pot, and the people around your table.</p>
 				<span id="product-count" class="product-count" aria-live="polite"></span>
 			</div>
 			<div id="products" class="product-grid" aria-live="polite"></div>
 		</section>
 
+		<section id="catering" class="shop-section catering-section" aria-labelledby="catering-title">
+			<div class="section-heading">
+				<div><p class="eyebrow" data-i18n="catering.eyebrow">Feeding a crowd?</p><h2 id="catering-title" data-i18n="catering.title">Party, catering &amp; wholesale</h2></div>
+				<p class="shop-caption" data-i18n="catering.caption">Plan a celebration in a couple of taps: find the packs that cover your guests, scale a recipe, or ask us to quote for a restaurant or event.</p>
+			</div>
+			<div class="catering-grid">
+				<div class="catering-card">
+					<label for="party-guests" data-i18n="catering.guests">How many guests?</label>
+					<div class="party-controls">
+						<input id="party-guests" type="number" min="1" max="1000" value="30" inputmode="numeric">
+						<button id="plan-party" class="secondary-button" type="button" data-i18n="catering.plan">Plan my party</button>
+					</div>
+					<div id="party-results" class="party-results" aria-live="polite"></div>
+				</div>
+				<div class="catering-card">
+					<h3 data-i18n="catering.quote.title">Request a catering quote</h3>
+					<form id="quote-form" class="quote-form">
+						<input id="quote-name" placeholder="Your name" required data-i18n-placeholder="catering.name">
+						<input id="quote-email" type="email" placeholder="Email address" required data-i18n-placeholder="catering.email">
+						<div class="quote-row">
+							<input id="quote-phone" placeholder="Phone (optional)" data-i18n-placeholder="catering.phone">
+							<input id="quote-date" type="date" aria-label="Event date">
+						</div>
+						<input id="quote-guests" type="number" min="1" placeholder="Guests" data-i18n-placeholder="catering.headcount">
+						<textarea id="quote-message" rows="3" placeholder="Tell us what you need" data-i18n-placeholder="catering.message"></textarea>
+						<button type="submit" class="checkout-button" data-i18n="catering.send">Send request</button>
+					</form>
+					<p class="wholesale-note"><strong data-i18n="catering.wholesale.title">Restaurant or shop owner?</strong> <span data-i18n="catering.wholesale.body">Open a trade account to unlock wholesale pricing across the catalogue.</span></p>
+				</div>
+			</div>
+		</section>
+
 		<section class="story" aria-labelledby="story-title">
 			<div class="story-inner">
 				<div class="story-copy">
-					<p class="eyebrow">Roots that travel with you</p>
-					<h2 id="story-title">Africa is never far when your kitchen remembers it</h2>
-					<p>Afro Mart began with a simple longing: the smell of a proper jollof, the crunch of fresh chin chin, the comfort of a familiar brand. We carry the aisles of home — West, East, Central and Southern — to your neighbourhood in Europe.</p>
+					<p class="eyebrow" data-i18n="story.eyebrow">Roots that travel with you</p>
+					<h2 id="story-title" data-i18n="story.title">Africa is never far when your kitchen remembers it</h2>
+					<p data-i18n="story.body">Afro Mart began with a simple longing: the smell of a proper jollof, the crunch of fresh chin chin, the comfort of a familiar brand. We carry the aisles of home — West, East, Central and Southern — to your neighbourhood in Europe.</p>
 					<ul class="region-tags">
 						<li>Nigeria</li><li>Ghana</li><li>Kenya</li><li>Ethiopia</li><li>Cameroon</li><li>South Africa</li><li>&amp; more</li>
 					</ul>
-					<a class="hero-cta" href="#shop">Start your basket <span aria-hidden="true">→</span></a>
+					<a class="hero-cta" href="#shop" data-i18n="story.cta">Start your basket</a>
 				</div>
 				<div class="story-art" aria-hidden="true">
 					<svg viewBox="0 0 48 48"><use href="#afromart-emblem"></use></svg>
@@ -160,21 +230,21 @@
 
 		<div class="shopping-layout">
 			<section id="shopping-cart" class="cart-section" aria-labelledby="cart-title">
-				<div class="section-heading compact-heading"><div><p class="eyebrow">Your selection</p><h2 id="cart-title">Your market bag</h2></div><span id="cart-summary">Ready when you are</span></div>
+				<div class="section-heading compact-heading"><div><p class="eyebrow" data-i18n="cart.eyebrow">Your selection</p><h2 id="cart-title" data-i18n="cart.title">Your market bag</h2></div><span id="cart-summary" data-i18n="cart.ready">Ready when you are</span></div>
 				<div class="cart-table-wrap"><table id="cart"><caption class="sr-only">Items in your market bag</caption></table></div>
 				<div class="cart-bottom">
 					<fieldset class="fulfillment-fieldset">
-						<legend>How would you like it?</legend>
+						<legend data-i18n="fulfill.legend">How would you like it?</legend>
 						<div class="fulfillment-options">
-							<label class="fulfillment-option"><input type="radio" name="fulfillment" value="delivery" checked><span class="fulfillment-tile"><span class="fulfillment-icon" aria-hidden="true">🚚</span><strong>Deliver to me</strong><small>Courier across Germany</small></span></label>
-							<label class="fulfillment-option"><input type="radio" name="fulfillment" value="pickup"><span class="fulfillment-tile"><span class="fulfillment-icon" aria-hidden="true">🏬</span><strong>Pick up in store</strong><small>Collect it yourself, fee-free</small></span></label>
+							<label class="fulfillment-option"><input type="radio" name="fulfillment" value="delivery" checked><span class="fulfillment-tile"><span class="fulfillment-icon" aria-hidden="true">🚚</span><strong data-i18n="fulfill.deliver">Deliver to me</strong><small data-i18n="fulfill.deliverSmall">Courier across Germany</small></span></label>
+							<label class="fulfillment-option"><input type="radio" name="fulfillment" value="pickup"><span class="fulfillment-tile"><span class="fulfillment-icon" aria-hidden="true">🏬</span><strong data-i18n="fulfill.pickup">Pick up in store</strong><small data-i18n="fulfill.pickupSmall">Collect it yourself, fee-free</small></span></label>
 						</div>
 					</fieldset>
 					<div id="delivery-fields" class="fulfillment-panel">
-						<label for="addr">Delivery address</label>
+						<label for="addr" data-i18n="addr.label">Delivery address</label>
 						<input id="addr" placeholder="Street, city, postal code" autocomplete="street-address">
 						<fieldset class="courier-fieldset">
-							<legend>Courier service <span>Germany only</span></legend>
+							<legend><span data-i18n="courier.legend">Courier service</span> <span data-i18n="courier.only">Germany only</span></legend>
 							<div class="courier-options">
 								<label class="courier-option"><input type="radio" name="delivery_service" value="dhl" checked><span class="courier-tile"><strong>DHL</strong><small>Deutsche Post</small></span></label>
 								<label class="courier-option"><input type="radio" name="delivery_service" value="dpd"><span class="courier-tile"><strong>DPD</strong><small>Parcel delivery</small></span></label>
@@ -184,43 +254,43 @@
 						<p class="delivery-note" id="delivery-fee-note">Courier delivery is currently available within Germany.</p>
 					</div>
 					<div id="pickup-fields" class="fulfillment-panel" hidden>
-						<label for="pickup-location">Pickup store</label>
+						<label for="pickup-location" data-i18n="pickup.label">Pickup store</label>
 						<select id="pickup-location"></select>
-						<label for="pickup-at">Preferred collection time</label>
+						<label for="pickup-at" data-i18n="pickup.time">Preferred collection time</label>
 						<select id="pickup-at"></select>
-						<p class="delivery-note">Free to collect — we'll have your bag packed and waiting.</p>
+						<p class="delivery-note" data-i18n="pickup.note">Free to collect — we'll have your bag packed and waiting.</p>
 					</div>
-					<div class="cart-total"><span>Basket subtotal</span><strong id="total">€0.00</strong></div>
+					<div class="cart-total"><span data-i18n="cart.subtotal">Basket subtotal</span><strong id="total">€0.00</strong></div>
 					<p class="fee-line" id="fee-line" hidden></p>
-					<div class="cart-total grand-total"><span>Total to pay</span><strong id="payable">€0.00</strong></div>
-					<button id="checkout" class="checkout-button">Continue to checkout <span aria-hidden="true">→</span></button>
-					<p class="checkout-note">You'll need an account to place your order.</p>
+					<div class="cart-total grand-total"><span data-i18n="cart.total">Total to pay</span><strong id="payable">€0.00</strong></div>
+					<button id="checkout" class="checkout-button"><span data-i18n="cart.checkout">Continue to checkout</span> <span aria-hidden="true">→</span></button>
+					<p class="checkout-note" data-i18n="cart.checkoutNote">You'll need an account to place your order.</p>
 				</div>
 			</section>
 			<section id="auth" class="account-section" aria-labelledby="account-title">
-				<p class="eyebrow">Come on in</p><h2 id="account-title">Your account</h2>
-				<p class="account-intro">Sign in to check out and keep your orders in one place — just like popping into your local shop.</p>
-				<label for="name">Your name <span>(for a new account)</span></label>
+				<p class="eyebrow" data-i18n="auth.eyebrow">Come on in</p><h2 id="account-title" data-i18n="auth.title">Your account</h2>
+				<p class="account-intro" data-i18n="auth.intro">Sign in to check out and keep your orders in one place — just like popping into your local shop.</p>
+				<label for="name"><span data-i18n="auth.name">Your name</span> <span data-i18n="auth.nameHint">(for a new account)</span></label>
 				<input id="name" placeholder="Name" autocomplete="name">
-				<label for="email">Email address</label>
+				<label for="email" data-i18n="auth.email">Email address</label>
 				<input id="email" placeholder="you@example.com" type="email" autocomplete="email">
-				<label for="pw">Password</label>
+				<label for="pw" data-i18n="auth.pw">Password</label>
 				<input id="pw" placeholder="At least 8 characters" type="password" autocomplete="current-password">
-				<label for="ref">Referral code <span>(optional — a friend earns points)</span></label>
+				<label for="ref"><span data-i18n="auth.ref">Referral code</span> <span data-i18n="auth.refHint">(optional — a friend earns points)</span></label>
 				<input id="ref" placeholder="Friend's code" autocomplete="off">
-				<div class="account-actions"><button id="login" class="secondary-button">Log in</button><button id="register" class="text-button">Create account <span aria-hidden="true">→</span></button></div>
+				<div class="account-actions"><button id="login" class="secondary-button" data-i18n="auth.login">Log in</button><button id="register" class="text-button"><span data-i18n="auth.register">Create account</span> <span aria-hidden="true">→</span></button></div>
 			</section>
 		</div>
 
 		<section id="member" class="member-section" hidden aria-labelledby="member-title">
-			<div class="section-heading compact-heading"><div><p class="eyebrow">Family rewards</p><h2 id="member-title">Your Afro Mart card</h2></div><button id="logout" class="text-button" type="button">Log out</button></div>
+			<div class="section-heading compact-heading"><div><p class="eyebrow" data-i18n="member.eyebrow">Family rewards</p><h2 id="member-title" data-i18n="member.title">Your Afro Mart card</h2></div><button id="logout" class="text-button" type="button" data-i18n="member.logout">Log out</button></div>
 			<div class="member-grid">
 				<div class="member-card referral-card">
-					<h3>Refer a friend</h3>
+					<h3 data-i18n="member.refer">Refer a friend</h3>
 					<div id="member-referral" class="referral-box"></div>
 				</div>
 				<div class="member-card subs-card">
-					<h3>Your monthly packs</h3>
+					<h3 data-i18n="member.subs">Your monthly packs</h3>
 					<div id="member-subs" class="subs-list"></div>
 				</div>
 			</div>
@@ -232,9 +302,9 @@
 	<footer>
 		<a class="brand footer-brand" href="/" aria-label="Afro Mart home">
 			<svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#afromart-emblem"></use></svg>
-			<span class="brand-words">afro<span class="brand-light">mart</span><small>THE AFRICAN PANTRY</small></span>
+			<span class="brand-words">afro<span class="brand-light">mart</span><small data-i18n="brand.tagline">THE AFRICAN PANTRY</small></span>
 		</a>
-		<p>Good food, generous tables, and a little taste of home.</p>
+		<p data-i18n="footer.tagline">Good food, generous tables, and a little taste of home.</p>
 		<span>© Afro Mart</span>
 	</footer>
 

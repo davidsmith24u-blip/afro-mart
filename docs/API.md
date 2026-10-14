@@ -6,13 +6,13 @@ Errors: `{ "error": "message" }` with 400/401/403/404/409/413.
 | Method & path | Access | Description |
 |---|---|---|
 | GET `/api/health` | public | `{status:"ok",time,version}` for uptime/monitoring |
-| GET `/api/config` | public | App config for mobile/web clients (currency, delivery services, order statuses, fulfilment options, payment methods, loyalty rate, default delivery fee, gateway flag, WhatsApp number) |
+| GET `/api/config` | public | App config for mobile/web clients (currency, `base_currency`, accepted `currencies` with display rates, facet label maps, delivery services, order statuses, fulfilment options, payment methods, loyalty rate, default delivery fee, gateway flag, WhatsApp number) |
 | POST `/api/auth/register` `{email,name,password,ref?}` | public | Create customer (`ref` = a friend's referral code, rewards them), returns `{token,user}` |
 | POST `/api/auth/login` `{email,password}` | public | Returns `{token,user}` |
 | GET `/api/me` | user | Current user incl. loyalty points, referral code and tier |
 | POST `/api/staff` `{email,name,password,role?}` | admin | Create staff/admin |
 | GET `/api/categories` / POST | public / staff | List / create `{name}` |
-| GET `/api/products?category=&q=&limit=&offset=` | public | Active products (staff also see cost/supplier/inactive) |
+| GET `/api/products?category=&q=&cuisine=&origin=&diet=&max_spice=&min_spice=&sort=&limit=&offset=` | public | Active products. `q` understands diaspora synonyms (e.g. *ata rodo* → scotch bonnet, *ugwu* → spinach, *semo* → semovita); `cuisine`/`origin`/`diet` accept comma-separated or repeated values (AND across kinds); `max_spice`/`min_spice` filter 0–5 heat; `sort` is `name \| price_asc \| price_desc \| spice`. Products carry `origin`, `cuisines`, `diets`, `spice_level` plus human labels. Staff also see cost/supplier/inactive |
 | GET `/api/products/:id` | public | One product |
 | POST `/api/products`, PUT `/api/products/:id` | staff | `sku,name,description,category_id,supplier_id,price_cents,cost_cents,stock,reorder_level,reorder_quantity,expiry_date,active` |
 | POST `/api/orders` `{items:[{product_id,quantity} | {bundle_id,quantity}],fulfillment:delivery|pickup,shipping_address?,delivery_service?,shipping_country?,pickup_location_id?,pickup_at?,location_id?,promo_code?}` | user | Place order; bundle lines expand into stock-checked components, decrements stock (per location), awards tiered points, applies bundle + promo discounts and adds the delivery-area fee; delivery is Germany-only and needs an address, pickup needs neither |
@@ -107,6 +107,31 @@ by lifetime spend). Passing a valid `ref` at registration awards the referrer 20
 | POST `/api/recipes`, PUT `/api/recipes/:id` | staff | `{title,description,prep_minutes,servings,emoji,active,ingredients:[{product_id\|bundle_id,quantity,note?}]}` |
 | DELETE `/api/recipes/:id` | staff | Remove a recipe and its ingredients |
 
+### Diaspora discovery
+Every product is classified by **origin** (ISO country, e.g. `NG`, `GH`, `ZA`), **cuisine** (`nigerian`, `ghanaian`, `west-african`, `caribbean`, …), **diet** (`halal`, `vegan`, `vegetarian`, `gluten-free`) and a 0–5 **spice level**, stored in `product_tags` + `products.spice_level`.
+| Method & path | Access | Description |
+|---|---|---|
+| GET `/api/discovery/facets` | public | Facet counts for the storefront filter bar: `{origins:[{value,label,count}],cuisines:[…],diets:[…],spice_levels:[{level,label,count}]}` |
+
+`GET /api/products` combines these as filters (multiple values are OR'd within a facet, AND'd across facets) and understands
+everyday diaspora names via the synonym map in `src/discovery.js` — writing *ata rodo*, *ugwu*, *semo*, *eba*, *garri* and the like
+still finds the right SKU even when the catalog uses its English/packaged name.
+
+### Party, catering & wholesale
+| Method & path | Access | Description |
+|---|---|---|
+| GET `/api/recipes/:id/scale?guests=N` | public | Recipe scaled to N guests: multiplied (never rounded-down) quantities, `multiplier`, `total_cents`, `per_guest_cents` |
+| GET `/api/catering/party?guests=N` | public | Party packs that cover N guests with `serves`, `packs_needed`, `unit_price_cents`, `total_price_cents` |
+| POST `/api/quotes` `{name,email,phone?,event_date?,guests?,message?,fulfillment?}` | public | File a catering/event quote request (201) |
+| GET `/api/quotes?status=` | staff | List quote requests |
+| PATCH `/api/quotes/:id` `{status?,quoted_cents?,staff_note?}` | staff | `requested \| quoted \| confirmed \| declined`, plus the quoted amount |
+| GET `/api/customers?q=` | staff | Customer list (up to 100) with `account_type` and loyalty points |
+| PATCH `/api/customers/:id/account-type` `{account_type:retail\|restaurant}` | staff | Toggle a wholesale (B2B) account |
+
+Bundles carry a `serves` headcount (set via `POST/PUT /api/bundles`), and products carry a `wholesale_price_cents`
+(the greater of cost × 1.12 or price × 0.82, capped just under retail). Shoppers on a `restaurant` account see and are charged
+the wholesale price on every order line automatically.
+
 ### Payments
 | Method & path | Access | Description |
 |---|---|---|
@@ -117,7 +142,8 @@ API versioning: every `/api/...` route also works under the versioned prefix `/a
 ## Schema
 Tables: `users`, `categories`, `suppliers`, `products`, `orders`, `order_items`, `purchase_orders`, `purchase_order_items`,
 `locations`, `inventory`, `subscribers`, `promo_codes`, `campaigns`, `message_templates`, `automations`, `messages`,
-`bundles`, `bundle_items`, `delivery_areas`, `subscriptions`, `recipes`, `recipe_ingredients` (see `src/db.js`).
+`bundles`, `bundle_items`, `delivery_areas`, `subscriptions`, `recipes`, `recipe_ingredients`, `product_tags`, `quotes` (see `src/db.js`).
 
 Beyond the base schema, `orders` also carries `fulfillment`, `pickup_location_id`, `pickup_at`, `delivery_fee_cents`,
-`payment_status`, `payment_method` and `payment_reference`; `users` carries `referral_code`.
+`payment_status`, `payment_method` and `payment_reference`; `users` carries `referral_code` and `account_type`
+(`retail`/`restaurant`); `products` carries `spice_level` and `wholesale_price_cents`; `bundles` carries `serves`.

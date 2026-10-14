@@ -118,6 +118,52 @@ const load = guard(async () => {
     btn.onclick = guard(async () => { await api(`/api/recipes/${r.raw.id}`, { method: 'PUT', body: { active: !r.raw.active } }); await load(); });
     return btn;
   }));
+
+  const rawQuotes = await api('/api/quotes');
+  const quoteRows = rawQuotes.map((q) => ({
+    id: q.id, name: q.name, email: q.email, guests: q.guests || '—',
+    event_date: q.event_date || '—', status: q.status,
+    quoted: q.quoted_cents != null ? money(q.quoted_cents) : '—', raw: q,
+  }));
+  $('quotes').replaceChildren(table(['id', 'name', 'email', 'guests', 'event_date', 'status', 'quoted'], quoteRows, (r) => {
+    if (r.raw.status === 'confirmed' || r.raw.status === 'declined') return null;
+    const wrap = el('div', '', { className: 'row-actions' });
+    const quote = el('button', 'Mark quoted');
+    quote.onclick = guard(async () => {
+      const current = r.raw.quoted_cents != null ? (r.raw.quoted_cents / 100).toFixed(2) : '';
+      const entered = window.prompt(`Quote amount in EUR for ${r.raw.name}:`, current);
+      if (entered == null) return '';
+      const cents = Math.round(Number(entered) * 100);
+      if (!Number.isFinite(cents) || cents < 0) throw new Error('Enter a valid amount');
+      await api(`/api/quotes/${r.raw.id}`, { method: 'PATCH', body: { status: 'quoted', quoted_cents: cents } });
+      await load();
+      return `Quote #${r.raw.id} marked as quoted.`;
+    });
+    wrap.append(quote);
+    const accept = el('button', 'Confirm');
+    accept.onclick = guard(async () => {
+      await api(`/api/quotes/${r.raw.id}`, { method: 'PATCH', body: { status: 'confirmed' } });
+      await load();
+      return `Quote #${r.raw.id} confirmed.`;
+    });
+    wrap.append(accept);
+    return wrap;
+  }));
+
+  const rawCustomers = await api('/api/customers');
+  const customerRows = rawCustomers.map((c) => ({
+    id: c.id, name: c.name, email: c.email, account: c.account_type, points: c.loyalty_points, raw: c,
+  }));
+  $('customers').replaceChildren(table(['id', 'name', 'email', 'account', 'points'], customerRows, (r) => {
+    const btn = el('button', r.raw.account_type === 'restaurant' ? 'Make retail' : 'Make restaurant');
+    btn.onclick = guard(async () => {
+      const next = r.raw.account_type === 'restaurant' ? 'retail' : 'restaurant';
+      await api(`/api/customers/${r.raw.id}/account-type`, { method: 'PATCH', body: { account_type: next } });
+      await load();
+      return `${r.raw.name} is now a ${next === 'restaurant' ? 'wholesale' : 'retail'} account.`;
+    });
+    return btn;
+  }));
 });
 
 $('go').onclick = guard(async () => {

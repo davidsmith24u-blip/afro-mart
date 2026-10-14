@@ -1,5 +1,27 @@
+import { LOCALES, LOCALE_LABELS, translate } from '/i18n.js';
+
 const $ = (id) => document.getElementById(id);
-const money = (c) => (c / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+
+let locale = localStorage.getItem('locale') || 'en';
+if (!LOCALES.includes(locale)) locale = 'en';
+let displayCurrency = localStorage.getItem('currency') || 'EUR';
+let currencies = [{ code: 'EUR', symbol: '€', rate: 1, locale: 'de-DE', label: 'Euro' }];
+const t = (key, vars) => translate(locale, key, vars);
+const currencyFor = (code) => currencies.find((c) => c.code === code) || currencies[0];
+function money(cents) {
+  const cur = currencyFor(displayCurrency);
+  const value = (cents / 100) * cur.rate;
+  const fraction = ['EUR', 'GBP', 'CHF', 'USD', 'CAD'].includes(cur.code) ? 2 : 0;
+  try {
+    return value.toLocaleString(cur.locale || 'de-DE', {
+      style: 'currency', currency: cur.code,
+      minimumFractionDigits: fraction, maximumFractionDigits: fraction,
+    });
+  } catch {
+    return `${cur.symbol}${value.toFixed(2)}`;
+  }
+}
+
 let token = localStorage.getItem('token');
 let user = null;
 let products = [];
@@ -11,6 +33,11 @@ let locations = [];
 let settings = {};
 let recipes = [];
 const cart = JSON.parse(localStorage.getItem('cart') || '{}');
+
+// Discovery filters (cuisine / country / diet / heat) + sort, mirrored to the API.
+const filters = { cuisine: new Set(), origin: new Set(), diet: new Set(), maxSpice: '', sort: 'name' };
+let facets = null;
+const unitPrice = (product) => product.effective_price_cents ?? product.price_cents;
 
 function el(tag, text, attrs = {}) {
   const e = document.createElement(tag);
@@ -31,6 +58,97 @@ async function api(path, opts = {}) {
 const fail = (e) => { $('msg').textContent = e.message; };
 const say = (message) => { $('msg').textContent = message; };
 
+// ---------- Language & currency (global reach) ----------
+function applyI18n() {
+  document.documentElement.lang = locale;
+  for (const node of document.querySelectorAll('[data-i18n]')) node.textContent = t(node.dataset.i18n);
+  for (const node of document.querySelectorAll('[data-i18n-placeholder]')) node.placeholder = t(node.dataset.i18nPlaceholder);
+  renderAccount();
+  renderCart();
+  renderSortOptions();
+  if (facets) renderFilterChips();
+}
+function fillPreferenceSelectors() {
+  const lang = $('lang');
+  lang.replaceChildren(...LOCALES.map((code) => el('option', LOCALE_LABELS[code], { value: code })));
+  lang.value = locale;
+  const cur = $('currency');
+  cur.replaceChildren(...currencies.map((c) => el('option', `${c.code} · ${c.symbol}`, { value: c.code })));
+  cur.value = displayCurrency;
+}
+function setLocale(next) {
+  if (!LOCALES.includes(next)) return;
+  locale = next;
+  localStorage.setItem('locale', locale);
+  fillPreferenceSelectors();
+  applyI18n();
+}
+function setDisplayCurrency(next) {
+  if (!currencies.some((c) => c.code === next)) return;
+  displayCurrency = next;
+  localStorage.setItem('currency', displayCurrency);
+  fillPreferenceSelectors();
+  applyI18n();
+}
+
+// ---------- Discovery: facets, chips and sort ----------
+const SORTS = ['name', 'price_asc', 'price_desc', 'spice'];
+const SPICE_WORDS = ['', '🌶', '🌶🌶', '🌶🌶🌶', '🌶🌶🌶🌶', '🌶🌶🌶🌶🌶'];
+const spiceLabel = (level) => `${t('discover.heat')} ${level}${level > 0 ? ' ' + SPICE_WORDS[level] : ''}`;
+
+function renderSortOptions() {
+  const select = $('sort');
+  select.replaceChildren(...SORTS.map((value) => el('option', t(`sort.${value}`), { value })));
+  select.value = filters.sort;
+}
+function chipRow(container, entries, isActive, onToggle) {
+  container.replaceChildren(...entries.map((entry) => {
+    const chip = el('button', `${entry.label}${entry.count != null ? ` (${entry.count})` : ''}`, {
+      className: 'chip' + (isActive(entry.value) ? ' is-active' : ''),
+      type: 'button',
+      ariaPressed: isActive(entry.value) ? 'true' : 'false',
+    });
+    chip.onclick = () => { onToggle(entry.value); renderFilterChips(); loadProducts().catch(fail); };
+    return chip;
+  }));
+}
+function renderFilterChips() {
+  if (!facets) return;
+  const isActive = (group) => (value) => filters[group].has(value);
+  const toggle = (group) => (value) => {
+    if (filters[group].has(value)) filters[group].delete(value);
+    else filters[group].add(value);
+  };
+  chipRow($('origin-chips'), facets.origins, isActive('origin'), toggle('origin'));
+  chipRow($('cuisine-chips'), facets.cuisines, isActive('cuisine'), toggle('cuisine'));
+  chipRow($('diet-chips'), facets.diets, isActive('diet'), toggle('diet'));
+  const spiceEntries = facets.spice_levels
+    .filter((s) => s.level > 0)
+    .map((s) => ({ value: String(s.level), label: spiceLabel(s.level) }));
+  chipRow($('spice-chips'), spiceEntries,
+    (value) => filters.maxSpice === value,
+    (value) => { filters.maxSpice = filters.maxSpice === value ? '' : value; });
+}
+async function loadFacets() {
+  facets = await api('/api/discovery/facets').catch(() => null);
+  if (facets) renderFilterChips();
+}
+const DIET_ICONS = { vegan: '🌱', vegetarian: '🥕', 'gluten-free': '🌾', halal: '☪' };
+function discoveryBadges(product) {
+  const wrap = el('div', undefined, { className: 'badge-row' });
+  if (product.origin_label) wrap.append(el('span', product.origin_label, { className: 'badge badge-origin' }));
+  const cuisine = (product.cuisine_labels || [])[0];
+  if (cuisine) wrap.append(el('span', cuisine, { className: 'badge badge-cuisine' }));
+  const diets = product.diets || [];
+  const diet = diets.includes('vegan') ? 'vegan' : diets.includes('vegetarian') ? 'vegetarian' : diets[0];
+  if (diet) wrap.append(el('span', `${DIET_ICONS[diet] || ''} ${diet}`.trim(), { className: 'badge badge-diet' }));
+  if (product.spice_level > 0) {
+    wrap.append(el('span', SPICE_WORDS[product.spice_level], { className: 'badge badge-spice', title: spiceLabel(product.spice_level) }));
+  }
+  return wrap.childElementCount ? wrap : null;
+}
+
+
 // ---------- Fulfilment: delivery fee, pickup stores and slots ----------
 const currentFulfillment = () => document.querySelector('input[name="fulfillment"]:checked')?.value || 'delivery';
 
@@ -49,7 +167,7 @@ function basketSubtotal() {
       if (bundle) subtotal += bundle.price_cents * qty;
     } else {
       const product = productCatalog.get(Number(key));
-      if (product) subtotal += product.price_cents * qty;
+      if (product) subtotal += unitPrice(product) * qty;
     }
   }
   return subtotal;
@@ -130,6 +248,11 @@ async function loadProducts() {
   const p = new URLSearchParams();
   if ($('q').value) p.set('q', $('q').value);
   if ($('cat').value) p.set('category', $('cat').value);
+  if (filters.cuisine.size) p.set('cuisine', [...filters.cuisine].join(','));
+  if (filters.origin.size) p.set('origin', [...filters.origin].join(','));
+  if (filters.diet.size) p.set('diet', [...filters.diet].join(','));
+  if (filters.maxSpice) p.set('max_spice', filters.maxSpice);
+  if (filters.sort && filters.sort !== 'name') p.set('sort', filters.sort);
   products = await api(`/api/products?${p}`);
   products.forEach((product) => productCatalog.set(product.id, product));
   const glyphs = { 'dry goods': '🌾', 'fresh produce': '🥬', beverages: '🫖', spices: '🌶️', frozen: '❄️', snacks: '🥜', 'oils & condiments': '🫘', 'rice & grains': '🍚', 'meat & fish': '🍖', 'health & beauty': '🧴' };
@@ -203,12 +326,21 @@ async function loadProducts() {
     const info = el('div', undefined, { className: 'product-info' });
     info.append(el('p', product.category || 'Market favorite', { className: 'product-category' }));
     info.append(el('h3', product.name));
+    const badges = discoveryBadges(product);
+    if (badges) info.append(badges);
     info.append(el('p', product.description || 'A favorite from our market.', { className: 'product-description' }));
     const buy = el('div', undefined, { className: 'product-buy' });
-    const price = el('strong', money(product.price_cents), { className: 'product-price' });
+    const priceWrap = el('div', undefined, { className: 'price-wrap' });
+    if (product.is_wholesale && product.wholesale_price_cents != null) {
+      priceWrap.append(el('span', money(product.price_cents), { className: 'strike' }), ' ');
+      priceWrap.append(el('strong', money(product.effective_price_cents), { className: 'product-price' }));
+      priceWrap.append(el('span', 'Wholesale', { className: 'wholesale-tag' }));
+    } else {
+      priceWrap.append(el('strong', money(product.price_cents), { className: 'product-price' }));
+    }
     const add = el('button', product.stock > 0 ? 'Add to bag +' : 'Sold out', { className: 'add-button', disabled: product.stock <= 0, type: 'button' });
     add.onclick = () => { cart[product.id] = Math.min((cart[product.id] || 0) + 1, product.stock); saveCart(); };
-    buy.append(price, add);
+    buy.append(priceWrap, add);
     if (product.stock > 0 && product.stock <= 5) buy.append(el('span', 'Only a few left', { className: 'stock-label' }));
     info.append(buy);
     card.append(art, info);
@@ -338,7 +470,7 @@ function renderCart() {
     increase.onclick = () => { cart[key] = Math.min(cart[key] + 1, p.stock); saveCart(); };
     controls.append(decrease, el('span', String(qty)), increase);
     quantityCell.append(controls);
-    tr.append(quantityCell, el('td', money(p.price_cents * qty)));
+    tr.append(quantityCell, el('td', money(unitPrice(p) * qty)));
     const removeCell = el('td');
     const remove = el('button', 'Remove', { className: 'remove-item', type: 'button' });
     remove.onclick = () => { delete cart[key]; saveCart(); };
@@ -351,18 +483,18 @@ function renderCart() {
   const caption = table.querySelector('caption');
   const head = el('thead');
   const headingRow = el('tr');
-  for (const title of ['Item', 'Qty', 'Subtotal', '']) headingRow.append(el('th', title));
+  for (const title of [t('cart.th.item'), t('cart.th.qty'), t('cart.th.subtotal'), '']) headingRow.append(el('th', title));
   head.append(headingRow);
   const body = el('tbody');
   if (rows.length) body.append(...rows);
   else {
     const emptyRow = el('tr');
-    emptyRow.append(el('td', 'Your bag is waiting for something good.', { className: 'empty-cart', colSpan: 4 }));
+    emptyRow.append(el('td', t('cart.empty'), { className: 'empty-cart', colSpan: 4 }));
     body.append(emptyRow);
   }
   table.replaceChildren(caption, head, body);
   $('cart-count').textContent = String(itemCount);
-  $('cart-summary').textContent = itemCount ? `${itemCount} ${itemCount === 1 ? 'item' : 'items'} in your bag` : 'Ready when you are';
+  $('cart-summary').textContent = itemCount ? t(itemCount === 1 ? 'cart.item' : 'cart.items', { n: itemCount }) : t('cart.ready');
   renderTotals();
 }
 function renderAccount() {
@@ -436,7 +568,7 @@ async function loadMember() {
 async function loadOrders() {
   if (!user) return;
   const orders = await api('/api/orders');
-  const t = el('table');
+  const table = el('table');
   const head = el('thead');
   const headingRow = el('tr');
   for (const label of ['Order', 'Placed', 'Status', 'Payment', 'How', 'Total']) headingRow.append(el('th', label));
@@ -453,8 +585,8 @@ async function loadOrders() {
     }
     body.append(tr);
   }
-  t.append(head, body);
-  $('orders').replaceChildren(el('h2', 'Your orders'), t);
+  table.append(head, body);
+  $('orders').replaceChildren(el('h2', 'Your orders'), table);
 }
 async function subscribe(bundleId) {
   if (!user) throw new Error('Please log in to start a monthly pack');
@@ -523,6 +655,70 @@ $('cat').onchange = () => loadProducts().catch(fail);
 document.querySelectorAll('input[name="fulfillment"]').forEach((radio) => radio.addEventListener('change', applyFulfillment));
 $('addr').addEventListener('input', renderTotals);
 
+// ---------- Catering: party planner & quote request ----------
+async function planParty() {
+  const spot = $('party-results');
+  const guests = Math.min(Math.max(Number($('party-guests').value) || 20, 1), 1000);
+  $('party-guests').value = String(guests);
+  try {
+    const plan = await api(`/api/catering/party?guests=${guests}`);
+    const top = plan.suggestions.slice(0, 4);
+    if (!top.length) {
+      spot.replaceChildren(el('p', 'Ask us for a custom plan for your event.', { className: 'empty-state' }));
+      return;
+    }
+    spot.replaceChildren(...top.map((s) => {
+      const row = el('div', undefined, { className: 'party-result' });
+      const details = el('div', undefined, { className: 'party-details' });
+      details.append(el('strong', s.name));
+      details.append(el('span', `${money(s.unit_price_cents)} · ${t('catering.covers', { n: s.serves })}`, { className: 'party-meta' }));
+      row.append(details);
+      row.append(el('span', t('catering.packs', { n: s.packs_needed }), { className: 'party-packs' }));
+      row.append(el('strong', money(s.total_price_cents), { className: 'party-total' }));
+      const add = el('button', 'Add to bag +', { className: 'add-button', type: 'button' });
+      add.onclick = () => {
+        cart[`b${s.id}`] = Math.min((cart[`b${s.id}`] || 0) + s.packs_needed, 10);
+        saveCart();
+        say(`Added ${s.packs_needed} × ${s.name} to your bag.`);
+      };
+      row.append(add);
+      return row;
+    }));
+  } catch (e) { fail(e); }
+}
+$('plan-party').onclick = () => planParty();
+$('quote-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  try {
+    await api('/api/quotes', { method: 'POST', body: {
+      name: $('quote-name').value,
+      email: $('quote-email').value,
+      phone: $('quote-phone').value || undefined,
+      event_date: $('quote-date').value || undefined,
+      guests: Number($('quote-guests').value) || 0,
+      message: $('quote-message').value || undefined,
+      fulfillment: currentFulfillment(),
+    } });
+    $('quote-form').reset();
+    say(t('catering.sent'));
+  } catch (e) { fail(e); }
+});
+
+// ---------- Language, currency and discovery controls ----------
+$('lang').onchange = (event) => setLocale(event.target.value);
+$('currency').onchange = (event) => setDisplayCurrency(event.target.value);
+$('sort').onchange = (event) => { filters.sort = event.target.value; loadProducts().catch(fail); };
+$('clear-filters').onclick = () => {
+  filters.cuisine.clear();
+  filters.origin.clear();
+  filters.diet.clear();
+  filters.maxSpice = '';
+  filters.sort = 'name';
+  renderFilterChips();
+  renderSortOptions();
+  loadProducts().catch(fail);
+};
+
 let deferredInstallPrompt;
 window.addEventListener('beforeinstallprompt', (event) => {
   event.preventDefault();
@@ -566,6 +762,8 @@ if ('serviceWorker' in navigator) {
       api('/api/locations').catch(() => []),
     ]);
     settings = config;
+    currencies = Array.isArray(config.currencies) && config.currencies.length ? config.currencies : currencies;
+    if (!currencies.some((c) => c.code === displayCurrency)) displayCurrency = currencies[0].code;
     deliveryAreas = areas;
     locations = stores;
     for (const category of categories) {
@@ -575,13 +773,17 @@ if ('serviceWorker' in navigator) {
       $('category-links').append(shortcut);
     }
     fillFulfillmentOptions();
+    fillPreferenceSelectors();
+    applyI18n();
     const invite = new URLSearchParams(location.search).get('ref');
     if (invite) $('ref').value = invite.toUpperCase();
     if (token) { try { user = await api('/api/me'); } catch { token = null; } }
     renderAccount();
     renderCart();
     applyFulfillment();
+    await loadFacets();
     await loadBundles();
     await Promise.all([loadProducts(), loadRecipes(), loadOrders(), loadMember()]);
+    planParty().catch(() => {});
   } catch (e) { fail(e); }
 })();
