@@ -9,6 +9,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { openDb } from '../../src/db.js';
+import { ensureAdmin } from '../../src/bootstrap.js';
 
 const DB_PATH = process.env.BLOBS_DB_PATH || join(tmpdir(), 'afromart.db');
 const STORE_NAME = process.env.BLOBS_STORE || 'afromart';
@@ -58,7 +59,10 @@ export function getDatabase() {
         }
       }
       if (!restored) await seedDatabase();
-      return openDb(DB_PATH);
+      const db = openDb(DB_PATH);
+      // Idempotent, so it also covers an admin added via env after the first run.
+      ensureAdmin(db);
+      return db;
     })();
   }
   return dbPromise;
