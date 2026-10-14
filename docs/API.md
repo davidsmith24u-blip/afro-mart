@@ -133,6 +133,30 @@ Bundles carry a `serves` headcount (set via `POST/PUT /api/bundles`), and produc
 (the greater of cost × 1.12 or price × 0.82, capped just under retail). Shoppers on a `restaurant` account see and are charged
 the wholesale price on every order line automatically.
 
+### Reviews, imagery, retention & operations
+| Method & path | Access | Description |
+|---|---|---|
+| POST `/api/images` `{content_type, data}` | signed-in | Upload a base64 image (≤ 3 MB; `data` may be a full `data:` URL), returns `{id, url}` (201) |
+| GET `/api/images/:id` | public | Serve stored image bytes (immutable cache headers) |
+| DELETE `/api/images/:id` | staff | Delete a stored image (204) |
+| GET `/api/products/:id/reviews` | public | Approved reviews with `count` and `average` |
+| POST `/api/products/:id/reviews` `{rating,title?,body?,image_url?}` | signed-in | Write/update your review (201); `verified` is set from paid order history; waits for moderation |
+| GET `/api/reviews?status=pending\|approved\|rejected\|all` | staff | Moderation queue with product name and author email |
+| PATCH `/api/reviews/:id` `{status}` | staff | Approve / reject / re-pend a review |
+| DELETE `/api/reviews/:id` | staff | Delete a review (204) |
+| POST `/api/stock-alerts` `{product_id,email}` | public | Register "notify me when back in stock" (201; duplicates ignored) |
+| GET `/api/stock-alerts` | staff | Pending back-in-stock requests |
+| POST `/api/automations/back-in-stock` | staff | Email everyone waiting on products that are back in stock; returns `{notified, products}` |
+| PUT `/api/cart` `{items,subtotal_cents?}` | signed-in | Snapshot your bag server-side for recovery |
+| GET `/api/carts` | staff | Saved carts (item count, subtotal, reminded/recovered flags) |
+| POST `/api/automations/abandoned-carts` `{minutes?}` | staff | Email quiet carts (default 60 min); returns `{reminded, after_minutes}` |
+| GET `/api/audit?limit=` | staff | Recent privileged actions (who, what, when) |
+| GET `/api/orders/:id/invoice` | owner or staff | Printable HTML invoice |
+
+Products now include `image_url`, `rating_average` and `rating_count`; staff set `image_url` via
+`POST/PUT /api/products`. API responses are best-effort rate limited per client IP (900 requests/minute;
+30 authentication attempts per 5 minutes), returning `429` with `Retry-After` when exceeded.
+
 ### Payments
 | Method & path | Access | Description |
 |---|---|---|
@@ -143,8 +167,9 @@ API versioning: every `/api/...` route also works under the versioned prefix `/a
 ## Schema
 Tables: `users`, `categories`, `suppliers`, `products`, `orders`, `order_items`, `purchase_orders`, `purchase_order_items`,
 `locations`, `inventory`, `subscribers`, `promo_codes`, `campaigns`, `message_templates`, `automations`, `messages`,
-`bundles`, `bundle_items`, `delivery_areas`, `subscriptions`, `recipes`, `recipe_ingredients`, `product_tags`, `quotes` (see `src/db.js`).
+`bundles`, `bundle_items`, `delivery_areas`, `subscriptions`, `recipes`, `recipe_ingredients`, `product_tags`, `quotes`,
+`images`, `product_reviews`, `stock_alerts`, `carts`, `audit_log` (see `src/db.js`).
 
 Beyond the base schema, `orders` also carries `fulfillment`, `pickup_location_id`, `pickup_at`, `delivery_fee_cents`,
 `payment_status`, `payment_method` and `payment_reference`; `users` carries `referral_code` and `account_type`
-(`retail`/`restaurant`); `products` carries `spice_level` and `wholesale_price_cents`; `bundles` carries `serves`.
+(`retail`/`restaurant`); `products` carries `spice_level`, `wholesale_price_cents` and `image_url`; `bundles` carries `serves`.

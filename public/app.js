@@ -39,6 +39,19 @@ const filters = { cuisine: new Set(), origin: new Set(), diet: new Set(), maxSpi
 let facets = null;
 const unitPrice = (product) => product.effective_price_cents ?? product.price_cents;
 
+// Prefer a real product image; fall back to a category/name-appropriate placeholder.
+const productPhoto = (product) => {
+  if (product.image_url) return product.image_url;
+  const name = product.name.toLowerCase();
+  if (name.includes('coca-cola')) return '/products/coca-cola.jpg';
+  if (name.includes('pepsi')) return '/products/pepsi.jpg';
+  if (name.includes('wine')) return '/products/wine.jpg';
+  if ((product.category || '').toLowerCase() === 'fresh produce') return '/products/produce.jpg';
+  if ((product.category || '').toLowerCase() === 'spices') return '/products/spices.jpg';
+  if ((product.category || '').toLowerCase() === 'beverages') return '/products/african-drinks.jpg';
+  return '/products/staples.jpg';
+};
+
 function el(tag, text, attrs = {}) {
   const e = document.createElement(tag);
   if (text !== undefined) e.textContent = text;
@@ -288,16 +301,6 @@ async function loadProducts() {
     if (name.includes('shea') || name.includes('soap') || name.includes('coconut oil') || name.includes('hair') || name.includes('butter')) return '🧴';
     return glyphs[(product.category || '').toLowerCase()] || '🧺';
   };
-  const productPhoto = (product) => {
-    const name = product.name.toLowerCase();
-    if (name.includes('coca-cola')) return '/products/coca-cola.jpg';
-    if (name.includes('pepsi')) return '/products/pepsi.jpg';
-    if (name.includes('wine')) return '/products/wine.jpg';
-    if ((product.category || '').toLowerCase() === 'fresh produce') return '/products/produce.jpg';
-    if ((product.category || '').toLowerCase() === 'spices') return '/products/spices.jpg';
-    if ((product.category || '').toLowerCase() === 'beverages') return '/products/african-drinks.jpg';
-    return '/products/staples.jpg';
-  };
   const toneFor = (category) => {
     const value = (category || '').toLowerCase();
     if (value.includes('spice')) return 'spices';
@@ -307,7 +310,11 @@ async function loadProducts() {
     return 'pantry';
   };
   $('products').replaceChildren(...(products.length ? products.map((product, index) => {
-    const card = el('article', undefined, { className: 'product-card' });
+    const card = el('article', undefined, { className: 'product-card', tabIndex: 0, role: 'button' });
+    card.onclick = () => openProduct(product);
+    card.onkeydown = (event) => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openProduct(product); }
+    };
     const art = el('div', undefined, { className: 'product-art' });
     art.dataset.tone = toneFor(product.category);
     const photo = el('img', undefined, {
@@ -326,6 +333,7 @@ async function loadProducts() {
     const info = el('div', undefined, { className: 'product-info' });
     info.append(el('p', product.category || 'Market favorite', { className: 'product-category' }));
     info.append(el('h3', product.name));
+    if (product.rating_count) info.append(ratingStars(product.rating_average, product.rating_count));
     const badges = discoveryBadges(product);
     if (badges) info.append(badges);
     info.append(el('p', product.description || 'A favorite from our market.', { className: 'product-description' }));
@@ -339,7 +347,7 @@ async function loadProducts() {
       priceWrap.append(el('strong', money(product.price_cents), { className: 'product-price' }));
     }
     const add = el('button', product.stock > 0 ? 'Add to bag +' : 'Sold out', { className: 'add-button', disabled: product.stock <= 0, type: 'button' });
-    add.onclick = () => { cart[product.id] = Math.min((cart[product.id] || 0) + 1, product.stock); saveCart(); };
+    add.onclick = (event) => { event.stopPropagation(); cart[product.id] = Math.min((cart[product.id] || 0) + 1, product.stock); saveCart(); };
     buy.append(priceWrap, add);
     if (product.stock > 0 && product.stock <= 5) buy.append(el('span', 'Only a few left', { className: 'stock-label' }));
     info.append(buy);
@@ -349,6 +357,177 @@ async function loadProducts() {
   $('product-count').textContent = `${products.length} ${products.length === 1 ? 'product' : 'products'}`;
   renderCart();
 }
+// ---------- Product detail modal: imagery, reviews and stock alerts ----------
+let modalEl = null;
+const onModalKey = (event) => { if (event.key === 'Escape') closeModal(); };
+function closeModal() {
+  if (modalEl) { modalEl.remove(); modalEl = null; document.removeEventListener('keydown', onModalKey); }
+}
+
+function ratingStars(average, count) {
+  const wrap = el('span', undefined, { className: 'rating-stars' });
+  const rounded = Math.round(Number(average) || 0);
+  wrap.append(el('span', '★'.repeat(rounded) + '☆'.repeat(5 - rounded), { className: 'stars-glyphs', ariaHidden: 'true' }));
+  wrap.append(el('span', ` ${Number(average).toFixed(1)} (${count})`, { className: 'rating-count' }));
+  wrap.setAttribute('aria-label', `${average} out of 5 from ${count} reviews`);
+  return wrap;
+}
+
+function openProduct(product) {
+  closeModal();
+  const overlay = el('div', undefined, { className: 'modal-overlay' });
+  overlay.onclick = (event) => { if (event.target === overlay) closeModal(); };
+  const modal = el('div', undefined, { className: 'product-modal' });
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-label', product.name);
+
+  const close = el('button', '×', { className: 'modal-close', type: 'button' });
+  close.setAttribute('aria-label', t('reviews.close'));
+  close.onclick = closeModal;
+  modal.append(close);
+
+  const art = el('div', undefined, { className: 'modal-art' });
+  const photo = el('img', undefined, { className: 'modal-photo', src: productPhoto(product), alt: `${product.name} product photo`, decoding: 'async' });
+  photo.onerror = () => photo.remove();
+  art.append(photo);
+
+  const body = el('div', undefined, { className: 'modal-body' });
+  body.append(el('p', product.category || 'Market favorite', { className: 'product-category' }));
+  body.append(el('h2', product.name));
+  if (product.rating_count) body.append(ratingStars(product.rating_average, product.rating_count));
+  body.append(el('p', product.description || 'A favorite from our market.', { className: 'modal-description' }));
+  body.append(el('p', money(unitPrice(product)), { className: 'modal-price' }));
+
+  const add = el('button', product.stock > 0 ? 'Add to bag +' : 'Sold out', { className: 'add-button', type: 'button', disabled: product.stock <= 0 });
+  add.onclick = () => { cart[product.id] = Math.min((cart[product.id] || 0) + 1, product.stock); saveCart(); say(`Added ${product.name} to your bag.`); };
+  body.append(add);
+  if (product.stock <= 0) body.append(stockAlertForm(product));
+
+  const reviews = el('section', undefined, { className: 'modal-reviews' });
+  reviews.append(el('h3', t('reviews.title')));
+  const list = el('div', undefined, { className: 'review-list' });
+  const formHost = el('div', undefined, { className: 'review-form-host' });
+  reviews.append(list, formHost);
+  body.append(reviews);
+  modal.append(art, body);
+  overlay.append(modal);
+  document.body.append(overlay);
+  modalEl = overlay;
+  document.addEventListener('keydown', onModalKey);
+  loadProductReviews(product.id, list, formHost);
+}
+
+async function loadProductReviews(productId, list, formHost) {
+  list.replaceChildren(el('p', t('reviews.loading'), { className: 'empty-state' }));
+  let data;
+  try {
+    data = await api(`/api/products/${productId}/reviews`);
+  } catch (error) {
+    list.textContent = error.message;
+    return;
+  }
+  if (!data.count) list.replaceChildren(el('p', t('reviews.none'), { className: 'empty-state' }));
+  else list.replaceChildren(...data.reviews.map(reviewCard));
+  renderReviewForm(productId, formHost, () => loadProductReviews(productId, list, formHost));
+}
+
+function reviewCard(review) {
+  const card = el('article', undefined, { className: 'review-card' });
+  const head = el('div', undefined, { className: 'review-head' });
+  head.append(el('span', '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating), { className: 'stars-glyphs', ariaHidden: 'true' }));
+  head.append(el('strong', review.author));
+  if (review.verified) head.append(el('span', t('reviews.verified'), { className: 'verified-badge' }));
+  card.append(head);
+  if (review.title) card.append(el('p', review.title, { className: 'review-title' }));
+  if (review.body) card.append(el('p', review.body, { className: 'review-body' }));
+  if (review.image_url) card.append(el('img', undefined, { className: 'review-photo', src: review.image_url, alt: `${review.author} review photo`, loading: 'lazy' }));
+  return card;
+}
+
+function renderReviewForm(productId, host, onDone) {
+  host.replaceChildren();
+  if (!user) {
+    host.append(el('p', t('reviews.signin'), { className: 'empty-state' }));
+    return;
+  }
+  const form = el('form', undefined, { className: 'review-form' });
+  form.append(el('h4', t('reviews.write')));
+  const rating = el('select', undefined, { className: 'review-rating' });
+  rating.setAttribute('aria-label', t('reviews.rating'));
+  for (const n of [5, 4, 3, 2, 1]) {
+    const option = el('option', `${'★'.repeat(n)} (${n})`);
+    option.value = String(n);
+    rating.append(option);
+  }
+  const title = el('input', undefined, { className: 'review-title-input', maxLength: 120 });
+  title.placeholder = t('reviews.titlePlaceholder');
+  const text = el('textarea', undefined, { className: 'review-body-input', maxLength: 2000, rows: 3 });
+  text.placeholder = t('reviews.bodyPlaceholder');
+  const file = el('input', undefined, { className: 'review-photo-input', type: 'file' });
+  file.accept = 'image/*';
+  const submit = el('button', t('reviews.submit'), { className: 'add-button', type: 'submit' });
+  form.append(rating, title, text, file, submit);
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    submit.disabled = true;
+    try {
+      let imageUrl = null;
+      const chosen = file.files && file.files[0];
+      if (chosen) {
+        const data = await readFileAsBase64(chosen);
+        const uploaded = await api('/api/images', { method: 'POST', body: { content_type: chosen.type, data } });
+        imageUrl = uploaded.url;
+      }
+      await api(`/api/products/${productId}/reviews`, {
+        method: 'POST',
+        body: { rating: Number(rating.value), title: title.value, body: text.value, image_url: imageUrl },
+      });
+      say(t('reviews.thanks'));
+      onDone();
+    } catch (error) {
+      fail(error);
+    } finally {
+      submit.disabled = false;
+    }
+  };
+  host.append(form);
+}
+
+function stockAlertForm(product) {
+  const form = el('form', undefined, { className: 'stock-alert-form' });
+  form.append(el('p', t('stock.out'), { className: 'stock-alert-note' }));
+  const email = el('input', undefined, { className: 'stock-alert-email', type: 'email' });
+  email.placeholder = t('stock.emailPlaceholder');
+  email.required = true;
+  email.value = (user && user.email) || '';
+  const button = el('button', t('stock.notifyMe'), { className: 'add-button', type: 'submit' });
+  form.append(email, button);
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    button.disabled = true;
+    try {
+      await api('/api/stock-alerts', { method: 'POST', body: { product_id: product.id, email: email.value } });
+      say(t('stock.thanks'));
+      form.reset();
+    } catch (error) {
+      fail(error);
+    } finally {
+      button.disabled = false;
+    }
+  };
+  return form;
+}
+
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Could not read that image'));
+    reader.readAsDataURL(file);
+  });
+}
+
 async function loadBundles() {
   const data = await api('/api/bundles');
   bundles = data;
@@ -437,8 +616,26 @@ function recipeCard(recipe) {
   card.append(buy);
   return card;
 }
-function saveCart() { localStorage.setItem('cart', JSON.stringify(cart)); renderCart(); }
+function saveCart() { localStorage.setItem('cart', JSON.stringify(cart)); renderCart(); queueCartSnapshot(); }
 function clearCart() { for (const key of Object.keys(cart)) delete cart[key]; saveCart(); }
+
+// Mirror the signed-in customer's bag to the server (debounced) so lapsed carts
+// can be recovered by the abandoned-cart automation.
+let cartSnapshotTimer = null;
+function queueCartSnapshot() {
+  if (!user) return;
+  clearTimeout(cartSnapshotTimer);
+  cartSnapshotTimer = setTimeout(snapshotCart, 1500);
+}
+function snapshotCart() {
+  if (!user) return;
+  const items = [];
+  for (const [key, qty] of Object.entries(cart)) {
+    if (key.startsWith('b')) items.push({ bundle_id: Number(key.slice(1)), quantity: qty });
+    else items.push({ product_id: Number(key), quantity: qty });
+  }
+  api('/api/cart', { method: 'PUT', body: { items, subtotal_cents: basketSubtotal() } }).catch(() => {});
+}
 function renderCart() {
   let itemCount = 0;
   const rows = [];
@@ -599,7 +796,16 @@ async function loadOrders() {
     }
     const trackTd = el('td');
     const trackBtn = el('button', t('orders.track'), { className: 'text-button', type: 'button' });
-    trackTd.append(trackBtn);
+    const invoiceBtn = el('button', t('orders.invoice'), { className: 'text-button', type: 'button' });
+    invoiceBtn.onclick = async () => {
+      try {
+        const res = await fetch(`/api/orders/${o.id}/invoice`, { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) throw new Error('Could not load that invoice');
+        const win = window.open('', '_blank');
+        if (win) { win.document.write(await res.text()); win.document.close(); }
+      } catch (error) { fail(error); }
+    };
+    trackTd.append(trackBtn, ' ', invoiceBtn);
     tr.append(trackTd);
     const detail = el('tr', undefined, { className: 'track-row', hidden: true });
     const detailTd = el('td', undefined, { colSpan: 7 });

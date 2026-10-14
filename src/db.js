@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS products (
   expiry_date TEXT,
   active INTEGER NOT NULL DEFAULT 1,
   spice_level INTEGER NOT NULL DEFAULT 0 CHECK (spice_level >= 0 AND spice_level <= 5),
-  wholesale_price_cents INTEGER
+  wholesale_price_cents INTEGER,
+  image_url TEXT
 );
 CREATE TABLE IF NOT EXISTS product_tags (
   product_id INTEGER NOT NULL REFERENCES products(id),
@@ -249,6 +250,66 @@ CREATE TABLE IF NOT EXISTS quotes (
   updated_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_product_tags ON product_tags(kind, value);
+
+-- Uploaded product/review imagery, stored inline so it survives the Netlify
+-- Blobs snapshot without a separate object store.
+CREATE TABLE IF NOT EXISTS images (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mime TEXT NOT NULL,
+  bytes BLOB NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Customer product reviews with star ratings and optional photo, moderated by staff.
+CREATE TABLE IF NOT EXISTS product_reviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  user_id INTEGER REFERENCES users(id),
+  order_id INTEGER REFERENCES orders(id),
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  title TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '',
+  image_url TEXT,
+  verified INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_reviews_product ON product_reviews(product_id, status);
+
+-- "Notify me when back in stock" requests, processed by a staff/cron endpoint.
+CREATE TABLE IF NOT EXISTS stock_alerts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  email TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  notified_at TEXT,
+  UNIQUE (product_id, email)
+);
+
+-- Server-side cart snapshots so lapsed carts can be recovered by email.
+CREATE TABLE IF NOT EXISTS carts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL UNIQUE REFERENCES users(id),
+  email TEXT,
+  items TEXT NOT NULL DEFAULT '[]',
+  subtotal_cents INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  reminded_at TEXT,
+  recovered_at TEXT
+);
+
+-- Who changed what: a lightweight trail of privileged mutations for accountability.
+CREATE TABLE IF NOT EXISTS audit_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id),
+  actor_email TEXT,
+  action TEXT NOT NULL,
+  entity TEXT,
+  entity_id INTEGER,
+  detail TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log(created_at);
 `;
 
 export function openDb(path = ':memory:') {
@@ -298,6 +359,9 @@ export function openDb(path = ':memory:') {
   }
   if (!productColumns.includes('wholesale_price_cents')) {
     db.exec('ALTER TABLE products ADD COLUMN wholesale_price_cents INTEGER');
+  }
+  if (!productColumns.includes('image_url')) {
+    db.exec('ALTER TABLE products ADD COLUMN image_url TEXT');
   }
   const bundleColumns = db.prepare('PRAGMA table_info(bundles)').all().map((column) => column.name);
   if (!bundleColumns.includes('serves')) {

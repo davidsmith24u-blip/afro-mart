@@ -16,6 +16,9 @@ import { applyReferral, referralCode, tierFor, lifetimeSpendCents, pointsFor } f
 import { registerDiscoveryRoutes, expandQuery, attachTags, ORIGIN_LABELS, CUISINE_LABELS, DIET_LABELS } from './discovery.js';
 import { BASE_CURRENCY, currencyList } from './currencies.js';
 import { registerCateringRoutes } from './catering.js';
+import { registerReviewRoutes } from './reviews.js';
+import { registerImageRoutes } from './images.js';
+import { registerRetentionRoutes } from './retention.js';
 import { applyProductMeta } from './catalog-meta.js';
 
 const PUBLIC_DIR = resolve(fileURLToPath(new URL('../public', import.meta.url)));
@@ -27,7 +30,7 @@ const MIME = {
   '.jpg': 'image/jpeg',
   '.webmanifest': 'application/manifest+json',
 };
-const MAX_BODY = 1_000_000;
+const MAX_BODY = 4_000_000;
 const ORDER_STATUSES = ['pending', 'paid', 'packed', 'shipped', 'delivered', 'cancelled'];
 const DELIVERY_SERVICES = ['dhl', 'dpd', 'hermes'];
 const FULFILLMENT_OPTIONS = ['delivery', 'pickup'];
@@ -42,12 +45,13 @@ class HttpError extends Error {
 }
 const bad = (m) => new HttpError(400, m);
 class Reply {
-  constructor(status, data) {
+  constructor(status, data, headers = {}) {
     this.status = status;
     this.data = data;
+    this.headers = headers;
   }
 }
-const reply = (status, data) => new Reply(status, data);
+const reply = (status, data, headers) => new Reply(status, data, headers);
 
 const str = (v, name, { max = 200, required = true } = {}) => {
   if (v === undefined || v === null || v === '') {
@@ -114,6 +118,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     if (b.reorder_level !== undefined) set('reorder_level', int(b.reorder_level, 'reorder_level'));
     if (b.reorder_quantity !== undefined) set('reorder_quantity', int(b.reorder_quantity, 'reorder_quantity', { min: 1 }));
     if (b.expiry_date !== undefined) set('expiry_date', str(b.expiry_date, 'expiry_date', { max: 10, required: false }));
+    if (b.image_url !== undefined) set('image_url', b.image_url === null ? null : str(b.image_url, 'image_url', { max: 500, required: false }));
     if (b.active !== undefined) set('active', b.active ? 1 : 0);
     return out;
   };
@@ -156,7 +161,15 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   }));
 
   const comms = createCommunications(db);
-  const api = { db, route, all, get, run, transaction, reply, bad, notFound, HttpError, str, int, requireUser, requireStaff, requireAdmin, publicUser, comms };
+  // Accountability trail for privileged mutations; never let it break a request.
+  const auditLog = (ctx, action, entity = null, entityId = null, detail = null) => {
+    try {
+      run(
+        'INSERT INTO audit_log (user_id, actor_email, action, entity, entity_id, detail) VALUES (?,?,?,?,?,?)',
+        ctx.user?.id ?? null, ctx.user?.email ?? null, action, entity, entityId, detail);
+    } catch { /* auditing is best-effort */ }
+  };
+  const api = { db, route, all, get, run, transaction, reply, bad, notFound, HttpError, str, int, requireUser, requireStaff, requireAdmin, publicUser, comms, audit: auditLog };
   registerAnalyticsRoutes(api);
   registerMarketingRoutes(api);
   registerCommunicationsRoutes(api);
@@ -167,6 +180,9 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   registerRecipeRoutes(api);
   registerDiscoveryRoutes(api);
   registerCateringRoutes(api);
+  registerReviewRoutes(api);
+  registerImageRoutes(api);
+  registerRetentionRoutes(api);
 
   // ---- Auth ----
   route('POST', '/api/auth/register', (ctx) => {
@@ -291,7 +307,9 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const offset = ctx.query.get('offset') ? Math.max(Number(ctx.query.get('offset')) || 0, 0) : 0;
     const rows = all(
       `SELECT p.id, p.sku, p.name, p.description, p.category_id, c.name AS category, p.price_cents, p.stock,
-              p.expiry_date, p.active, p.spice_level${wholesale ? ', p.wholesale_price_cents' : ''}${staff ? ', p.cost_cents, p.reorder_level, p.reorder_quantity, p.supplier_id' : ''}
+              p.expiry_date, p.active, p.spice_level, p.image_url${wholesale ? ', p.wholesale_price_cents' : ''}${staff ? ', p.cost_cents, p.reorder_level, p.reorder_quantity, p.supplier_id' : ''},
+              (SELECT ROUND(AVG(r.rating), 1) FROM product_reviews r WHERE r.product_id = p.id AND r.status = 'approved') AS rating_average,
+              (SELECT COUNT(*) FROM product_reviews r WHERE r.product_id = p.id AND r.status = 'approved') AS rating_count
        FROM products p LEFT JOIN categories c ON c.id = p.category_id
        ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY ${orderBy}${limit ? ' LIMIT ? OFFSET ?' : ''}`,
       ...params, ...(limit ? [limit, offset] : []));
@@ -310,7 +328,9 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const wholesale = ctx.user && ctx.user.account_type === 'restaurant';
     const p = get(
       `SELECT p.id, p.sku, p.name, p.description, p.category_id, c.name AS category, p.price_cents, p.stock,
-              p.expiry_date, p.active, p.spice_level${wholesale ? ', p.wholesale_price_cents' : ''}
+              p.expiry_date, p.active, p.spice_level, p.image_url${wholesale ? ', p.wholesale_price_cents' : ''},
+              (SELECT ROUND(AVG(r.rating), 1) FROM product_reviews r WHERE r.product_id = p.id AND r.status = 'approved') AS rating_average,
+              (SELECT COUNT(*) FROM product_reviews r WHERE r.product_id = p.id AND r.status = 'approved') AS rating_count
        FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?`, ctx.params.id);
     if (!p || (!p.active && !staff)) throw notFound();
     const [row] = attachTags(db, [p]);
@@ -330,6 +350,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       const { lastInsertRowid } = run(`INSERT INTO products (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`, ...cols.map((c) => f[c]));
       const created = get('SELECT * FROM products WHERE id = ?', lastInsertRowid);
       try { const row = get(`SELECT p.*, c.name AS category FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?`, created.id); applyProductMeta(db, row, { preserve: true }); } catch {}
+      auditLog(ctx, 'product.create', 'product', lastInsertRowid, f.sku);
       return reply(201, get('SELECT * FROM products WHERE id = ?', lastInsertRowid));
     } catch (e) {
       if (/FOREIGN KEY/.test(e.message)) throw bad('Unknown category or supplier');
@@ -346,6 +367,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     try {
       run(`UPDATE products SET ${cols.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`, ...cols.map((c) => f[c]), ctx.params.id);
       try { const row = get(`SELECT p.*, c.name AS category FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?`, ctx.params.id); applyProductMeta(db, row, { preserve: true }); } catch {}
+      auditLog(ctx, 'product.update', 'product', ctx.params.id, cols.join(','));
     } catch (e) {
       if (/UNIQUE/.test(e.message)) throw new HttpError(409, 'SKU exists');
       if (/FOREIGN KEY/.test(e.message)) throw bad('Unknown category or supplier');
@@ -430,6 +452,8 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       return get('SELECT * FROM orders WHERE id = ?', oid);
     });
 
+    // Placing an order converts any saved cart, so recovery emails stop.
+    run('UPDATE carts SET recovered_at = CURRENT_TIMESTAMP WHERE user_id = ? AND recovered_at IS NULL', user.id);
     comms.emit('order.placed', {
       email: user.email, name: user.name, order_id: order.id,
       total_cents: order.total_cents, location_id: order.location_id, fulfillment: order.fulfillment,
@@ -464,6 +488,51 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const o = get('SELECT * FROM orders WHERE id = ?', ctx.params.id);
     if (!o || (user.role === 'customer' && o.user_id !== user.id)) throw notFound();
     return orderWithItems(o);
+  });
+
+  // Printable invoice — visible to the order's owner or any staff member.
+  route('GET', '/api/orders/:id/invoice', (ctx) => {
+    const user = requireUser(ctx);
+    const o = get('SELECT * FROM orders WHERE id = ?', ctx.params.id);
+    if (!o || (user.role === 'customer' && o.user_id !== user.id)) throw notFound();
+    const order = orderWithItems(o);
+    const buyer = get('SELECT name, email FROM users WHERE id = ?', o.user_id);
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const eur = (cents) => (cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+    const rows = order.items
+      .map((it) => `<tr><td>${esc(it.name)}</td><td>${it.quantity}</td><td>${eur(it.unit_price_cents)}</td><td>${eur(it.unit_price_cents * it.quantity)}</td></tr>`)
+      .join('');
+    const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<title>Afro Mart invoice #${o.id}</title>
+<style>
+body{font:14px/1.5 system-ui,sans-serif;color:#2a1414;margin:32px;max-width:760px}
+h1{font-size:24px;margin:0}.muted{color:#7d5656}
+table{width:100%;border-collapse:collapse;margin-top:16px}
+th,td{padding:8px;border-bottom:1px solid #eadede;text-align:left}
+th{background:#fbe8e8}.totals{margin-top:16px;text-align:right}
+.totals div{margin:2px 0}.grand{font-weight:700;font-size:16px}
+@media print{body{margin:0}}
+</style></head><body>
+<h1>AFROMART</h1><p class="muted">Authentic African Foods — Right to Your Door</p>
+<h2>Invoice #${o.id}</h2>
+<p class="muted">Placed ${esc(o.created_at)} • Status: ${esc(o.status)} • Payment: ${esc(o.payment_status)}</p>
+<p><strong>Billed to:</strong> ${esc(buyer?.name)}<br>${esc(buyer?.email)}<br>${esc(o.shipping_address || 'In-store pickup')}</p>
+<table><thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Line</th></tr></thead><tbody>${rows}</tbody></table>
+<div class="totals">
+<div>Discount: −${eur(o.discount_cents)}</div>
+<div>Delivery: ${eur(o.delivery_fee_cents)}</div>
+<div class="grand">Total: ${eur(o.total_cents)}</div>
+</div>
+<p class="muted">Afro Mart Bochum • Thank you for shopping with us.</p>
+</body></html>`;
+    return reply(200, html, { 'Content-Type': 'text/html; charset=utf-8' });
+  });
+
+  // Staff: recent privileged actions (newest first).
+  route('GET', '/api/audit', (ctx) => {
+    requireStaff(ctx);
+    const limit = Math.min(Math.max(Number(ctx.query.get('limit')) || 100, 1), 500);
+    return all('SELECT * FROM audit_log ORDER BY id DESC LIMIT ?', limit);
   });
 
   // Public delivery tracking: an order number plus the email used to place it.
@@ -513,6 +582,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       return orderWithItems(get('SELECT * FROM orders WHERE id = ?', id));
     });
     const customer = get('SELECT email, name FROM users WHERE id = ?', order.user_id);
+    auditLog(ctx, 'order.status', 'order', order.id, status);
     if (customer) {
       comms.emit('order.status_changed', {
         email: customer.email, name: customer.name,
@@ -529,7 +599,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     if (!PAYMENT_STATUSES.includes(status)) throw bad(`payment status must be one of ${PAYMENT_STATUSES.join(', ')}`);
     const method = ctx.body.method === undefined ? null : str(ctx.body.method, 'method', { max: 12 });
     if (method && !PAYMENT_METHODS.includes(method.toLowerCase())) throw bad('Unknown payment method');
-    return transaction(db, () => {
+    const result = transaction(db, () => {
       const order = get('SELECT * FROM orders WHERE id = ?', ctx.params.id);
       if (!order) throw notFound();
       const set = ['payment_status = ?'];
@@ -540,6 +610,8 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       if (status === 'paid' && order.status === 'pending') run("UPDATE orders SET status = 'paid' WHERE id = ?", order.id);
       return orderWithItems(get('SELECT * FROM orders WHERE id = ?', order.id));
     });
+    auditLog(ctx, 'order.payment', 'order', ctx.params.id, method ? `${status}:${method.toLowerCase()}` : status);
+    return result;
   });
 
   route('POST', '/api/payments/webhook', (ctx) => {
@@ -736,7 +808,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
         : 'application/json',
       'X-Content-Type-Options': 'nosniff',
       'X-API-Version': '1',
-      'Content-Security-Policy': "default-src 'self'; img-src 'self' https://images.unsplash.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com",
+      'Content-Security-Policy': "default-src 'self'; img-src 'self' https: data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com",
       'Referrer-Policy': 'same-origin',
       ...cors(),
       ...headers,
@@ -755,6 +827,18 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     }
   }
 
+  // ---- Rate limiting (best-effort, in-memory, per client IP) ----
+  const hits = new Map();
+  const allow = (key, limit, windowMs) => {
+    const now = Date.now();
+    const entry = hits.get(key);
+    if (!entry || now - entry.start >= windowMs) { hits.set(key, { start: now, count: 1 }); return true; }
+    entry.count += 1;
+    return entry.count <= limit;
+  };
+  const clientIp = (req) =>
+    String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'local').split(',')[0].trim();
+
   return async function handler(req, res) {
     try {
       const url = new URL(req.url, 'http://localhost');
@@ -769,6 +853,13 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       if (!pathname.startsWith('/api/')) {
         if (req.method !== 'GET') throw notFound();
         return await serveStatic(url.pathname, res);
+      }
+      const ip = clientIp(req);
+      const isAuthWrite = req.method === 'POST' && (pathname === '/api/auth/login' || pathname === '/api/auth/register');
+      const withinLimit = isAuthWrite ? allow(`auth:${ip}`, 30, 5 * 60_000) : allow(`api:${ip}`, 900, 60_000);
+      if (!withinLimit) {
+        send(res, 429, { error: 'Too many requests — please slow down and try again shortly' }, { 'Retry-After': '60' });
+        return;
       }
       let matched = null;
       let pathMatched = false;
@@ -792,7 +883,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       if (['POST', 'PUT', 'PATCH'].includes(req.method)) ctx.body = await readBody(req);
 
       const out = await matched.r.handler(ctx);
-      if (out instanceof Reply) send(res, out.status, out.data);
+      if (out instanceof Reply) send(res, out.status, out.data, out.headers);
       else send(res, 200, out);
     } catch (e) {
       if (e instanceof HttpError || typeof e?.status === 'number') return send(res, e.status, { error: e.message });

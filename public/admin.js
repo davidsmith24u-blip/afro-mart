@@ -8,8 +8,9 @@ async function api(path, opts = {}) {
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) throw new Error((data && data.error) || 'Request failed');
   return data;
 }
 function table(cols, rows, action) {
@@ -55,6 +56,16 @@ const load = guard(async () => {
       p.onclick = guard(async () => { await api(`/api/orders/${raw.id}/payment`, { method: 'PATCH', body: { status: 'paid', method: 'manual' } }); await load(); });
       wrap.append(p);
     }
+    const invoice = el('button', 'Invoice');
+    invoice.onclick = async () => {
+      try {
+        const res = await fetch(`/api/orders/${raw.id}/invoice`, { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) throw new Error('Could not load that invoice');
+        const win = window.open('', '_blank');
+        if (win) { win.document.write(await res.text()); win.document.close(); }
+      } catch (e) { $('msg').textContent = e.message; }
+    };
+    wrap.append(invoice);
     return wrap.children.length ? wrap : null;
   }));
   $('low').replaceChildren(table(['sku', 'name', 'stock', 'reorder_level', 'supplier'], await api('/api/inventory/low-stock')));
@@ -164,6 +175,75 @@ const load = guard(async () => {
     });
     return btn;
   }));
+
+  const rawReviews = await api('/api/reviews?status=all');
+  const reviewRows = rawReviews.map((r) => ({
+    id: r.id, product: r.product_name, author: r.author, rating: '★'.repeat(r.rating),
+    status: r.status, title: r.title || '—', verified: r.verified ? 'Yes' : '', raw: r,
+  }));
+  $('reviews').replaceChildren(table(['id', 'product', 'author', 'rating', 'status', 'title', 'verified'], reviewRows, (r) => {
+    const wrap = el('div', '', { className: 'row-actions' });
+    if (r.raw.status !== 'approved') {
+      const ok = el('button', 'Approve');
+      ok.onclick = guard(async () => { await api(`/api/reviews/${r.raw.id}`, { method: 'PATCH', body: { status: 'approved' } }); await load(); return `Review #${r.raw.id} approved.`; });
+      wrap.append(ok);
+    }
+    if (r.raw.status !== 'rejected') {
+      const no = el('button', 'Reject');
+      no.onclick = guard(async () => { await api(`/api/reviews/${r.raw.id}`, { method: 'PATCH', body: { status: 'rejected' } }); await load(); return `Review #${r.raw.id} rejected.`; });
+      wrap.append(no);
+    }
+    const del = el('button', 'Delete');
+    del.onclick = guard(async () => { await api(`/api/reviews/${r.raw.id}`, { method: 'DELETE' }); await load(); return `Review #${r.raw.id} deleted.`; });
+    wrap.append(del);
+    return wrap;
+  }));
+
+  const imageProducts = await api('/api/products?limit=200');
+  const manager = el('div', '', { className: 'image-manager' });
+  for (const p of imageProducts) {
+    const row = el('div', '', { className: 'image-row' });
+    const thumb = el('img', '', { src: p.image_url || '/products/staples.jpg', alt: p.name, className: 'image-thumb' });
+    const meta = el('div', '', { className: 'image-meta' });
+    meta.append(el('strong', p.name), el('small', p.sku));
+    const input = el('input', '', { className: 'image-url', value: p.image_url || '' });
+    input.placeholder = '/api/images/12 or https://…';
+    const file = el('input', '', { type: 'file', className: 'image-file' });
+    file.accept = 'image/*';
+    const save = el('button', 'Save URL');
+    save.dataset.id = String(p.id);
+    save.onclick = guard(async () => {
+      await api(`/api/products/${p.id}`, { method: 'PUT', body: { image_url: input.value.trim() || null } });
+      await load();
+      return `${p.name} image updated.`;
+    });
+    file.onchange = guard(async () => {
+      const chosen = file.files && file.files[0];
+      if (!chosen) return '';
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Could not read image'));
+        reader.readAsDataURL(chosen);
+      });
+      const up = await api('/api/images', { method: 'POST', body: { content_type: chosen.type, data: dataUrl } });
+      await api(`/api/products/${p.id}`, { method: 'PUT', body: { image_url: up.url } });
+      await load();
+      return `${p.name} image uploaded.`;
+    });
+    row.append(thumb, meta, input, file, save);
+    manager.append(row);
+  }
+  $('images').replaceChildren(manager);
+
+  $('stock-alerts').replaceChildren(table(['id', 'product', 'email', 'created_at'], await api('/api/stock-alerts')));
+  const cartRows = (await api('/api/carts')).map((c) => ({
+    id: c.id, email: c.email, items: c.item_count, subtotal: money(c.subtotal_cents), updated_at: c.updated_at,
+    reminded: c.reminded_at ? 'Yes' : '—', recovered: c.recovered_at ? 'Yes' : '—',
+  }));
+  $('carts').replaceChildren(table(['id', 'email', 'items', 'subtotal', 'updated_at', 'reminded', 'recovered'], cartRows));
+
+  $('audit').replaceChildren(table(['id', 'created_at', 'actor_email', 'action', 'entity', 'entity_id', 'detail'], await api('/api/audit?limit=100')));
 });
 
 $('go').onclick = guard(async () => {
@@ -179,5 +259,15 @@ $('process-subs').onclick = guard(async () => {
   const r = await api('/api/subscriptions/process', { method: 'POST' });
   await load();
   return `Processed ${r.processed} due subscription${r.processed === 1 ? '' : 's'}.`;
+});
+$('notify-restock').onclick = guard(async () => {
+  const r = await api('/api/automations/back-in-stock', { method: 'POST' });
+  await load();
+  return `Notified ${r.notified} waiting customer${r.notified === 1 ? '' : 's'}.`;
+});
+$('remind-carts').onclick = guard(async () => {
+  const r = await api('/api/automations/abandoned-carts', { method: 'POST', body: {} });
+  await load();
+  return `Sent ${r.reminded} reminder${r.reminded === 1 ? '' : 's'}.`;
 });
 if (token) load();

@@ -55,6 +55,16 @@ The app itself has zero npm dependencies: Node.js ≥ 22.13 (built-in `node:http
 
 The REST API is mobile-app friendly: a React Native / Expo app can reuse every endpoint as-is.
 
+**Trust, retention & operations**
+- Real product photography: staff upload an image (stored inline and served from `GET /api/images/:id`) or paste a URL per product from the dashboard's product-image manager; every product still falls back to a category-appropriate placeholder
+- Customer reviews with star ratings, an optional photo and a verified-purchase badge derived from paid order history, moderated in the staff dashboard before they appear; product payloads carry `rating_average`/`rating_count` and cards show stars
+- Back-in-stock alerts: out-of-stock products offer "Notify me", and `POST /api/automations/back-in-stock` emails everyone waiting once stock returns
+- Abandoned-cart recovery: signed-in carts are snapshotted server-side (`PUT /api/cart`), `POST /api/automations/abandoned-carts` chases quiet carts, and placing an order clears the snapshot
+- Audit log of privileged actions (`GET /api/audit`) and per-IP rate limiting on API and auth endpoints
+- Printable invoices at `GET /api/orders/:id/invoice` (owner or staff), linked from the account orders and the staff dashboard
+- A product detail modal with imagery, description, ratings and a review form
+- CI (`.github/workflows/ci.yml`) runs the full test suite on every push and pull request
+
 ## Installable web app (PWA)
 The storefront is installable and works offline for the app shell. It ships a web app manifest
 (`public/manifest.webmanifest`), an SVG app icon (`public/app-icon.svg`) and a service worker
