@@ -39,7 +39,7 @@ async function makeProduct(admin, sku, name, price, extra = {}) {
   }, admin)).data;
 }
 
-const tag = (id, kind, value) => db.prepare('INSERT INTO product_tags (product_id, kind, value) VALUES (?,?,?)').run(id, kind, value);
+const tag = (id, kind, value) => db.prepare('INSERT OR IGNORE INTO product_tags (product_id, kind, value) VALUES (?,?,?)').run(id, kind, value);
 const setSpice = (id, level) => db.prepare('UPDATE products SET spice_level = ? WHERE id = ?').run(level, id);
 const setWholesale = (id, cents) => db.prepare('UPDATE products SET wholesale_price_cents = ? WHERE id = ?').run(cents, id);
 

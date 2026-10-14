@@ -109,7 +109,52 @@ export function classifyProduct(product) {
 // A wholesale (restaurant / B2B) price: comfortably above cost, below retail,
 // rounded to a tidy five cents.
 export function wholesalePriceCents(priceCents, costCents) {
-  const target = Math.max(Math.round(costCents * 1.12), Math.round(priceCents * 0.82));
+  const cost = costCents ?? 0;
+  const target = Math.max(Math.round(cost * 1.12), Math.round(priceCents * 0.82));
   const capped = Math.min(priceCents - 5, target);
   return Math.max(0, Math.round(capped / 5) * 5);
+}
+
+export const BUNDLE_SERVES = {
+  'EGS-BND': 4, 'JOL-BND': 12, 'FUF-BND': 4, 'YAM-BND': 4, 'BRK-BND': 2,
+  'BRA-BND': 4, 'GHA-BND': 6, 'JWAR-BND': 8, 'VEG-BND': 4, 'GLW-BND': 1,
+};
+export const DEFAULT_SERVES_BY_TYPE = { party_pack: 10, meal_pack: 4, starter_pack: 4, gift_box: 2, taste_box: 6 };
+export function servesForBundle(sku, type) {
+  return BUNDLE_SERVES[sku] ?? DEFAULT_SERVES_BY_TYPE[type] ?? 0;
+}
+
+export function applyProductMeta(db, product, opts = {}) {
+  const preserve = opts.preserve ?? false;
+  const meta = classifyProduct({ sku: product.sku, name: product.name, category: product.category ?? product.category_name });
+  const prod = db.prepare('SELECT spice_level, wholesale_price_cents FROM products WHERE id = ?').get(product.id);
+  if (!preserve || prod.spice_level === 0) {
+    db.prepare('UPDATE products SET spice_level = ? WHERE id = ?').run(meta.spice, product.id);
+  }
+  if (!preserve || prod.wholesale_price_cents == null) {
+    db.prepare('UPDATE products SET wholesale_price_cents = ? WHERE id = ?')
+      .run(wholesalePriceCents(product.price_cents, product.cost_cents ?? 0), product.id);
+  }
+  if (preserve) {
+    return meta;
+  }
+  const del = db.prepare('DELETE FROM product_tags WHERE product_id = ?');
+  const ins = db.prepare('INSERT OR IGNORE INTO product_tags (product_id, kind, value) VALUES (?,?,?)');
+  del.run(product.id);
+  for (const c of meta.cuisines) ins.run(product.id, 'cuisine', c);
+  for (const d of meta.diet) ins.run(product.id, 'diet', d);
+  if (meta.origin) ins.run(product.id, 'origin', meta.origin);
+  return meta;
+}
+
+export function syncCatalogMeta(db) {
+  const products = db.prepare(
+    `SELECT p.id, p.sku, p.name, p.price_cents, p.cost_cents, c.name AS category
+     FROM products p LEFT JOIN categories c ON c.id = p.category_id
+     WHERE NOT EXISTS (SELECT 1 FROM product_tags t WHERE t.product_id = p.id)`).all();
+  for (const p of products) applyProductMeta(db, p, { preserve: false });
+  const bundles = db.prepare('SELECT id, sku, bundle_type FROM bundles WHERE serves = 0').all();
+  const upd = db.prepare('UPDATE bundles SET serves = ? WHERE id = ?');
+  for (const b of bundles) upd.run(servesForBundle(b.sku, b.bundle_type), b.id);
+  return { products: products.length, bundles: bundles.length };
 }

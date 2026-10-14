@@ -1,4 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
+import { syncCatalogMeta } from './catalog-meta.js';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS users (
@@ -321,6 +322,7 @@ export function openDb(path = ':memory:') {
   db.exec('CREATE INDEX IF NOT EXISTS idx_orders_location ON orders(location_id)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(payment_status)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_subscriptions_next ON subscriptions(status, next_run_on)');
+  try { syncCatalogMeta(db); } catch {}
   return db;
 }
 

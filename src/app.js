@@ -16,6 +16,7 @@ import { applyReferral, referralCode, tierFor, lifetimeSpendCents, pointsFor } f
 import { registerDiscoveryRoutes, expandQuery, attachTags, ORIGIN_LABELS, CUISINE_LABELS, DIET_LABELS } from './discovery.js';
 import { BASE_CURRENCY, currencyList } from './currencies.js';
 import { registerCateringRoutes } from './catering.js';
+import { applyProductMeta } from './catalog-meta.js';
 
 const PUBLIC_DIR = resolve(fileURLToPath(new URL('../public', import.meta.url)));
 const MIME = {
@@ -327,6 +328,8 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const cols = Object.keys(f);
     try {
       const { lastInsertRowid } = run(`INSERT INTO products (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`, ...cols.map((c) => f[c]));
+      const created = get('SELECT * FROM products WHERE id = ?', lastInsertRowid);
+      try { const row = get(`SELECT p.*, c.name AS category FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?`, created.id); applyProductMeta(db, row, { preserve: true }); } catch {}
       return reply(201, get('SELECT * FROM products WHERE id = ?', lastInsertRowid));
     } catch (e) {
       if (/FOREIGN KEY/.test(e.message)) throw bad('Unknown category or supplier');
@@ -342,6 +345,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     if (!cols.length) throw bad('No fields to update');
     try {
       run(`UPDATE products SET ${cols.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`, ...cols.map((c) => f[c]), ctx.params.id);
+      try { const row = get(`SELECT p.*, c.name AS category FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?`, ctx.params.id); applyProductMeta(db, row, { preserve: true }); } catch {}
     } catch (e) {
       if (/UNIQUE/.test(e.message)) throw new HttpError(409, 'SKU exists');
       if (/FOREIGN KEY/.test(e.message)) throw bad('Unknown category or supplier');
