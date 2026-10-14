@@ -31,7 +31,7 @@ const MAX_BODY = 1_000_000;
 const ORDER_STATUSES = ['pending', 'paid', 'packed', 'shipped', 'delivered', 'cancelled'];
 const DELIVERY_SERVICES = ['dhl', 'dpd', 'hermes'];
 const FULFILLMENT_OPTIONS = ['delivery', 'pickup'];
-const PAYMENT_METHODS = ['card', 'paypal', 'klarna', 'invoice', 'manual'];
+const PAYMENT_METHODS = ['card', 'paypal', 'klarna', 'manual'];
 const PAYMENT_STATUSES = ['unpaid', 'paid', 'failed', 'refunded'];
 
 class HttpError extends Error {
@@ -464,6 +464,34 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const o = get('SELECT * FROM orders WHERE id = ?', ctx.params.id);
     if (!o || (user.role === 'customer' && o.user_id !== user.id)) throw notFound();
     return orderWithItems(o);
+  });
+
+  // Public delivery tracking: an order number plus the email used to place it.
+  route('GET', '/api/track', (ctx) => {
+    const rawOrder = String(ctx.query.get('order') ?? '').trim();
+    if (!/^\d+$/.test(rawOrder)) throw bad('order must be a number');
+    const orderId = Number(rawOrder);
+    const email = str(ctx.query.get('email'), 'email', { max: 200 }).toLowerCase();
+    const o = get('SELECT * FROM orders WHERE id = ?', orderId);
+    if (!o) throw notFound();
+    const owner = get('SELECT email FROM users WHERE id = ?', o.user_id);
+    if (!owner || String(owner.email).toLowerCase() !== email) throw notFound();
+    const items = all(
+      `SELECT oi.quantity, oi.unit_price_cents, p.name
+       FROM order_items oi LEFT JOIN products p ON p.id = oi.product_id
+       WHERE oi.order_id = ?`, o.id);
+    return {
+      id: o.id,
+      status: o.status,
+      fulfillment: o.fulfillment,
+      delivery_service: o.delivery_service,
+      created_at: o.created_at,
+      total_cents: o.total_cents,
+      payment_status: o.payment_status,
+      shipping_address: o.shipping_address,
+      pickup_at: o.pickup_at,
+      items,
+    };
   });
 
   route('PATCH', '/api/orders/:id/status', (ctx) => {

@@ -687,6 +687,33 @@ $('q').oninput = () => loadProducts().catch(fail);
 $('cat').onchange = () => loadProducts().catch(fail);
 document.querySelectorAll('input[name="fulfillment"]').forEach((radio) => radio.addEventListener('change', applyFulfillment));
 $('addr').addEventListener('input', renderTotals);
+$('track-form').onsubmit = async (event) => {
+  event.preventDefault();
+  const spot = $('track-result');
+  const id = String($('track-order').value).replace(/[^0-9]/g, '');
+  const email = $('track-email').value.trim();
+  if (!id || !email) {
+    spot.replaceChildren(el('p', t('track.missing'), { className: 'empty-state' }));
+    return;
+  }
+  spot.replaceChildren(el('p', t('track.loading'), { className: 'tracker-loading' }));
+  try {
+    const order = await api(`/api/track?order=${encodeURIComponent(id)}&email=${encodeURIComponent(email)}`);
+    const box = el('div', undefined, { className: 'track-box' });
+    box.append(el('h3', `#${order.id}`, { className: 'tracker-order' }));
+    box.append(buildTracker(order));
+    if (order.items?.length) {
+      const list = el('ul', undefined, { className: 'tracker-items' });
+      for (const item of order.items) {
+        list.append(el('li', `${item.quantity} × ${item.name ?? 'Item'}`));
+      }
+      box.append(list);
+    }
+    spot.replaceChildren(box);
+  } catch {
+    spot.replaceChildren(el('p', t('track.notFound'), { className: 'empty-state' }));
+  }
+};
 
 // ---------- Catering: party planner & quote request ----------
 async function planParty() {

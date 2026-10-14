@@ -1,5 +1,6 @@
 import { openDb } from './db.js';
 import { classifyProduct, wholesalePriceCents } from './catalog-meta.js';
+import { hashPassword } from './auth.js';
 
 const db = openDb(process.env.DB_PATH || 'afromart.db');
 const categoryNames = ['Dry Goods', 'Fresh Produce', 'Beverages', 'Spices', 'Frozen', 'Snacks', 'Oils & Condiments', 'Rice & Grains', 'Meat & Fish', 'Health & Beauty'];
@@ -392,3 +393,17 @@ console.log(`Seeded ${added} new products (${products.length - added} existing S
 console.log(`Tagged ${taggedProducts} products with origin/cuisine/diet + spice level and wholesale prices.`);
 console.log(`Bundles: ${addedBundles} created.${skippedBundles.length ? ` Skipped ${skippedBundles.length} due to missing SKUs: ${skippedBundles.join('; ')}` : ''}`);
 console.log(`Recipes: ${addedRecipes} created.${skippedRecipes.length ? ` Skipped ${skippedRecipes.length} (missing ingredients): ${skippedRecipes.join('; ')}` : ''}`);
+
+// Guarantee an administrator so the staff dashboard at /admin is usable on a
+// fresh database. Overridable with ADMIN_EMAIL / ADMIN_PASSWORD.
+const adminEmail = String(process.env.ADMIN_EMAIL || 'davidsmith24u@gmail.com').trim().toLowerCase();
+const adminPassword = String(process.env.ADMIN_PASSWORD || 'Afro-b6135c923e43');
+if (adminEmail && adminPassword && !db.prepare('SELECT 1 FROM users WHERE email = ?').get(adminEmail)) {
+  db.prepare("INSERT INTO users (email, name, password_hash, role) VALUES (?, 'Administrator', ?, 'admin')")
+    .run(adminEmail, hashPassword(adminPassword));
+  console.log(`Admin user created: ${adminEmail}`);
+} else if (db.prepare("SELECT 1 FROM users WHERE role = 'admin'").get()) {
+  console.log('Admin user already present.');
+} else {
+  console.log('No admin user configured.');
+}

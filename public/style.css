@@ -2,24 +2,24 @@
 
 :root {
   color-scheme: light;
-  /* Warm African palette: clay, ochre, kente gold, forest green, indigo */
-  --ink: #2b211c;
-  --ink-soft: #4a3b32;
-  --muted: #7b6857;
-  --clay: #a8401d;
-  --clay-deep: #7d2f12;
-  --clay-soft: #c05a2f;
+  /* Afromart red theme with kente gold accents */
+  --ink: #2a1414;
+  --ink-soft: #4a2626;
+  --muted: #7d5656;
+  --clay: #c0192b;
+  --clay-deep: #7f0d18;
+  --clay-soft: #d43a3a;
   --ochre: #e0a12f;
   --gold: #f4cf7a;
   --green: #3c6b45;
   --green-deep: #2c5234;
   --indigo: #22385f;
-  --cream: #fbf3e6;
-  --paper: #fffdf8;
-  --sand: #f3e6d2;
-  --line: #ecdfcb;
-  --shadow: 0 16px 34px rgb(84 44 16 / 12%);
-  --shadow-sm: 0 6px 16px rgb(84 44 16 / 8%);
+  --cream: #fdeeee;
+  --paper: #fff8f8;
+  --sand: #f7dcdc;
+  --line: #f0c9c9;
+  --shadow: 0 16px 34px rgb(120 12 24 / 14%);
+  --shadow-sm: 0 6px 16px rgb(120 12 24 / 10%);
   --serif: 'Fraunces', 'DM Serif Display', Georgia, serif;
   --sans: 'Plus Jakarta Sans', 'DM Sans', 'Helvetica Neue', sans-serif;
 }
@@ -64,10 +64,19 @@ h1, h2, h3 { font-optical-sizing: auto; }
   grid-template-columns: 1fr minmax(260px, 480px) 1fr;
   align-items: center;
   gap: 32px;
-  background: var(--cream);
-  background: color-mix(in srgb, var(--cream) 92%, transparent);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(120deg, var(--clay-deep), var(--clay));
+  color: #fff;
+  box-shadow: var(--shadow-sm);
 }
+.site-header .brand-words { color: #fff; }
+.site-header .brand small { color: var(--gold); }
+.site-header #acct a, .site-header #acct span { color: #fff; }
+.site-header #acct button { color: var(--gold); }
+.site-header .install-app { border-color: #fff; color: #fff; }
+.site-header .track-link { border-color: #fff; color: #fff; }
+.site-header .track-link:hover { background: #fff; color: var(--clay); }
+.site-header .cart-link { background: #fff; color: var(--clay); }
+.site-header .cart-link #cart-count { background: var(--gold); color: var(--clay-deep); }
 .brand { display: inline-flex; align-items: center; gap: 11px; width: fit-content; font: 26px/.9 var(--serif); }
 .brand-mark { width: 44px; height: 44px; flex: none; border-radius: 50%; box-shadow: var(--shadow-sm); }
 .brand-words { display: flex; flex-direction: column; }
@@ -285,6 +294,21 @@ main { max-width: 1320px; padding: 0 40px; margin: 0 auto; }
 .tracker-courier, .tracker-reference { margin: 2px 0 0; color: var(--muted); font-size: 10px; }
 .tracker-cancelled { margin: 0; color: var(--clay); font-size: 11px; font-weight: 700; }
 .track-row td { background: #fdf6ea; }
+.track-section { margin: 34px 0 8px; padding: 26px 26px 28px; border: 1px solid var(--line); border-radius: 22px; background: var(--paper); box-shadow: var(--shadow-sm); }
+.track-intro { margin: 0 0 16px; color: var(--muted); font-size: 13px; max-width: 60ch; }
+.track-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: end; gap: 10px 14px; }
+.track-form label { font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+.track-form input { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--cream); }
+.track-form .checkout-button { grid-column: auto; align-self: end; }
+.track-result { margin-top: 16px; }
+.track-box { padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--cream); }
+.tracker-order { margin: 0 0 6px; color: var(--clay); font-size: 15px; }
+.tracker-items { margin: 8px 0 0; padding-left: 18px; color: var(--ink-soft); font-size: 12px; }
+.tracker-loading { margin: 0; color: var(--muted); font-size: 12px; }
+@media (max-width: 720px) {
+  .track-form { grid-template-columns: 1fr; }
+  .track-form .checkout-button { width: 100%; }
+}
 
 /* ---------- Recipes ---------- */
 .recipe-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
@@ -333,13 +357,14 @@ main { max-width: 1320px; padding: 0 40px; margin: 0 auto; }
 .orders-section th { color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 
 /* ---------- Footer ---------- */
-footer { min-height: 118px; padding: 26px max(32px, calc((100vw - 1176px) / 2)); display: flex; align-items: center; justify-content: space-between; gap: 20px; background: #241a14; color: #f4ecdf; }
+footer { min-height: 118px; padding: 26px max(32px, calc((100vw - 1176px) / 2)); display: flex; align-items: center; justify-content: space-between; gap: 20px; background: var(--clay-deep); color: #f4ecdf; }
 .footer-brand { color: #fff; font-size: 23px; }
 .footer-brand .brand-mark { width: 38px; height: 38px; }
-.footer-brand small { color: var(--clay); }
-footer p { margin: 0; color: var(--muted); max-width: 760px; line-height: 1.6; }
+.footer-brand small { color: var(--gold); }
+footer p { margin: 0; color: #e9b9b9; max-width: 760px; line-height: 1.6; }
 .footer-brand .brand-light { color: var(--gold); }
-footer p, footer > span { margin: 0; color: #c2ac93; font-size: 10px; }
+.footer-staff { color: var(--gold); font-size: 11px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+footer p, footer > span { margin: 0; color: #e0c1c1; font-size: 10px; }
 
 /* ---------- Staff dashboard ---------- */
 .admin-page { background: var(--cream); }

@@ -34,7 +34,7 @@
 	<div class="announcement">
 		<div class="announcement-inner">
 			<span aria-hidden="true">✳</span>
-			<span data-i18n="announce.1">Welcome home — free delivery on orders over €50 in Berlin &amp; Hamburg</span>
+			<span data-i18n="announce.1">Free delivery on orders over €50 within Germany</span>
 			<span class="announcement-dot" aria-hidden="true">•</span>
 			<span data-i18n="announce.2">Now pick up in store, or set up a monthly pantry pack</span>
 		</div>
@@ -274,7 +274,6 @@
 							<label class="payment-option"><input type="radio" name="payment_method" value="card" checked><span class="payment-tile"><span class="payment-icon" aria-hidden="true">💳</span><strong data-i18n="payment.card">Card</strong><small data-i18n="payment.cardSmall">Visa, Mastercard, Amex</small></span></label>
 							<label class="payment-option"><input type="radio" name="payment_method" value="paypal"><span class="payment-tile"><span class="payment-icon" aria-hidden="true">🅿️</span><strong>PayPal</strong><small data-i18n="payment.paypalSmall">Pay with your PayPal account</small></span></label>
 							<label class="payment-option"><input type="radio" name="payment_method" value="klarna"><span class="payment-tile"><span class="payment-icon" aria-hidden="true">🧾</span><strong>Klarna</strong><small data-i18n="payment.klarnaSmall">Pay later in 3 instalments</small></span></label>
-							<label class="payment-option"><input type="radio" name="payment_method" value="invoice"><span class="payment-tile"><span class="payment-icon" aria-hidden="true">📄</span><strong data-i18n="payment.invoice">Invoice</strong><small data-i18n="payment.invoiceSmall">Pay by bank transfer</small></span></label>
 							<label class="payment-option"><input type="radio" name="payment_method" value="manual"><span class="payment-tile"><span class="payment-icon" aria-hidden="true">💶</span><strong data-i18n="payment.cod">Cash on delivery</strong><small data-i18n="payment.codSmall">Pay the courier on arrival</small></span></label>
 						</div>
 						<p class="payment-note" data-i18n="payment.note">Payments are collected securely. Card and PayPal details are never stored on our servers.</p>
@@ -316,6 +315,24 @@
 		</section>
 
 		<section id="orders" class="orders-section"></section>
+
+		<section id="track" class="track-section" aria-labelledby="track-title">
+			<div class="section-heading compact-heading">
+				<div>
+					<p class="eyebrow" data-i18n="track.eyebrow">Where is my order?</p>
+					<h2 id="track-title" data-i18n="track.title">Track your delivery</h2>
+				</div>
+			</div>
+			<p class="track-intro" data-i18n="track.intro">Enter your order number and the email you used, and we'll show you exactly where your parcel is.</p>
+			<form id="track-form" class="track-form">
+				<label for="track-order" data-i18n="track.order">Order number</label>
+				<input id="track-order" inputmode="numeric" placeholder="#1024" autocomplete="off">
+				<label for="track-email" data-i18n="track.email">Email address</label>
+				<input id="track-email" type="email" placeholder="you@example.com" autocomplete="email">
+				<button type="submit" class="checkout-button" data-i18n="track.button">Track my order</button>
+			</form>
+			<div id="track-result" class="track-result" aria-live="polite"></div>
+		</section>
 	</main>
 
 	<footer>
@@ -325,6 +342,7 @@
 		</a>
 		<p data-i18n="footer.tagline">Authentic African Foods — Right to Your Door. Quality service • Trusted sources • Fast &amp; reliable delivery • Track your delivery.</p>
 		<p>Free delivery on orders over €50 within Germany</p>
+		<a class="footer-staff" href="/admin" data-i18n="footer.staff">Staff dashboard</a>
 		<span>© AFROMART</span>
 	</footer>
 
