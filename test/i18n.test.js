@@ -21,7 +21,7 @@ test('i18n: interpolation and safe fallback', () => {
   assert.equal(translate('de', 'cart.items', { n: 3 }), '3 Artikel in deiner Tasche');
   assert.equal(translate('fr', 'cart.item', { n: 1 }), '1 article dans votre panier');
   // Unknown locale falls back to English; unknown key returns the key.
-  assert.equal(translate('xx', 'hero.title'), 'Every pot tells a story.');
+  assert.equal(translate('xx', 'hero.title'), 'Authentic African Foods — Right to Your Door');
   assert.equal(translate('en', 'nope.key'), 'nope.key');
   assert.equal(makeT('de')('cart.ready'), 'Bereit, wenn du es bist');
 });

@@ -45,7 +45,7 @@ The app itself has zero npm dependencies: Node.js ≥ 22.13 (built-in `node:http
 - Every one of the 123 SKUs is classified by origin (Nigeria, Ghana, South Africa, Ethiopia, Kenya, Senegal, Cameroon, DR Congo, Somalia, …), cuisine, diet (halal, vegan, vegetarian, gluten-free) and a 0–5 spice level
 - A discovery filter bar on the storefront — origin and cuisine chips, diet and heat filters, and sort by name/price/heat — backed by `GET /api/discovery/facets`
 - Synonym-aware search that understands everyday diaspora names (*ata rodo* → scotch bonnet, *ugwu* → spinach, *semo* → semovita) on top of the plain text index
-- Multi-language storefront (English, German, French) and display-currency switcher (EUR base, plus GBP/CHF/USD/CAD/NGN/GHS/ZAR/…), both remembered per browser
+- Multi-language storefront (English, German, French) and display-currency switcher (EUR, USD, GBP), both remembered per browser
 
 **Party, catering & wholesale**
 - Recipe scaler: any recipe multiplied for a given number of guests, with per-guest cost (`GET /api/recipes/:id/scale`)

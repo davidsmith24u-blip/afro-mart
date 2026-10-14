@@ -73,7 +73,8 @@ const ORIGIN_BY_SKU = {
 // 0 (mild) to 5 (fiery). Anything not listed falls back to the category
 // default below so mild staples stay at 0.
 const SPICE_OVERRIDES = {
-  'PEP-001': 5, 'DPP-001': 5, 'AGR-001': 5, 'NGM-001': 5,
+  'PEP-001': 5, 'DPP-001': 5, 'AGR-001': 5, 'NGM-001': 5, 'ATA-001': 5,
+  'SUY-001': 4,
   'SPC-001': 4, 'PSP-001': 4, 'BER-001': 4, 'UDA-001': 4, 'EHX-001': 4,
   'NZS-001': 4, 'OFA-001': 4, 'PPR-002': 4, 'PIL-001': 4, 'KEN-001': 4, 'YAS-001': 4,
   'JOL-001': 3, 'JOL-002': 3, 'EGM-001': 3, 'CRY-001': 3, 'CRY-002': 3,
@@ -86,7 +87,7 @@ const SPICE_OVERRIDES = {
 const SPICE_BY_CATEGORY = { Spices: 3, 'Fresh Produce': 1 };
 
 // Animal products are not vegan/vegetarian (keyword match on the product name).
-const ANIMAL_RE = /crayfish|prawn|catfish|croaker|stockfish|snail|ponmo|cow foot|nkwobi|goat|snapper|sardine|biltong|kilishi|dambun|nama|chicken|beef|pork|fish|meat|shrimp|turkey|lamb/i;
+const ANIMAL_RE = /crayfish|prawn|catfish|croaker|stockfish|snail|ponmo|cow foot|nkwobi|goat|snapper|sardine|biltong|kilishi|dambun|nama|chicken|beef|pork|fish|meat|shrimp|turkey|lamb|cheese|wara/i;
 
 // Wheat/malt products are not gluten-free.
 const GLUTEN_RE = /semovita|semolina|wheat|chin chin|puff puff|malt|barley|\bbread\b|pasta|noodle/i;
@@ -118,6 +119,7 @@ export function wholesalePriceCents(priceCents, costCents) {
 export const BUNDLE_SERVES = {
   'EGS-BND': 4, 'JOL-BND': 12, 'FUF-BND': 4, 'YAM-BND': 4, 'BRK-BND': 2,
   'BRA-BND': 4, 'GHA-BND': 6, 'JWAR-BND': 8, 'VEG-BND': 4, 'GLW-BND': 1,
+  'STU-BND': 2, 'FAM-BND': 8, 'XMS-BND': 6, 'HMP-BND': 4, 'NYC-BND': 6,
 };
 export const DEFAULT_SERVES_BY_TYPE = { party_pack: 10, meal_pack: 4, starter_pack: 4, gift_box: 2, taste_box: 6 };
 export function servesForBundle(sku, type) {

@@ -565,28 +565,60 @@ async function loadMember() {
     subsBox.append(row);
   }
 }
+const TRACK_STAGES = ['pending', 'paid', 'packed', 'shipped', 'delivered'];
 async function loadOrders() {
   if (!user) return;
   const orders = await api('/api/orders');
   const table = el('table');
   const head = el('thead');
   const headingRow = el('tr');
-  for (const label of ['Order', 'Placed', 'Status', 'Payment', 'How', 'Total']) headingRow.append(el('th', label));
+  for (const label of [t('orders.th.order'), t('orders.th.placed'), t('orders.th.status'), t('orders.th.payment'), t('orders.th.how'), t('orders.th.total'), t('orders.th.track')]) {
+    headingRow.append(el('th', label));
+  }
   head.append(headingRow);
   const body = el('tbody');
   for (const o of orders) {
     const tr = el('tr');
-    const paymentLabel = o.payment_status === 'unpaid' ? 'Unpaid' : o.payment_status === 'paid' ? 'Paid' : o.payment_status;
+    const paymentLabel = t(`payment.status.${o.payment_status}`);
+    const methodLabel = t(`payment.method.${o.payment_method}`) === `payment.method.${o.payment_method}` ? (o.payment_method || '') : t(`payment.method.${o.payment_method}`);
     for (const value of [
-      `#${o.id}`, o.created_at, o.status, paymentLabel,
-      o.fulfillment === 'pickup' ? 'Pickup' : 'Delivery', money(o.total_cents),
+      `#${o.id}`, o.created_at, t(`orders.status.${o.status}`), `${paymentLabel} · ${methodLabel}`,
+      o.fulfillment === 'pickup' ? t('orders.pickup') : t('orders.delivery'), money(o.total_cents),
     ]) {
       tr.append(el('td', value));
     }
-    body.append(tr);
+    const trackTd = el('td');
+    const trackBtn = el('button', t('orders.track'), { className: 'text-button', type: 'button' });
+    trackTd.append(trackBtn);
+    tr.append(trackTd);
+    const detail = el('tr', undefined, { className: 'track-row', hidden: true });
+    const detailTd = el('td', undefined, { colSpan: 7 });
+    detailTd.append(buildTracker(o));
+    detail.append(detailTd);
+    trackBtn.onclick = () => { detail.hidden = !detail.hidden; };
+    body.append(tr, detail);
   }
   table.append(head, body);
-  $('orders').replaceChildren(el('h2', 'Your orders'), table);
+  $('orders').replaceChildren(el('h2', t('orders.title')), table);
+}
+function buildTracker(o) {
+  const box = el('div', undefined, { className: 'tracker' });
+  if (o.status === 'cancelled') {
+    box.append(el('p', t('orders.cancelled'), { className: 'tracker-cancelled' }));
+    return box;
+  }
+  const current = Math.max(0, TRACK_STAGES.indexOf(o.status));
+  const stages = el('ol', undefined, { className: 'tracker-stages' });
+  for (const [i, stage] of TRACK_STAGES.entries()) {
+    const li = el('li', t(`orders.status.${stage}`), { className: i <= current ? 'is-done' : '' });
+    stages.append(li);
+  }
+  box.append(stages);
+  const eta = new Date(new Date(o.created_at).getTime() + 3 * 86400000).toLocaleDateString(currencyFor(displayCurrency).locale || 'de-DE');
+  box.append(el('p', t('orders.eta', { date: eta }), { className: 'tracker-eta' }));
+  if (o.delivery_service) box.append(el('p', t('orders.courier', { courier: o.delivery_service.toUpperCase() }), { className: 'tracker-courier' }));
+  if (o.payment_reference) box.append(el('p', t('orders.reference', { ref: o.payment_reference }), { className: 'tracker-reference' }));
+  return box;
 }
 async function subscribe(bundleId) {
   if (!user) throw new Error('Please log in to start a monthly pack');
@@ -633,6 +665,7 @@ $('checkout').onclick = async () => {
       items,
       fulfillment,
       delivery_service: document.querySelector('input[name="delivery_service"]:checked').value,
+      payment_method: document.querySelector('input[name="payment_method"]:checked')?.value ?? 'card',
       shipping_country: 'DE',
     };
     if (fulfillment === 'pickup') {

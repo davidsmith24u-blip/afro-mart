@@ -149,6 +149,33 @@ const products = [
   ['SHH-001', 'Somali shaah spice tea 250g', 'The Somali chai blend of black tea, cardamom, cinnamon, clove and ginger — brew it strong with milk and sugar.', 'Beverages', 599, 370, 18, 6, 24],
   ['YAS-001', 'Yassa seasoning 100g', 'A bright Senegalese blend of onion, lemon, mustard and chilli — the tangy marinade behind poulet yassa.', 'Spices', 549, 330, 20, 7, 28],
   ['NDL-001', 'Ndole (bitterleaf) pack 400g', 'Prepped bitterleaf and groundnut base for Cameroonian ndole — simmer with prawns or beef for a rich, nutty stew.', 'Frozen', 899, 560, 14, 5, 20],
+  // ---- More Nigerian favourites (Afro Mart Bochum) ----
+  ['ATA-001', 'Ata rodo (scotch bonnet) powder 100g', 'Fiery ground scotch bonnet with a clean, fruity heat — the backbone of Nigerian pepper soup, stews and marinades.', 'Spices', 399, 220, 24, 8, 32],
+  ['SUY-001', 'Suya spice (yaji) 100g', 'The smoky, nutty yaji blend of groundnut, ginger, paprika and chilli — rub it on skewers or sprinkle over grilled anything.', 'Spices', 499, 300, 24, 8, 32],
+  ['EFO-001', 'Efo tete (African spinach) 400g', 'Frozen chopped African spinach with a tender, earthy leaf — perfect for efo riro, efo elegusi and quick vegetable soups.', 'Frozen', 549, 340, 16, 5, 22],
+  ['MFN-001', 'Moin moin mix 500g', 'A seasoned bean-flour blend to steam the classic savoury bean pudding — just add water, pepper and oil, then wrap and cook.', 'Dry Goods', 749, 470, 16, 5, 22],
+  ['KOK-001', 'Kokoro (maize & garri snack) 150g', 'Crunchy, lightly sweet maize-and-garri sticks — the addictive Lagos street snack, best shared with a cold drink.', 'Snacks', 349, 200, 20, 7, 28],
+  ['ZBK-001', 'Zobo drink concentrate 500ml', 'A ready hibiscus-and-ginger concentrate — dilute with water and ice for a deep-red zobo that tastes just like the market.', 'Beverages', 649, 390, 18, 6, 24],
+  ['KUN-001', 'Kunu (millet drink) mix 500g', 'A smooth millet-and-ginger blend for the creamy northern drink — whisk with cold water for a cooling, lightly spiced kunu.', 'Beverages', 599, 360, 18, 6, 24],
+  ['TGM-001', 'Tiger nut milk (kunnu aya) 1L', 'Rich, naturally sweet tiger nut milk — a dairy-free Nigerian favourite that is lovely chilled, over ice or blended with dates.', 'Beverages', 699, 420, 18, 6, 24],
+  ['BEA-001', 'Honey beans (oloyin) 2kg', 'Creamy, sweet oloyin beans that cook soft and hold their shape — the classic choice for ewa agoyin, akara and moin moin.', 'Rice & Grains', 1099, 720, 16, 5, 22],
+  ['BRN-001', 'Brown beans (olotu) 2kg', 'Hearty brown beans with a firm bite and nutty flavour — simmer into a rich pottage or smoky ewa riro.', 'Rice & Grains', 999, 640, 16, 5, 22],
+  ['IJE-001', 'Ijebu garri 2kg', 'Sour, crunchy Ijebu-style cassava garri — soak it cold with groundnut and sugar, or use it to thicken and lift any soup.', 'Rice & Grains', 799, 480, 18, 6, 24],
+  ['PLA-002', 'Unripe plantain flour 1kg', 'Stone-ground green plantain flour, naturally low in sugar — bake into a firm, flavourful swallow or pounded-yam substitute.', 'Rice & Grains', 899, 560, 16, 5, 22],
+  ['PNY-001', 'Poundo yam flour 2kg', 'Instant pounded-yam flour for a smooth, stretchy swallow in minutes — the quick route to a proper yam-and-egusi meal.', 'Rice & Grains', 1099, 700, 16, 5, 22],
+  ['AML-001', 'Amala (yam flour) 2kg', 'The deep-brown yam flour behind silky amala — stir into hot water and serve with gbegiri and ewedu for a true Yoruba plate.', 'Rice & Grains', 999, 630, 16, 5, 22],
+  ['PMO-002', 'Red palm oil 1L', 'Unrefined, deep-red palm oil with the rich aroma of home — the essential base for jollof, banga, stews and efo riro.', 'Oils & Condiments', 899, 560, 18, 6, 24],
+  ['CCN-001', 'Coconut oil 500ml', 'Cold-pressed virgin coconut oil with a clean, tropical sweetness — for frying, baking and skin care alike.', 'Oils & Condiments', 799, 500, 18, 6, 24],
+  ['TMP-001', 'Tomato paste (tinned) 400g', 'Thick, concentrated tomato paste that gives stews a deep red colour and body — a pantry workhorse for Nigerian cooking.', 'Oils & Condiments', 299, 170, 24, 8, 32],
+  ['OGB-002', 'Ogbono (draw soup) seeds 200g', 'Ground wild mango seeds that draw into a glossy, silky soup — cook with stock and assorted meat for the classic ogbono.', 'Oils & Condiments', 749, 470, 16, 5, 22],
+  ['EKU-001', 'Egusi (melon seeds) ground 1kg', 'Freshly ground melon seeds, rich and nutty — the heart of a thick, golden egusi soup with bitterleaf or efo.', 'Oils & Condiments', 1199, 760, 16, 5, 22],
+  ['UGW-001', 'Ugwu (fluted pumpkin leaves) 400g', 'Shredded fluted pumpkin leaves (ugwu) with an earthy, iron-rich bite — stir into egusi, yam or pepper soup.', 'Frozen', 599, 370, 16, 5, 22],
+  ['OGI-002', 'Ogi (white corn pap) 1kg', 'Velvety white corn pap that ferments to a gentle tang — stir with hot water for a silky breakfast or serve with akara.', 'Rice & Grains', 899, 540, 16, 5, 22],
+  ['KLK-002', 'Kuli kuli (groundnut cake) 250g', 'Crunchy spiced groundnut cake pressed into rounds — crumble over salads, snack as is, or grind into suya spice.', 'Snacks', 549, 320, 20, 7, 28],
+  ['BOL-001', 'Boli (roasted plantain) pack 4', 'Sweet, ripe plantain packed for roasting — grill or oven-bake and serve with groundnut and pepper sauce.', 'Fresh Produce', 599, 360, 15, 5, 20],
+  ['AGB-001', 'Agbalumo (African star apple) 500g', 'Tart-sweet African star apple with a chewy skin and tangy flesh — a nostalgic seasonal treat eaten straight from the hand.', 'Fresh Produce', 699, 430, 12, 4, 16],
+  ['WSK-001', 'Wara (soft cheese) 250g', 'Fresh, squeaky Nigerian wara cheese — grill it as a snack or drop it into soups and stews for a mild, milky richness.', 'Fresh Produce', 799, 500, 12, 4, 16],
+  ['AKR-002', 'Akara (bean fritter) mix 500g', 'Peeled, ground bean flour blended with pepper and spice — whip with water and fry golden akara balls in minutes.', 'Dry Goods', 699, 430, 16, 5, 22],
 ];
 let added = 0;
 let refreshed = 0;
@@ -242,6 +269,31 @@ const bundles = [
     sku: 'GLW-BND', name: 'Glow Up: Shea & Hair Care Kit', type: 'gift_box', savings: 10, serves: 1,
     description: 'Self-care from the village to your vanity: raw shea, black soap, hair butter, coconut oil and body butter.',
     items: [['SHE-001', 1], ['BSO-001', 1], ['HAI-001', 1], ['COC-001', 1], ['BTR-001', 1]],
+  },
+  {
+    sku: 'STU-BND', name: 'Student Starter Bundle', type: 'starter_pack', savings: 12, serves: 2,
+    description: 'A student-friendly start to a proper kitchen: garri, rice, honey beans, palm oil, crayfish, pepper, jollof seasoning and stock cubes.',
+    items: [['GAR-001', 1], ['RIC-001', 1], ['BEA-001', 1], ['PAL-001', 1], ['CRY-001', 1], ['PPR-002', 1], ['JOL-001', 1], ['ONG-001', 1]],
+  },
+  {
+    sku: 'FAM-BND', name: 'Family Feast Pack', type: 'meal_pack', savings: 15, serves: 8,
+    description: 'Feed the whole house: a big rice, honey beans, palm fruit, egusi, crayfish, stockfish, pepper, plantain and seasonings.',
+    items: [['RIC-001', 2], ['BEA-001', 1], ['PAL-002', 1], ['EGU-001', 2], ['CRY-001', 1], ['STK-001', 1], ['PPR-002', 1], ['PLN-001', 1], ['ONG-001', 2]],
+  },
+  {
+    sku: 'XMS-BND', name: 'Christmas Celebration Hamper', type: 'gift_box', savings: 15, serves: 6,
+    description: 'A festive hamper for the season: jollof essentials, rice, chin chin, malt, zobo concentrate, groundnuts, plantain chips, palm fruit and goat meat.',
+    items: [['RIC-001', 1], ['JOL-001', 2], ['CHI-001', 1], ['MAL-001', 1], ['ZBK-001', 1], ['GND-001', 1], ['PLC-001', 1], ['PAL-002', 1], ['GOA-001', 1]],
+  },
+  {
+    sku: 'HMP-BND', name: 'Lagos Pantry Hamper', type: 'gift_box', savings: 12, serves: 4,
+    description: 'A generous taste of Lagos: ofada rice, iru, crayfish, palm oil, pepper mix, egusi, kuli kuli and zobo.',
+    items: [['OFR-001', 1], ['IRU-001', 1], ['CRY-002', 1], ['PAL-001', 1], ['DPP-001', 1], ['EGU-001', 1], ['KLK-002', 1], ['ZOB-001', 1]],
+  },
+  {
+    sku: 'NYC-BND', name: 'New Yam Festival Box', type: 'taste_box', savings: 12, serves: 6,
+    description: 'Celebrate the new yam: pounded yam flour, oha leaves, uziza, iru, crayfish, stockfish and red palm oil.',
+    items: [['PNY-001', 2], ['OHA-001', 1], ['UZI-001', 1], ['IRU-001', 1], ['CRY-001', 1], ['STK-001', 1], ['PAL-001', 1]],
   },
 ];
 const insertBundle = db.prepare('INSERT OR IGNORE INTO bundles (sku, name, description, bundle_type, savings_percent, serves, active) VALUES (?,?,?,?,?,?,1)');

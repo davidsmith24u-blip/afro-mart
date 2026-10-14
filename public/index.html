@@ -4,10 +4,10 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 	<meta name="theme-color" content="#a8401d">
-	<meta name="description" content="Afro Mart — a taste of home. African groceries, spices and everyday staples delivered across Germany.">
+	<meta name="description" content="AFROMART — Authentic African Foods Right to Your Door. African groceries, spices and everyday staples with fast reliable delivery across Germany. Track your delivery. Free delivery over €50.">
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-capable" content="yes">
-	<title>Afro Mart | A taste of home, delivered</title>
+	<title>AFROMART | Authentic African Foods — Right to Your Door</title>
 	<link rel="manifest" href="/manifest.webmanifest">
 	<link rel="icon" href="/app-icon.svg" type="image/svg+xml">
 	<link rel="apple-touch-icon" href="/app-icon.svg">
@@ -41,9 +41,9 @@
 	</div>
 
 	<header class="site-header">
-		<a class="brand" href="/" aria-label="Afro Mart home">
+		<a class="brand" href="/" aria-label="AFROMART home">
 			<svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#afromart-emblem"></use></svg>
-			<span class="brand-words">afro<span class="brand-light">mart</span><small data-i18n="brand.tagline">THE AFRICAN PANTRY</small></span>
+			<span class="brand-words brand-bold">AFRO<span class="brand-red">MART</span><small data-i18n="brand.tagline">AUTHENTIC AFRICAN FOODS — RIGHT TO YOUR DOOR</small></span>
 		</a>
 		<label class="search-box">
 			<span class="sr-only">Search the store</span>
@@ -61,6 +61,7 @@
 				<span class="sr-only" data-i18n="currency.label">Currency</span>
 				<select id="currency" aria-label="Currency"></select>
 			</label>
+			<a class="track-link" href="#account" data-i18n="nav.track">Track order</a>
 			<span id="acct"></span>
 			<a class="cart-link" href="#shopping-cart"><span class="cart-icon" aria-hidden="true">🧺</span> <span data-i18n="nav.bag">Bag</span> <span id="cart-count">0</span></a>
 		</div>
@@ -80,9 +81,13 @@
 		<div class="hero-shade"></div>
 		<div class="hero-pattern" aria-hidden="true"></div>
 		<div class="hero-copy">
-			<p class="eyebrow" data-i18n="hero.eyebrow">Welcome home, family</p>
-			<h1 id="hero-title" data-i18n="hero.title">Every pot tells a story.</h1>
-			<p data-i18n="hero.body">From the market stalls back home to your kitchen in Europe — find the flavours, staples and everyday comforts you grew up with, gathered in one bag.</p>
+			<p class="eyebrow" data-i18n="hero.eyebrow">Welcome home</p>
+			<h1 id="hero-title" data-i18n="hero.title">Authentic African Foods — Right to Your Door</h1>
+			<p data-i18n="hero.body">Quality service • Trusted sources • Fast &amp; reliable delivery. Track your delivery online.</p>
+			<div class="hero-welcome" aria-label="Welcome in multiple languages">
+				<span>Welcome</span> <span>Bienvenue</span> <span>Willkommen</span> <span>Karibu</span> <span>Akwaaba</span> <span>Bienvenidos</span> <span>Ekaabo</span>
+			</div>
+			<div class="hero-offer">Free delivery on orders over €50 within Germany</div>
 			<div class="hero-actions">
 				<a class="hero-cta" href="#shop" data-i18n="hero.shop">Shop the market</a>
 				<a class="hero-cta ghost" href="#bundles" data-i18n="hero.bundles">Explore bundles</a>
@@ -100,9 +105,9 @@
 
 		<section class="roots" aria-labelledby="roots-title">
 			<div class="section-heading centered">
-				<p class="eyebrow" data-i18n="promise.eyebrow">The Afro Mart promise</p>
-				<h2 id="roots-title" data-i18n="promise.title">Like a neighbour who knows your kitchen</h2>
-				<p class="shop-caption" data-i18n="promise.caption">You should not have to cross a continent for a taste of home. So we bring the pantry to your street.</p>
+				<p class="eyebrow" data-i18n="promise.eyebrow">Quality service • Trusted sources • Fast & reliable delivery</p>
+				<h2 id="roots-title" data-i18n="promise.title">Quality service • Trusted sources • Fast &amp; reliable delivery</h2>
+				<p class="shop-caption" data-i18n="promise.caption">Track your delivery in real time. Free delivery on orders over €50 within Germany.</p>
 			</div>
 			<div class="roots-grid">
 				<article class="root-card">
@@ -118,7 +123,7 @@
 				<article class="root-card">
 					<span class="root-icon" aria-hidden="true">🏡</span>
 					<h3 data-i18n="promise.c.title">At your table</h3>
-					<p data-i18n="promise.c.body">Reliable courier delivery across Germany, so dinner is never far from the people you love most.</p>
+					<p data-i18n="promise.c.body">Reliable courier delivery across Germany. Track your delivery online from dispatch to your door.</p>
 				</article>
 			</div>
 		</section>
@@ -156,7 +161,10 @@
 		<section id="bundles" class="shop-section bundles-section" aria-labelledby="bundles-title">
 			<div class="section-heading">
 				<div><p class="eyebrow" data-i18n="bundles.eyebrow">Curated for your table</p><h2 id="bundles-title" data-i18n="bundles.title">Packs that feel like home</h2></div>
-				<p class="shop-caption" data-i18n="bundles.caption">Meal packs, starter kits and gift boxes — everything for a dish, a party or a gift, in one bag for less.</p>
+				<p class="shop-caption" data-i18n="bundles.caption">Student bundles • Family packs • Christmas packs • Hampers — more choices for every occasion.</p>
+			</div>
+			<div class="bundle-cats">
+				<span class="chip">Student Bundles</span><span class="chip">Family Packs</span><span class="chip">Christmas Packs</span><span class="chip">Hampers</span><span class="chip">Party Packs</span><span class="chip">Starter Kits</span><span class="chip">Taste Boxes</span><span class="chip">Gift Boxes</span>
 			</div>
 			<div id="bundle-grid" class="product-grid" aria-live="polite"></div>
 		</section>
@@ -260,6 +268,17 @@
 						<select id="pickup-at"></select>
 						<p class="delivery-note" data-i18n="pickup.note">Free to collect — we'll have your bag packed and waiting.</p>
 					</div>
+					<fieldset class="payment-fieldset">
+						<legend data-i18n="payment.legend">How would you like to pay?</legend>
+						<div class="payment-options">
+							<label class="payment-option"><input type="radio" name="payment_method" value="card" checked><span class="payment-tile"><span class="payment-icon" aria-hidden="true">💳</span><strong data-i18n="payment.card">Card</strong><small data-i18n="payment.cardSmall">Visa, Mastercard, Amex</small></span></label>
+							<label class="payment-option"><input type="radio" name="payment_method" value="paypal"><span class="payment-tile"><span class="payment-icon" aria-hidden="true">🅿️</span><strong>PayPal</strong><small data-i18n="payment.paypalSmall">Pay with your PayPal account</small></span></label>
+							<label class="payment-option"><input type="radio" name="payment_method" value="klarna"><span class="payment-tile"><span class="payment-icon" aria-hidden="true">🧾</span><strong>Klarna</strong><small data-i18n="payment.klarnaSmall">Pay later in 3 instalments</small></span></label>
+							<label class="payment-option"><input type="radio" name="payment_method" value="invoice"><span class="payment-tile"><span class="payment-icon" aria-hidden="true">📄</span><strong data-i18n="payment.invoice">Invoice</strong><small data-i18n="payment.invoiceSmall">Pay by bank transfer</small></span></label>
+							<label class="payment-option"><input type="radio" name="payment_method" value="manual"><span class="payment-tile"><span class="payment-icon" aria-hidden="true">💶</span><strong data-i18n="payment.cod">Cash on delivery</strong><small data-i18n="payment.codSmall">Pay the courier on arrival</small></span></label>
+						</div>
+						<p class="payment-note" data-i18n="payment.note">Payments are collected securely. Card and PayPal details are never stored on our servers.</p>
+					</fieldset>
 					<div class="cart-total"><span data-i18n="cart.subtotal">Basket subtotal</span><strong id="total">€0.00</strong></div>
 					<p class="fee-line" id="fee-line" hidden></p>
 					<div class="cart-total grand-total"><span data-i18n="cart.total">Total to pay</span><strong id="payable">€0.00</strong></div>
@@ -300,12 +319,13 @@
 	</main>
 
 	<footer>
-		<a class="brand footer-brand" href="/" aria-label="Afro Mart home">
+		<a class="brand footer-brand" href="/" aria-label="AFROMART home">
 			<svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#afromart-emblem"></use></svg>
-			<span class="brand-words">afro<span class="brand-light">mart</span><small data-i18n="brand.tagline">THE AFRICAN PANTRY</small></span>
+			<span class="brand-words brand-bold">AFRO<span class="brand-red">MART</span><small data-i18n="brand.tagline">AUTHENTIC AFRICAN FOODS — RIGHT TO YOUR DOOR</small></span>
 		</a>
-		<p data-i18n="footer.tagline">Good food, generous tables, and a little taste of home.</p>
-		<span>© Afro Mart</span>
+		<p data-i18n="footer.tagline">Authentic African Foods — Right to Your Door. Quality service • Trusted sources • Fast &amp; reliable delivery • Track your delivery.</p>
+		<p>Free delivery on orders over €50 within Germany</p>
+		<span>© AFROMART</span>
 	</footer>
 
 	<script src="/app.js" type="module"></script>
