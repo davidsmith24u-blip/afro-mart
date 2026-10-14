@@ -504,15 +504,8 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       .join('');
     const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <title>Afro Mart invoice #${o.id}</title>
-<style>
-body{font:14px/1.5 system-ui,sans-serif;color:#2a1414;margin:32px;max-width:760px}
-h1{font-size:24px;margin:0}.muted{color:#7d5656}
-table{width:100%;border-collapse:collapse;margin-top:16px}
-th,td{padding:8px;border-bottom:1px solid #eadede;text-align:left}
-th{background:#fbe8e8}.totals{margin-top:16px;text-align:right}
-.totals div{margin:2px 0}.grand{font-weight:700;font-size:16px}
-@media print{body{margin:0}}
-</style></head><body>
+<link rel="stylesheet" href="/invoice.css">
+</head><body>
 <h1>AFROMART</h1><p class="muted">Authentic African Foods — Right to Your Door</p>
 <h2>Invoice #${o.id}</h2>
 <p class="muted">Placed ${esc(o.created_at)} • Status: ${esc(o.status)} • Payment: ${esc(o.payment_status)}</p>
@@ -808,7 +801,7 @@ th{background:#fbe8e8}.totals{margin-top:16px;text-align:right}
         : 'application/json',
       'X-Content-Type-Options': 'nosniff',
       'X-API-Version': '1',
-      'Content-Security-Policy': "default-src 'self'; img-src 'self' https: data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com",
+      'Content-Security-Policy': "default-src 'self'; img-src 'self' https: data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
       'Referrer-Policy': 'same-origin',
       ...cors(),
       ...headers,

@@ -26,3 +26,15 @@
   from = "/admin"
   to = "/admin.html"
   status = 200
+
+# Security headers for the statically-served storefront and dashboard.
+# The app has no inline scripts or inline event handlers, so the CSP can stay strict;
+# the invoice styles live in /invoice.css rather than an inline <style> block.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; img-src 'self' https: data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"

@@ -1,0 +1,23 @@
+/* Printable invoice styling (linked, so the site can keep a strict style-src). */
+body {
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #2a1414;
+  margin: 32px;
+  max-width: 760px;
+}
+
+h1 { font-size: 24px; margin: 0; }
+h2 { margin: 18px 0 6px; }
+.muted { color: #7d5656; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+th, td { padding: 8px; border-bottom: 1px solid #eadede; text-align: left; }
+th { background: #fbe8e8; }
+
+.totals { margin-top: 16px; text-align: right; }
+.totals div { margin: 2px 0; }
+.grand { font-weight: 700; font-size: 16px; }
+
+@media print {
+  body { margin: 0; }
+}
