@@ -289,6 +289,7 @@ main { max-width: 1320px; padding: 0 40px; margin: 0 auto; }
 .sub-active { background: #dceadb; color: var(--green-deep); }
 .sub-paused { background: #f4e2c4; color: #8a5a12; }
 .sub-cancelled { background: #ecdfd6; color: var(--muted); }
+.row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* ---------- Orders ---------- */
 .orders-section { padding: 0 0 64px; }
