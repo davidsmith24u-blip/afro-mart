@@ -1,7 +1,8 @@
 # Afro Mart
 
 E-commerce platform and business management system for an African grocery store.
-Zero npm dependencies: Node.js ≥ 22.13 (built-in `node:http`, `node:sqlite`, `node:test`).
+The app itself has zero npm dependencies: Node.js ≥ 22.13 (built-in `node:http`, `node:sqlite`, `node:test`).
+(The only dependency, `@netlify/blobs`, is used solely by the optional Netlify deployment layer.)
 
 ## Features
 
@@ -31,6 +32,15 @@ Zero npm dependencies: Node.js ≥ 22.13 (built-in `node:http`, `node:sqlite`, `
 - A resident-curated catalog spanning 10 categories — pantry staples, rice & grains, fresh & frozen, meat & fish, drinks (incl. South African wines), spices and health & beauty (raw shea, African black soap, natural hair care)
 - Storefront "Packs & bundles" section showcases bundles with savings vs. buying items separately
 
+**Fulfilment, rewards & recipes**
+- Delivery areas matched by postal prefix, each with a fee and a minimum-order surcharge; store pickup with a location and collection slot; every order records `delivery_fee_cents` and its fulfilment
+- Loyalty tiers (bronze/silver/gold/platinum) that multiply the points earned, plus refer-a-friend codes that reward the referrer on a new signup
+- Monthly pantry subscriptions: any bundle delivered or collected every 30 days, turned into real, stock-checked orders with `POST /api/subscriptions/process` (staff or a cron job)
+- Recipes that link to the exact products and packs needed to cook a dish, each with one-tap "add all ingredients to bag"
+- Payment status on every order (`unpaid`/`paid`/`failed`/`refunded`) with staff settlement and an integration-ready gateway webhook (`POST /api/payments/webhook`, guarded by `PAYMENTS_WEBHOOK_SECRET`)
+- WhatsApp added as a communications channel alongside email, SMS, push and webhook
+- Storefront: an African-inspired brand identity (calabash-and-sun emblem, kente stripe), richer copy across 115 products, euro pricing, and UI for pickup, subscriptions, recipes and referrals
+
 The REST API is mobile-app friendly: a React Native / Expo app can reuse every endpoint as-is.
 
 ## Installable web app (PWA)
@@ -52,13 +62,33 @@ npm test
 Environment: `PORT` (3000), `DB_PATH` (`afromart.db`), `AUTH_SECRET` (required in production so sessions survive restarts),
 `ADMIN_EMAIL`/`ADMIN_PASSWORD` (creates the first admin if absent). Admins can create staff via `POST /api/staff`.
 `CORS_ORIGIN` (default `*`) controls which origins may call the API from a browser; `COMMS_WEBHOOK_URL` casts the
-messages outbox to a webhook instead of the log transport.
+messages outbox to a webhook instead of the log transport. `DELIVERY_FEE_DEFAULT_CENTS` sets a fallback delivery fee
+for postcodes outside any configured area; `PAYMENTS_WEBHOOK_SECRET` enables the payment webhook; `WHATSAPP_NUMBER`
+is advertised to clients via `/api/config`.
 
 Docker: `AUTH_SECRET=... docker compose up --build`.
 
+## Deploy on Netlify
+
+`netlify.toml` serves the storefront from `public/` and routes `/api/*` to a single Netlify Function
+(`netlify/functions/api.mjs`) that runs the same app — no build step, no framework.
+
+Because Netlify Functions have no persistent disk, the SQLite database is snapshotted to Netlify Blobs
+(`netlify/functions/store.mjs`): it is restored on a cold start, seeded on the very first run, and written back after
+every request that changes data. Node 24 (pinned in `.nvmrc`) provides a stable `node:sqlite`.
+
+```sh
+npx netlify-cli deploy --build --prod
+```
+
+Set `AUTH_SECRET` (and any other variable above) in the Netlify UI. Netlify Blobs is a key-value store, not a
+database: this works well for a low-traffic shop, but for heavy concurrent writes run the app on a long-running
+Node host and keep Netlify for the frontend.
+
 ## Security notes
 Parameterised SQL everywhere, input validation, body size limit, CSP and `nosniff` headers, DOM rendering via `textContent`.
-Run behind HTTPS (e.g. a reverse proxy). Payment processing is not integrated: staff manage order payment status manually.
-Add a payment provider and rate limiting before going live.
+Run behind HTTPS (e.g. a reverse proxy). Payment processing is integration-ready but no gateway is wired: orders start
+`unpaid` and staff settle them, or a provider can call `POST /api/payments/webhook` with the `x-webhook-secret` header.
+Add rate limiting before going live.
 
 See [docs/API.md](docs/API.md) for the API and the schema in `src/db.js`.

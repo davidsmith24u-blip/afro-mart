@@ -6,18 +6,19 @@ Errors: `{ "error": "message" }` with 400/401/403/404/409/413.
 | Method & path | Access | Description |
 |---|---|---|
 | GET `/api/health` | public | `{status:"ok",time,version}` for uptime/monitoring |
-| GET `/api/config` | public | App config for mobile/web clients (currency, delivery services, statuses) |
-| POST `/api/auth/register` `{email,name,password}` | public | Create customer, returns `{token,user}` |
+| GET `/api/config` | public | App config for mobile/web clients (currency, delivery services, order statuses, fulfilment options, payment methods, loyalty rate, default delivery fee, gateway flag, WhatsApp number) |
+| POST `/api/auth/register` `{email,name,password,ref?}` | public | Create customer (`ref` = a friend's referral code, rewards them), returns `{token,user}` |
 | POST `/api/auth/login` `{email,password}` | public | Returns `{token,user}` |
-| GET `/api/me` | user | Current user incl. loyalty points |
+| GET `/api/me` | user | Current user incl. loyalty points, referral code and tier |
 | POST `/api/staff` `{email,name,password,role?}` | admin | Create staff/admin |
 | GET `/api/categories` / POST | public / staff | List / create `{name}` |
 | GET `/api/products?category=&q=&limit=&offset=` | public | Active products (staff also see cost/supplier/inactive) |
 | GET `/api/products/:id` | public | One product |
 | POST `/api/products`, PUT `/api/products/:id` | staff | `sku,name,description,category_id,supplier_id,price_cents,cost_cents,stock,reorder_level,reorder_quantity,expiry_date,active` |
-| POST `/api/orders` `{items:[{product_id,quantity} | {bundle_id,quantity}],shipping_address,delivery_service?,shipping_country?,location_id?,promo_code?}` | user | Place order; bundle lines expand into stock-checked components, decrements stock (per location), awards points, applies bundle + promo discounts; courier is Germany-only |
+| POST `/api/orders` `{items:[{product_id,quantity} | {bundle_id,quantity}],fulfillment:delivery|pickup,shipping_address?,delivery_service?,shipping_country?,pickup_location_id?,pickup_at?,location_id?,promo_code?}` | user | Place order; bundle lines expand into stock-checked components, decrements stock (per location), awards tiered points, applies bundle + promo discounts and adds the delivery-area fee; delivery is Germany-only and needs an address, pickup needs neither |
 | GET `/api/orders`, GET `/api/orders/:id` | user | Own orders (staff: all, limit/offset pagination) |
 | PATCH `/api/orders/:id/status` `{status}` | staff | `pending,paid,packed,shipped,delivered,cancelled`; fires status-change automations |
+| PATCH `/api/orders/:id/payment` `{status,method?,reference?}` | staff | Set `unpaid/paid/failed/refunded`; `paid` also advances a pending order to `paid` |
 | GET/POST `/api/suppliers`, PUT `/api/suppliers/:id` | staff | Supplier management |
 | GET `/api/inventory/low-stock?location_id=` | staff | Products at/below reorder level (optionally at one location) |
 | POST `/api/inventory/reorder` | staff | Create purchase orders for low-stock products (per supplier, skipping already-ordered) |
@@ -73,9 +74,50 @@ Bundle price = contents subtotal − `savings_percent` (`meal_pack | starter_pac
 | POST `/api/bundles`, PUT `/api/bundles/:id` | staff | `{sku,name,description,bundle_type,active,savings_percent,items:[{product_id,quantity}]}` (each product once per bundle) |
 | DELETE `/api/bundles/:id` | staff | Remove a bundle |
 
+### Fulfilment & delivery areas
+| Method & path | Access | Description |
+|---|---|---|
+| GET `/api/delivery-areas` | public | Active areas (staff can pass `?all=1`) |
+| POST `/api/delivery-areas`, PUT `/api/delivery-areas/:id`, DELETE `/:id` | staff | `{name,city,postal_prefixes,fee_cents,min_order_cents,active}` |
+
+A delivery fee is looked up by the longest matching postal prefix; an order below the area's minimum gets a shortfall
+surcharge, and postcodes outside every area fall back to `DELIVERY_FEE_DEFAULT_CENTS`. Pickup orders pay no fee.
+
+### Loyalty, tiers & referrals
+| Method & path | Access | Description |
+|---|---|---|
+| GET `/api/me/referral` | user | `{code,points_per_friend,link,referred_by,tier}` |
+
+Points are earned per euro spent, multiplied by the customer's tier (bronze 1×, silver 1.1×, gold 1.25×, platinum 1.5×,
+by lifetime spend). Passing a valid `ref` at registration awards the referrer 200 points; an unknown code is rejected (400).
+
+### Subscriptions (monthly pantry packs)
+| Method & path | Access | Description |
+|---|---|---|
+| GET `/api/subscriptions` | user | Own plans (staff: all) with their bundle |
+| POST `/api/subscriptions` `{bundle_id,fulfillment,shipping_address? \| pickup_location_id?,pickup_at?}` | user | Start a monthly plan (30-day cadence) |
+| PUT `/api/subscriptions/:id` `{status?,fulfillment?,shipping_address?,pickup_location_id?,pickup_at?,next_run_on?}` | user | Pause/resume/cancel or change fulfilment |
+| POST `/api/subscriptions/process` | staff | Turn every due, active plan into a real stock-checked order |
+
+### Recipes
+| Method & path | Access | Description |
+|---|---|---|
+| GET `/api/recipes` | public | Active recipes with priced ingredients and `items_available` (staff can pass `?all=1`) |
+| GET `/api/recipes/:id` | public | One recipe |
+| POST `/api/recipes`, PUT `/api/recipes/:id` | staff | `{title,description,prep_minutes,servings,emoji,active,ingredients:[{product_id\|bundle_id,quantity,note?}]}` |
+| DELETE `/api/recipes/:id` | staff | Remove a recipe and its ingredients |
+
+### Payments
+| Method & path | Access | Description |
+|---|---|---|
+| POST `/api/payments/webhook` `{reference,status?,method?}` | gateway | Settle an order by `payment_reference`; requires the `x-webhook-secret` header matching `PAYMENTS_WEBHOOK_SECRET` (401 on a bad secret, 503 when unconfigured) |
+
 API versioning: every `/api/...` route also works under the versioned prefix `/api/v1/...` (e.g. `/api/v1/products`).
 
 ## Schema
 Tables: `users`, `categories`, `suppliers`, `products`, `orders`, `order_items`, `purchase_orders`, `purchase_order_items`,
 `locations`, `inventory`, `subscribers`, `promo_codes`, `campaigns`, `message_templates`, `automations`, `messages`,
-`bundles`, `bundle_items` (see `src/db.js`).
+`bundles`, `bundle_items`, `delivery_areas`, `subscriptions`, `recipes`, `recipe_ingredients` (see `src/db.js`).
+
+Beyond the base schema, `orders` also carries `fulfillment`, `pickup_location_id`, `pickup_at`, `delivery_fee_cents`,
+`payment_status`, `payment_method` and `payment_reference`; `users` carries `referral_code`.
