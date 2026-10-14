@@ -1,0 +1,28 @@
+# Deploy Afro Mart to Netlify.
+#
+# The storefront in public/ is served statically, and every /api route is
+# handled by a single Function that runs the same app as `npm start`. Because
+# Netlify Functions have no persistent disk, the SQLite database is snapshotted
+# to Netlify Blobs between requests (see netlify/functions/store.mjs).
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+  command = "npm install"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+[functions]
+  node_bundler = "esbuild"
+
+# API: hand every /api/* request to the Function.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# The staff dashboard lives at /admin (the Node server maps it to admin.html).
+[[redirects]]
+  from = "/admin"
+  to = "/admin.html"
+  status = 200
