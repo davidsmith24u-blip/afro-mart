@@ -22,7 +22,7 @@ const ingredientPayload = (db, ingredient) => {
   };
 };
 
-const recipeWithStuff = (db, recipe) => {
+export const recipeWithStuff = (db, recipe) => {
   const ingredients = db.prepare(
     'SELECT product_id, bundle_id, quantity, note FROM recipe_ingredients WHERE recipe_id = ? ORDER BY rowid',
   ).all(recipe.id).map((row) => ingredientPayload(db, row)).filter(Boolean);

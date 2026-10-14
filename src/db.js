@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer','staff','admin')),
   loyalty_points INTEGER NOT NULL DEFAULT 0,
+  account_type TEXT NOT NULL DEFAULT 'retail' CHECK (account_type IN ('retail','restaurant')),
   location_id INTEGER REFERENCES locations(id),
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -37,7 +38,15 @@ CREATE TABLE IF NOT EXISTS products (
   reorder_level INTEGER NOT NULL DEFAULT 10,
   reorder_quantity INTEGER NOT NULL DEFAULT 50,
   expiry_date TEXT,
-  active INTEGER NOT NULL DEFAULT 1
+  active INTEGER NOT NULL DEFAULT 1,
+  spice_level INTEGER NOT NULL DEFAULT 0 CHECK (spice_level >= 0 AND spice_level <= 5),
+  wholesale_price_cents INTEGER
+);
+CREATE TABLE IF NOT EXISTS product_tags (
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  kind TEXT NOT NULL CHECK (kind IN ('origin','cuisine','diet')),
+  value TEXT NOT NULL,
+  PRIMARY KEY (product_id, kind, value)
 );
 CREATE TABLE IF NOT EXISTS orders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -168,6 +177,7 @@ CREATE TABLE IF NOT EXISTS bundles (
   bundle_type TEXT NOT NULL DEFAULT 'meal_pack'
     CHECK (bundle_type IN ('meal_pack','starter_pack','party_pack','gift_box','taste_box')),
   savings_percent INTEGER NOT NULL DEFAULT 10 CHECK (savings_percent >= 0 AND savings_percent <= 100),
+  serves INTEGER NOT NULL DEFAULT 0 CHECK (serves >= 0),
   active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -219,6 +229,24 @@ CREATE TABLE IF NOT EXISTS recipe_ingredients (
   CHECK ((product_id IS NOT NULL) OR (bundle_id IS NOT NULL)),
   PRIMARY KEY (recipe_id, product_id, bundle_id)
 );
+CREATE TABLE IF NOT EXISTS quotes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id),
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  event_date TEXT,
+  guests INTEGER NOT NULL DEFAULT 0 CHECK (guests >= 0),
+  fulfillment TEXT NOT NULL DEFAULT 'delivery' CHECK (fulfillment IN ('delivery','pickup')),
+  message TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'requested'
+    CHECK (status IN ('requested','quoted','confirmed','declined')),
+  quoted_cents INTEGER,
+  staff_note TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_product_tags ON product_tags(kind, value);
 `;
 
 export function openDb(path = ':memory:') {
@@ -262,7 +290,21 @@ export function openDb(path = ':memory:') {
   if (!orderColumns.includes('payment_reference')) {
     db.exec('ALTER TABLE orders ADD COLUMN payment_reference TEXT');
   }
+  const productColumns = db.prepare('PRAGMA table_info(products)').all().map((column) => column.name);
+  if (!productColumns.includes('spice_level')) {
+    db.exec('ALTER TABLE products ADD COLUMN spice_level INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!productColumns.includes('wholesale_price_cents')) {
+    db.exec('ALTER TABLE products ADD COLUMN wholesale_price_cents INTEGER');
+  }
+  const bundleColumns = db.prepare('PRAGMA table_info(bundles)').all().map((column) => column.name);
+  if (!bundleColumns.includes('serves')) {
+    db.exec('ALTER TABLE bundles ADD COLUMN serves INTEGER NOT NULL DEFAULT 0');
+  }
   const userColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name);
+  if (!userColumns.includes('account_type')) {
+    db.exec("ALTER TABLE users ADD COLUMN account_type TEXT NOT NULL DEFAULT 'retail' CHECK (account_type IN ('retail','restaurant'))");
+  }
   if (!userColumns.includes('location_id')) {
     db.exec('ALTER TABLE users ADD COLUMN location_id INTEGER REFERENCES locations(id)');
   }

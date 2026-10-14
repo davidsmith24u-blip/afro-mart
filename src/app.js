@@ -13,6 +13,9 @@ import { registerDeliveryRoutes, deliveryFeeFor } from './delivery.js';
 import { registerSubscriptionRoutes } from './subscriptions.js';
 import { registerRecipeRoutes } from './recipes.js';
 import { applyReferral, referralCode, tierFor, lifetimeSpendCents, pointsFor } from './loyalty.js';
+import { registerDiscoveryRoutes, expandQuery, attachTags, ORIGIN_LABELS, CUISINE_LABELS, DIET_LABELS } from './discovery.js';
+import { BASE_CURRENCY, currencyList } from './currencies.js';
+import { registerCateringRoutes } from './catering.js';
 
 const PUBLIC_DIR = resolve(fileURLToPath(new URL('../public', import.meta.url)));
 const MIME = {
@@ -71,6 +74,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const tier = tierFor(lifetimeSpendCents(db, u.id));
     return {
       id: u.id, email: u.email, name: u.name, role: u.role, loyalty_points: u.loyalty_points,
+      account_type: u.account_type ?? 'retail',
       referral_code: referralCode(db, u.id),
       tier: tier.key, tier_label: tier.label, points_multiplier: tier.multiplier,
     };
@@ -132,6 +136,8 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   route('GET', '/api/config', () => ({
     app: 'Afro Mart',
     currency: 'EUR',
+    base_currency: BASE_CURRENCY,
+    currencies: currencyList(),
     country: 'DE',
     delivery_services: DELIVERY_SERVICES,
     order_statuses: ORDER_STATUSES,
@@ -141,6 +147,11 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     delivery_fee_default_cents: Math.max(0, Number(process.env.DELIVERY_FEE_DEFAULT_CENTS) || 0),
     has_payment_gateway: Boolean(process.env.PAYMENTS_WEBHOOK_SECRET),
     whatsapp_number: process.env.WHATSAPP_NUMBER || null,
+    facets: {
+      origins: ORIGIN_LABELS,
+      cuisines: CUISINE_LABELS,
+      diets: DIET_LABELS,
+    },
   }));
 
   const comms = createCommunications(db);
@@ -153,6 +164,8 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   registerDeliveryRoutes(api);
   registerSubscriptionRoutes(api);
   registerRecipeRoutes(api);
+  registerDiscoveryRoutes(api);
+  registerCateringRoutes(api);
 
   // ---- Auth ----
   route('POST', '/api/auth/register', (ctx) => {
@@ -219,29 +232,92 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   // ---- Products ----
   route('GET', '/api/products', (ctx) => {
     const staff = ctx.user && ctx.user.role !== 'customer';
+    const wholesale = ctx.user && ctx.user.account_type === 'restaurant';
     const where = [];
     const params = [];
     if (!staff) where.push('p.active = 1');
     const cat = ctx.query.get('category');
     if (cat) { where.push('p.category_id = ?'); params.push(Number(cat) || 0); }
+
+    const multi = (name) => ctx.query.getAll(name).flatMap((v) => v.split(',')).map((v) => v.trim()).filter(Boolean);
+
     const q = ctx.query.get('q');
-    if (q) { where.push('(p.name LIKE ? OR p.description LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
+    if (q) {
+      const facets = expandQuery(q);
+      const or = [];
+      for (const term of facets.terms) {
+        or.push('(p.name LIKE ? OR p.description LIKE ? OR p.sku LIKE ?)');
+        params.push(`%${term}%`, `%${term}%`, `%${term}%`);
+      }
+      if (facets.origin) {
+        or.push("EXISTS (SELECT 1 FROM product_tags t WHERE t.product_id = p.id AND t.kind = 'origin' AND t.value = ?)");
+        params.push(facets.origin);
+      }
+      for (const cuisine of facets.cuisines) {
+        or.push("EXISTS (SELECT 1 FROM product_tags t WHERE t.product_id = p.id AND t.kind = 'cuisine' AND t.value = ?)");
+        params.push(cuisine);
+      }
+      where.push('(' + or.join(' OR ') + ')');
+    }
+
+    const cuisines = multi('cuisine');
+    if (cuisines.length) {
+      where.push(`EXISTS (SELECT 1 FROM product_tags t WHERE t.product_id = p.id AND t.kind = 'cuisine' AND t.value IN (${cuisines.map(() => '?').join(',')}))`);
+      params.push(...cuisines);
+    }
+    const origins = multi('origin');
+    if (origins.length) {
+      where.push(`EXISTS (SELECT 1 FROM product_tags t WHERE t.product_id = p.id AND t.kind = 'origin' AND t.value IN (${origins.map(() => '?').join(',')}))`);
+      params.push(...origins);
+    }
+    for (const diet of multi('diet')) {
+      where.push("EXISTS (SELECT 1 FROM product_tags t WHERE t.product_id = p.id AND t.kind = 'diet' AND t.value = ?)");
+      params.push(diet);
+    }
+    if (ctx.query.get('max_spice')) {
+      where.push('p.spice_level <= ?');
+      params.push(Math.min(Math.max(Number(ctx.query.get('max_spice')) || 0, 0), 5));
+    }
+    if (ctx.query.get('min_spice')) {
+      where.push('p.spice_level >= ?');
+      params.push(Math.min(Math.max(Number(ctx.query.get('min_spice')) || 0, 0), 5));
+    }
+
+    const sortMap = { price_asc: 'p.price_cents ASC, p.name', price_desc: 'p.price_cents DESC, p.name', spice: 'p.spice_level DESC, p.name', name: 'p.name' };
+    const orderBy = sortMap[ctx.query.get('sort')] || 'p.name';
+
     const limit = ctx.query.get('limit') ? Math.min(Math.max(Number(ctx.query.get('limit')) || 50, 1), 200) : null;
     const offset = ctx.query.get('offset') ? Math.max(Number(ctx.query.get('offset')) || 0, 0) : 0;
-    return all(
+    const rows = all(
       `SELECT p.id, p.sku, p.name, p.description, p.category_id, c.name AS category, p.price_cents, p.stock,
-              p.expiry_date, p.active${staff ? ', p.cost_cents, p.reorder_level, p.reorder_quantity, p.supplier_id' : ''}
+              p.expiry_date, p.active, p.spice_level${wholesale ? ', p.wholesale_price_cents' : ''}${staff ? ', p.cost_cents, p.reorder_level, p.reorder_quantity, p.supplier_id' : ''}
        FROM products p LEFT JOIN categories c ON c.id = p.category_id
-       ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY p.name${limit ? ' LIMIT ? OFFSET ?' : ''}`,
+       ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY ${orderBy}${limit ? ' LIMIT ? OFFSET ?' : ''}`,
       ...params, ...(limit ? [limit, offset] : []));
+    attachTags(db, rows);
+    for (const row of rows) {
+      if (wholesale) {
+        row.is_wholesale = true;
+        row.effective_price_cents = row.wholesale_price_cents ?? row.price_cents;
+      }
+    }
+    return rows;
   });
 
   route('GET', '/api/products/:id', (ctx) => {
+    const staff = ctx.user && ctx.user.role !== 'customer';
+    const wholesale = ctx.user && ctx.user.account_type === 'restaurant';
     const p = get(
-      `SELECT p.id, p.sku, p.name, p.description, p.category_id, c.name AS category, p.price_cents, p.stock, p.expiry_date, p.active
+      `SELECT p.id, p.sku, p.name, p.description, p.category_id, c.name AS category, p.price_cents, p.stock,
+              p.expiry_date, p.active, p.spice_level${wholesale ? ', p.wholesale_price_cents' : ''}
        FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?`, ctx.params.id);
-    if (!p || (!p.active && !(ctx.user && ctx.user.role !== 'customer'))) throw notFound();
-    return p;
+    if (!p || (!p.active && !staff)) throw notFound();
+    const [row] = attachTags(db, [p]);
+    if (wholesale) {
+      row.is_wholesale = true;
+      row.effective_price_cents = row.wholesale_price_cents ?? row.price_cents;
+    }
+    return row;
   });
 
   route('POST', '/api/products', (ctx) => {
@@ -323,8 +399,10 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
         const p = get('SELECT * FROM products WHERE id = ? AND active = 1', pid);
         if (!p) throw bad(`Product ${pid} not available`);
         if (stockAt(db, p.id, locationId) < qty) throw new HttpError(409, `Insufficient stock for ${p.name}`);
-        total += p.price_cents * qty;
-        lines.push({ p, qty });
+        const unit = user.account_type === 'restaurant' && p.wholesale_price_cents != null
+          ? p.wholesale_price_cents : p.price_cents;
+        total += unit * qty;
+        lines.push({ p, qty, unit });
       }
       const promo = promoCode ? validatePromo(db, promoCode, total) : null;
       const discount = Math.min(total, (promo ? computeDiscount(promo, total) : 0) + bundleDiscount);
@@ -340,8 +418,8 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         user.id, payable, discount, promoCode, locationId, points, address, deliveryService, country,
         fulfillment, pickupLocationId, pickupAt, deliveryFee, 'unpaid', paymentMethod, paymentReference);
-      for (const { p, qty } of lines) {
-        run('INSERT INTO order_items (order_id, product_id, quantity, unit_price_cents) VALUES (?,?,?,?)', oid, p.id, qty, p.price_cents);
+      for (const { p, qty, unit } of lines) {
+        run('INSERT INTO order_items (order_id, product_id, quantity, unit_price_cents) VALUES (?,?,?,?)', oid, p.id, qty, unit);
         adjustStock(db, p.id, locationId, -qty);
       }
       run('UPDATE users SET loyalty_points = loyalty_points + ? WHERE id = ?', points, user.id);

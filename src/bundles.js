@@ -83,12 +83,13 @@ export function registerBundleRoutes(api) {
     if (!BUNDLE_TYPES.includes(type)) throw bad(`bundle_type must be one of ${BUNDLE_TYPES.join(', ')}`);
     const savings = int(ctx.body.savings_percent ?? 10, 'savings_percent', { min: 0, required: false }) ?? 10;
     if (savings > 100) throw bad('savings_percent cannot exceed 100');
+    const serves = int(ctx.body.serves ?? 0, 'serves', { min: 0, required: false }) ?? 0;
     const active = ctx.body.active === undefined ? 1 : (ctx.body.active ? 1 : 0);
     const items = fillItems(ctx.body.items);
     const bundle = transaction(db, () => {
       const { lastInsertRowid } = run(
-        'INSERT INTO bundles (sku, name, description, bundle_type, savings_percent, active) VALUES (?,?,?,?,?,?)',
-        sku, name, description, type, savings, active);
+        'INSERT INTO bundles (sku, name, description, bundle_type, savings_percent, serves, active) VALUES (?,?,?,?,?,?,?)',
+        sku, name, description, type, savings, serves, active);
       insertItems(lastInsertRowid, items);
       return get('SELECT * FROM bundles WHERE id = ?', lastInsertRowid);
     });
@@ -110,9 +111,10 @@ export function registerBundleRoutes(api) {
       if (!BUNDLE_TYPES.includes(type)) throw bad(`bundle_type must be one of ${BUNDLE_TYPES.join(', ')}`);
       const savings = int(ctx.body.savings_percent ?? current.savings_percent, 'savings_percent', { min: 0 });
       if (savings > 100) throw bad('savings_percent cannot exceed 100');
+      const serves = ctx.body.serves === undefined ? current.serves : int(ctx.body.serves, 'serves', { min: 0 });
       const active = ctx.body.active === undefined ? current.active : (ctx.body.active ? 1 : 0);
-      run('UPDATE bundles SET sku=?, name=?, description=?, bundle_type=?, savings_percent=?, active=? WHERE id=?',
-        sku, name, description, type, savings, active, current.id);
+      run('UPDATE bundles SET sku=?, name=?, description=?, bundle_type=?, savings_percent=?, serves=?, active=? WHERE id=?',
+        sku, name, description, type, savings, serves, active, current.id);
       if (ctx.body.items !== undefined) {
         run('DELETE FROM bundle_items WHERE bundle_id = ?', current.id);
         insertItems(current.id, fillItems(ctx.body.items));

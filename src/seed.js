@@ -1,4 +1,5 @@
 import { openDb } from './db.js';
+import { classifyProduct, wholesalePriceCents } from './catalog-meta.js';
 
 const db = openDb(process.env.DB_PATH || 'afromart.db');
 const categoryNames = ['Dry Goods', 'Fresh Produce', 'Beverages', 'Spices', 'Frozen', 'Snacks', 'Oils & Condiments', 'Rice & Grains', 'Meat & Fish', 'Health & Beauty'];
@@ -139,6 +140,15 @@ const products = [
   ['DBN-001', 'Dambun nama (shredded dried beef) 150g', 'Fluffy shredded dried beef with smoky, savoury depth — sprinkle over rice, eggs or suya-spiced snacks.', 'Meat & Fish', 699, 450, 14, 5, 18],
   ['CFT-001', 'Dried cow foot (nkwobi) 300g', 'Dried cow foot that braises into rich, sticky perfection — the star of nkwobi and a silky addition to soup pots.', 'Meat & Fish', 1099, 720, 12, 4, 16],
   ['PAL-002', 'Palm fruit (banga) 500g', 'Chunks of frozen palm fruit for authentic banga soup — boil, squeeze out the rich red juice and simmer.', 'Frozen', 649, 420, 18, 6, 24],
+  // ---- Beyond Nigeria: Kenya, Ethiopia, Somalia, Senegal, Cameroon, South Africa ----
+  ['PIL-001', 'Kenyan pilau masala 100g', 'A warm Kenyan blend of cumin, cardamom, clove and cinnamon — stir through rice and beef for a fragrant, golden pilau.', 'Spices', 499, 300, 24, 8, 32],
+  ['KEN-001', 'Kenyan curry powder 100g', 'A mild, aromatic Kenyan-style curry powder — the everyday base for curries, stews and sukuma wiki.', 'Spices', 449, 270, 24, 8, 32],
+  ['SHR-002', 'Ethiopian shiro powder 400g', 'Stone-ground chickpea flour seasoned the Ethiopian way — whisk with water and simmer into the creamy shiro wat served with injera.', 'Dry Goods', 799, 500, 18, 6, 24],
+  ['CHA-001', 'Chakalaka relish 410g', 'A tangy South African relish of tomato, pepper, carrot, onion and spice — the braai-table side that goes with everything.', 'Oils & Condiments', 449, 280, 20, 7, 28],
+  ['ROO-001', 'Rooibos tea 250g', 'Naturally caffeine-free South African rooibos with a smooth, lightly sweet taste — enjoy it hot or as a long iced tea.', 'Beverages', 599, 360, 20, 7, 28],
+  ['SHH-001', 'Somali shaah spice tea 250g', 'The Somali chai blend of black tea, cardamom, cinnamon, clove and ginger — brew it strong with milk and sugar.', 'Beverages', 599, 370, 18, 6, 24],
+  ['YAS-001', 'Yassa seasoning 100g', 'A bright Senegalese blend of onion, lemon, mustard and chilli — the tangy marinade behind poulet yassa.', 'Spices', 549, 330, 20, 7, 28],
+  ['NDL-001', 'Ndole (bitterleaf) pack 400g', 'Prepped bitterleaf and groundnut base for Cameroonian ndole — simmer with prawns or beef for a rich, nutty stew.', 'Frozen', 899, 560, 14, 5, 20],
 ];
 let added = 0;
 let refreshed = 0;
@@ -147,6 +157,24 @@ for (const [sku, name, description, category, price, cost, stock, level, quantit
   const existingId = !!hasProduct.get(sku);
   const { changes } = ins.run(sku, name, description, cats[category], supplier.id, price, cost, stock, level, quantity);
   if (changes) (existingId ? refreshed++ : added++);
+}
+
+// Discovery metadata: origin/cuisine/diet tags, spice level and a wholesale
+// price for restaurant accounts. Rebuilt on every seed so edits stay in sync.
+const catNameById = {};
+for (const row of db.prepare('SELECT id, name FROM categories').all()) catNameById[row.id] = row.name;
+const updProductMeta = db.prepare('UPDATE products SET spice_level = ?, wholesale_price_cents = ? WHERE id = ?');
+const delProductTags = db.prepare('DELETE FROM product_tags WHERE product_id = ?');
+const insProductTag = db.prepare('INSERT OR IGNORE INTO product_tags (product_id, kind, value) VALUES (?,?,?)');
+let taggedProducts = 0;
+for (const p of db.prepare('SELECT id, sku, name, price_cents, cost_cents, category_id FROM products').all()) {
+  const meta = classifyProduct({ sku: p.sku, name: p.name, category: catNameById[p.category_id] });
+  updProductMeta.run(meta.spice, wholesalePriceCents(p.price_cents, p.cost_cents), p.id);
+  delProductTags.run(p.id);
+  if (meta.origin) insProductTag.run(p.id, 'origin', meta.origin);
+  for (const value of meta.cuisines) insProductTag.run(p.id, 'cuisine', value);
+  for (const value of meta.diet) insProductTag.run(p.id, 'diet', value);
+  taggedProducts++;
 }
 
 // Phase 3 demo data: a primary store location, a welcome automation and a promo code.
@@ -166,57 +194,58 @@ const skuId = {};
 for (const row of db.prepare('SELECT id, sku FROM products').all()) skuId[row.sku] = row.id;
 const bundles = [
   {
-    sku: 'EGS-BND', name: 'Egusi Soup Starter Kit', type: 'starter_pack', savings: 12,
+    sku: 'EGS-BND', name: 'Egusi Soup Starter Kit', type: 'starter_pack', savings: 12, serves: 4,
     description: 'Everything for a rich egusi soup — ground egusi, red palm oil, stockfish, crayfish, spinach and seasonings.',
     items: [['EGU-001', 2], ['PAL-001', 1], ['CRY-001', 1], ['DSP-001', 1], ['DPP-001', 1], ['ONG-001', 1], ['STK-001', 1], ['IRU-001', 1]],
   },
   {
-    sku: 'JOL-BND', name: 'Jollof Rice Party Pack', type: 'party_pack', savings: 10,
+    sku: 'JOL-BND', name: 'Jollof Rice Party Pack', type: 'party_pack', savings: 10, serves: 12,
     description: 'Stock up for the party: perfumed rice, jollof seasoning, pepper mix, crayfish, cubes, palm oil and groundnuts.',
     items: [['RIC-001', 1], ['JOL-001', 2], ['PPR-002', 1], ['CRY-001', 1], ['ONG-001', 2], ['PAL-001', 1], ['GND-001', 1]],
   },
   {
-    sku: 'FUF-BND', name: 'Fufu & Ogbono Night In', type: 'meal_pack', savings: 12,
+    sku: 'FUF-BND', name: 'Fufu & Ogbono Night In', type: 'meal_pack', savings: 12, serves: 4,
     description: 'A classic draw-soup night: cassava fufu, ogbono, crayfish, pepper, palm oil and stockfish.',
     items: [['FUF-001', 2], ['OGB-001', 1], ['CRY-001', 1], ['DPP-001', 1], ['PAL-001', 1], ['STK-001', 1]],
   },
   {
-    sku: 'YAM-BND', name: 'Pounded Yam & Vegetable Pot', type: 'meal_pack', savings: 12,
+    sku: 'YAM-BND', name: 'Pounded Yam & Vegetable Pot', type: 'meal_pack', savings: 12, serves: 4,
     description: 'Pounded yam flour with dried oha leaves, iru, crayfish, stockfish and spinach for a hearty vegetable pot.',
     items: [['YAM-002', 2], ['OHA-001', 1], ['IRU-001', 1], ['CRY-001', 1], ['STK-001', 1], ['DSP-001', 1]],
   },
   {
-    sku: 'BRK-BND', name: 'Afro Breakfast Box', type: 'gift_box', savings: 10,
+    sku: 'BRK-BND', name: 'Afro Breakfast Box', type: 'gift_box', savings: 10, serves: 2,
     description: 'A cheerful morning box: malt drink, Chapman, chin chin, groundnuts, plantain chips and zobo tea.',
     items: [['MAL-001', 1], ['CHP-001', 1], ['CHI-001', 1], ['GND-001', 1], ['PLC-001', 1], ['HIB-001', 1]],
   },
   {
-    sku: 'BRA-BND', name: 'South African Braai & Wine Box', type: 'gift_box', savings: 10,
+    sku: 'BRA-BND', name: 'South African Braai & Wine Box', type: 'gift_box', savings: 10, serves: 4,
     description: 'A taste of the garden route: Pinotage, Chenin Blanc, biltong, suya spice and roasted groundnuts.',
     items: [['PIN-001', 1], ['BIL-001', 1], ['SPC-001', 1], ['CHW-001', 1], ['GND-001', 1]],
   },
   {
-    sku: 'GHA-BND', name: 'Ghana Banku & Pepper Box', type: 'meal_pack', savings: 12,
+    sku: 'GHA-BND', name: 'Ghana Banku & Pepper Box', type: 'meal_pack', savings: 12, serves: 6,
     description: 'Banku mix, ground pepper sauce staples, stockfish, dried prawns, crayfish and palm oil.',
     items: [['BNK-001', 2], ['PSP-001', 1], ['STK-001', 1], ['CRY-001', 1], ['SHR-001', 1], ['PAL-001', 1]],
   },
   {
-    sku: 'JWAR-BND', name: 'Jollof Rice Wars Box (NG vs GH)', type: 'taste_box', savings: 15,
+    sku: 'JWAR-BND', name: 'Jollof Rice Wars Box (NG vs GH)', type: 'taste_box', savings: 15, serves: 8,
     description: 'Settle the debate at home: Nigerian-style jollof base, Ghanaian-style jollof base, two rices, pepper and dried prawns.',
     items: [['RIC-001', 1], ['RIC-002', 1], ['JOL-001', 1], ['JOL-002', 1], ['PPR-002', 1], ['SHR-001', 1], ['KNR-001', 1]],
   },
   {
-    sku: 'VEG-BND', name: 'Vegan Soups & Stews Box', type: 'meal_pack', savings: 12,
+    sku: 'VEG-BND', name: 'Vegan Soups & Stews Box', type: 'meal_pack', savings: 12, serves: 4,
     description: '100% plant-based comfort: egusi, palmnut cream, oha, uziza, dehydrated spinach, palm oil, jollof base and plantain.',
     items: [['EGU-001', 1], ['PNC-001', 1], ['OHA-001', 1], ['UZI-001', 1], ['DSP-001', 1], ['PAL-001', 1], ['JOL-001', 1], ['PLN-001', 1]],
   },
   {
-    sku: 'GLW-BND', name: 'Glow Up: Shea & Hair Care Kit', type: 'gift_box', savings: 10,
+    sku: 'GLW-BND', name: 'Glow Up: Shea & Hair Care Kit', type: 'gift_box', savings: 10, serves: 1,
     description: 'Self-care from the village to your vanity: raw shea, black soap, hair butter, coconut oil and body butter.',
     items: [['SHE-001', 1], ['BSO-001', 1], ['HAI-001', 1], ['COC-001', 1], ['BTR-001', 1]],
   },
 ];
-const insertBundle = db.prepare('INSERT OR IGNORE INTO bundles (sku, name, description, bundle_type, savings_percent, active) VALUES (?,?,?,?,?,1)');
+const insertBundle = db.prepare('INSERT OR IGNORE INTO bundles (sku, name, description, bundle_type, savings_percent, serves, active) VALUES (?,?,?,?,?,?,1)');
+const setBundleServes = db.prepare('UPDATE bundles SET serves = ? WHERE id = ?');
 const insertBundleItem = db.prepare('INSERT OR IGNORE INTO bundle_items (bundle_id, product_id, quantity) VALUES (?,?,?)');
 let addedBundles = 0;
 const skippedBundles = [];
@@ -226,10 +255,13 @@ for (const b of bundles) {
     skippedBundles.push(`${b.sku} (missing: ${missing.join(', ')})`);
     continue;
   }
+  const serves = b.serves ?? 0;
   let id = db.prepare('SELECT id FROM bundles WHERE sku = ?').get(b.sku)?.id;
   if (!id) {
-    id = Number(insertBundle.run(b.sku, b.name, b.description, b.type, b.savings).lastInsertRowid);
+    id = Number(insertBundle.run(b.sku, b.name, b.description, b.type, b.savings, serves).lastInsertRowid);
     addedBundles++;
+  } else {
+    setBundleServes.run(serves, id);
   }
   for (const [sku, qty] of b.items) insertBundleItem.run(id, skuId[sku], qty);
 }
@@ -305,5 +337,6 @@ for (const r of recipes) {
 }
 
 console.log(`Seeded ${added} new products (${products.length - added} existing SKUs); refreshed descriptions on ${refreshed} existing SKUs.`);
+console.log(`Tagged ${taggedProducts} products with origin/cuisine/diet + spice level and wholesale prices.`);
 console.log(`Bundles: ${addedBundles} created.${skippedBundles.length ? ` Skipped ${skippedBundles.length} due to missing SKUs: ${skippedBundles.join('; ')}` : ''}`);
 console.log(`Recipes: ${addedRecipes} created.${skippedRecipes.length ? ` Skipped ${skippedRecipes.length} (missing ingredients): ${skippedRecipes.join('; ')}` : ''}`);
