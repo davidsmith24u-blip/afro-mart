@@ -72,7 +72,8 @@ npm test
 ```
 
 Environment: `PORT` (3000), `DB_PATH` (`afromart.db`), `AUTH_SECRET` (required in production so sessions survive restarts),
-`ADMIN_EMAIL`/`ADMIN_PASSWORD` (creates the first admin if absent). Admins can create staff via `POST /api/staff`.
+`ADMIN_EMAIL`/`ADMIN_PASSWORD` (creates the first admin if absent; `npm run seed` also creates a default admin —
+`davidsmith24u@gmail.com` — unless overridden). Admins can create staff via `POST /api/staff`.
 `CORS_ORIGIN` (default `*`) controls which origins may call the API from a browser; `COMMS_WEBHOOK_URL` casts the
 messages outbox to a webhook instead of the log transport. `DELIVERY_FEE_DEFAULT_CENTS` sets a fallback delivery fee
 for postcodes outside any configured area; `PAYMENTS_WEBHOOK_SECRET` enables the payment webhook; `WHATSAPP_NUMBER`

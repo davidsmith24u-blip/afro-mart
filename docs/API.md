@@ -17,6 +17,7 @@ Errors: `{ "error": "message" }` with 400/401/403/404/409/413.
 | POST `/api/products`, PUT `/api/products/:id` | staff | `sku,name,description,category_id,supplier_id,price_cents,cost_cents,stock,reorder_level,reorder_quantity,expiry_date,active` |
 | POST `/api/orders` `{items:[{product_id,quantity} | {bundle_id,quantity}],fulfillment:delivery|pickup,shipping_address?,delivery_service?,shipping_country?,pickup_location_id?,pickup_at?,location_id?,promo_code?}` | user | Place order; bundle lines expand into stock-checked components, decrements stock (per location), awards tiered points, applies bundle + promo discounts and adds the delivery-area fee; delivery is Germany-only and needs an address, pickup needs neither |
 | GET `/api/orders`, GET `/api/orders/:id` | user | Own orders (staff: all, limit/offset pagination) |
+| GET `/api/track?order=&email=` | public | Public delivery tracking: the order number plus the email used to place it returns status, courier, fulfilment and line items; a mismatched email is a 404 |
 | PATCH `/api/orders/:id/status` `{status}` | staff | `pending,paid,packed,shipped,delivered,cancelled`; fires status-change automations |
 | PATCH `/api/orders/:id/payment` `{status,method?,reference?}` | staff | Set `unpaid/paid/failed/refunded`; `paid` also advances a pending order to `paid` |
 | GET/POST `/api/suppliers`, PUT `/api/suppliers/:id` | staff | Supplier management |
