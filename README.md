@@ -36,13 +36,13 @@ The app itself has zero npm dependencies: Node.js ≥ 22.13 (built-in `node:http
 - Delivery areas matched by postal prefix, each with a fee and a minimum-order surcharge; store pickup with a location and collection slot; every order records `delivery_fee_cents` and its fulfilment
 - Loyalty tiers (bronze/silver/gold/platinum) that multiply the points earned, plus refer-a-friend codes that reward the referrer on a new signup
 - Monthly pantry subscriptions: any bundle delivered or collected every 30 days, turned into real, stock-checked orders with `POST /api/subscriptions/process` (staff or a cron job)
-- Recipes that link to the exact products and packs needed to cook a dish, each with one-tap "add all ingredients to bag"
+- Recipes that link to the exact products and packs needed to cook a dish, each with a step-by-step cooking method and a one-tap "add all ingredients to bag"
 - Payment status on every order (`unpaid`/`paid`/`failed`/`refunded`) with staff settlement and an integration-ready gateway webhook (`POST /api/payments/webhook`, guarded by `PAYMENTS_WEBHOOK_SECRET`)
 - WhatsApp added as a communications channel alongside email, SMS, push and webhook
-- Storefront: an African-inspired brand identity (calabash-and-sun emblem, kente stripe), richer copy across 123 products, euro pricing, and UI for pickup, subscriptions, recipes and referrals
+- Storefront: an African-inspired brand identity (calabash-and-sun emblem, kente stripe), richer copy across 149 products, euro pricing, and UI for pickup, subscriptions, recipes and referrals
 
 **Diaspora discovery & global reach**
-- Every one of the 123 SKUs is classified by origin (Nigeria, Ghana, South Africa, Ethiopia, Kenya, Senegal, Cameroon, DR Congo, Somalia, …), cuisine, diet (halal, vegan, vegetarian, gluten-free) and a 0–5 spice level
+- Every one of the 149 SKUs is classified by origin (Nigeria, Ghana, South Africa, Ethiopia, Kenya, Senegal, Cameroon, DR Congo, Somalia, …), cuisine, diet (halal, vegan, vegetarian, gluten-free) and a 0–5 spice level
 - A discovery filter bar on the storefront — origin and cuisine chips, diet and heat filters, and sort by name/price/heat — backed by `GET /api/discovery/facets`
 - Synonym-aware search that understands everyday diaspora names (*ata rodo* → scotch bonnet, *ugwu* → spinach, *semo* → semovita) on top of the plain text index
 - Multi-language storefront (English, German, French) and display-currency switcher (EUR, USD, GBP), both remembered per browser
@@ -89,6 +89,12 @@ Docker: `AUTH_SECRET=... docker compose up --build`.
 Because Netlify Functions have no persistent disk, the SQLite database is snapshotted to Netlify Blobs
 (`netlify/functions/store.mjs`): it is restored on a cold start, seeded on the very first run, and written back after
 every request that changes data. Node 24 (pinned in `.nvmrc`) provides a stable `node:sqlite`.
+
+Catalog content (products, bundles, recipes and their copy) is versioned via `PRAGMA user_version` and
+`src/catalog-version.js`: when a restored snapshot is older than `CATALOG_VERSION`, the idempotent seed re-runs and
+refreshes descriptions, bundles and recipes in place — so content updates reach a snapshot-backed production database
+on the next cold start **without discarding orders or customers**. Bump `CATALOG_VERSION` whenever the seed content
+changes.
 
 ```sh
 npx netlify-cli deploy --build --prod

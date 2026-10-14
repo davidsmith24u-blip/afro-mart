@@ -215,6 +215,7 @@ CREATE TABLE IF NOT EXISTS recipes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   title TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
+  steps TEXT NOT NULL DEFAULT '',
   prep_minutes INTEGER NOT NULL DEFAULT 30 CHECK (prep_minutes > 0),
   servings INTEGER NOT NULL DEFAULT 4 CHECK (servings > 0),
   emoji TEXT NOT NULL DEFAULT '🍽️',
@@ -301,6 +302,10 @@ export function openDb(path = ':memory:') {
   const bundleColumns = db.prepare('PRAGMA table_info(bundles)').all().map((column) => column.name);
   if (!bundleColumns.includes('serves')) {
     db.exec('ALTER TABLE bundles ADD COLUMN serves INTEGER NOT NULL DEFAULT 0');
+  }
+  const recipeColumns = db.prepare('PRAGMA table_info(recipes)').all().map((column) => column.name);
+  if (!recipeColumns.includes('steps')) {
+    db.exec("ALTER TABLE recipes ADD COLUMN steps TEXT NOT NULL DEFAULT ''");
   }
   const userColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name);
   if (!userColumns.includes('account_type')) {

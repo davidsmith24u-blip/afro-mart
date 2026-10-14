@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { openDb } from '../../src/db.js';
 import { ensureAdmin } from '../../src/bootstrap.js';
+import { CATALOG_VERSION } from '../../src/catalog-version.js';
 
 const DB_PATH = process.env.BLOBS_DB_PATH || join(tmpdir(), 'afromart.db');
 const STORE_NAME = process.env.BLOBS_STORE || 'afromart';
@@ -59,7 +60,16 @@ export function getDatabase() {
         }
       }
       if (!restored) await seedDatabase();
-      const db = openDb(DB_PATH);
+      let db = openDb(DB_PATH);
+      // Content sync: a restored snapshot may predate the current catalog. When
+      // it does, re-run the (idempotent) seed so new products, bundles, recipes
+      // and refreshed copy reach production without discarding orders or users.
+      const storedVersion = Number(db.prepare('PRAGMA user_version').get().user_version) || 0;
+      if (storedVersion < CATALOG_VERSION) {
+        try { db.close(); } catch { /* ignore */ }
+        await seedDatabase();
+        db = openDb(DB_PATH);
+      }
       // Idempotent, so it also covers an admin added via env after the first run.
       ensureAdmin(db);
       return db;

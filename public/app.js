@@ -406,6 +406,16 @@ function recipeCard(recipe) {
     list.append(li);
   }
   card.append(list);
+  if (recipe.steps) {
+    const details = el('details', undefined, { className: 'recipe-method' });
+    details.append(el('summary', t('recipe.method')));
+    const steps = el('ol', undefined, { className: 'recipe-steps' });
+    for (const step of recipe.steps.split('\n').map((line) => line.trim()).filter(Boolean)) {
+      steps.append(el('li', step.replace(/^\d+[.)]\s*/, '')));
+    }
+    details.append(steps);
+    card.append(details);
+  }
   const buy = el('div', undefined, { className: 'product-buy' });
   buy.append(el('strong', money(recipe.price_cents), { className: 'product-price' }));
   const add = el('button', 'Add all to bag +', { className: 'add-button', type: 'button' });

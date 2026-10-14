@@ -77,6 +77,7 @@ export function registerRecipeRoutes(api) {
     const set = (k, v) => { if (v !== undefined && !(partial && b[k] === undefined)) out[k] = v; };
     if (partial ? b.title !== undefined : true) set('title', str(b.title, 'title'));
     if (b.description !== undefined) set('description', str(b.description, 'description', { max: 2000, required: false }) ?? '');
+    if (b.steps !== undefined) set('steps', str(b.steps, 'steps', { max: 6000, required: false }) ?? '');
     if (b.prep_minutes !== undefined) set('prep_minutes', int(b.prep_minutes, 'prep_minutes', { min: 1 }));
     if (b.servings !== undefined) set('servings', int(b.servings, 'servings', { min: 1 }));
     if (b.emoji !== undefined) set('emoji', str(b.emoji, 'emoji', { max: 8, required: false }) ?? '🍽️');
@@ -105,8 +106,8 @@ export function registerRecipeRoutes(api) {
     const ingredients = fillIngredients(db, ctx.body.ingredients);
     const recipe = transaction(db, () => {
       const { lastInsertRowid } = run(
-        'INSERT INTO recipes (title, description, prep_minutes, servings, emoji, active) VALUES (?,?,?,?,?,?)',
-        f.title, f.description ?? '', f.prep_minutes ?? 30, f.servings ?? 4, f.emoji ?? '🍽️', f.active ?? 1);
+        'INSERT INTO recipes (title, description, steps, prep_minutes, servings, emoji, active) VALUES (?,?,?,?,?,?,?)',
+        f.title, f.description ?? '', f.steps ?? '', f.prep_minutes ?? 30, f.servings ?? 4, f.emoji ?? '🍽️', f.active ?? 1);
       insertIngredients(lastInsertRowid, ingredients);
       return get('SELECT * FROM recipes WHERE id = ?', lastInsertRowid);
     });

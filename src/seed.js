@@ -1,5 +1,6 @@
 import { openDb } from './db.js';
 import { classifyProduct, wholesalePriceCents } from './catalog-meta.js';
+import { CATALOG_VERSION } from './catalog-version.js';
 import { hashPassword } from './auth.js';
 
 const db = openDb(process.env.DB_PATH || 'afromart.db');
@@ -223,84 +224,106 @@ for (const row of db.prepare('SELECT id, sku FROM products').all()) skuId[row.sk
 const bundles = [
   {
     sku: 'EGS-BND', name: 'Egusi Soup Starter Kit', type: 'starter_pack', savings: 12, serves: 4,
-    description: 'Everything for a rich egusi soup — ground egusi, red palm oil, stockfish, crayfish, spinach and seasonings.',
+    description: 'The heart of a proper Nigerian Sunday pot, already portioned so there is nothing left to hunt down. Two packs of ground melon seeds, unrefined red palm oil, stockfish, sun-dried crayfish, dehydrated spinach, ground pepper, beef seasoning and iru come together into a thick, golden, nutty soup. Just add meat or fish, simmer until the red oil floats on top, and serve with pounded yam, eba or fufu.',
     items: [['EGU-001', 2], ['PAL-001', 1], ['CRY-001', 1], ['DSP-001', 1], ['DPP-001', 1], ['ONG-001', 1], ['STK-001', 1], ['IRU-001', 1]],
   },
   {
     sku: 'JOL-BND', name: 'Jollof Rice Party Pack', type: 'party_pack', savings: 10, serves: 12,
-    description: 'Stock up for the party: perfumed rice, jollof seasoning, pepper mix, crayfish, cubes, palm oil and groundnuts.',
+    description: 'Everything you need to feed a crowd that will not stop talking about your jollof. A full bag of perfumed long-grain rice, two sachets of smoky jollof seasoning, a five-pepper blend, ground crayfish, beef cubes, red palm oil and roasted groundnuts for the peppered garnish. Cooks one giant party tray that comfortably serves twelve, with that unmistakable smoky bottom-pot flavour.',
     items: [['RIC-001', 1], ['JOL-001', 2], ['PPR-002', 1], ['CRY-001', 1], ['ONG-001', 2], ['PAL-001', 1], ['GND-001', 1]],
   },
   {
     sku: 'FUF-BND', name: 'Fufu & Ogbono Night In', type: 'meal_pack', savings: 12, serves: 4,
-    description: 'A classic draw-soup night: cassava fufu, ogbono, crayfish, pepper, palm oil and stockfish.',
+    description: 'A cozy draw-soup supper for four, made simple. Smooth cassava fufu, ground ogbono seeds that thicken into that glossy, stretchy draw, crayfish, hot dried pepper, red palm oil and stockfish for deep savour. Simmer the ogbono with stock and meat, drop in the greens of your choice, then scoop it all up with warm fufu. Comfort food that needs almost no shopping.',
     items: [['FUF-001', 2], ['OGB-001', 1], ['CRY-001', 1], ['DPP-001', 1], ['PAL-001', 1], ['STK-001', 1]],
   },
   {
     sku: 'YAM-BND', name: 'Pounded Yam & Vegetable Pot', type: 'meal_pack', savings: 12, serves: 4,
-    description: 'Pounded yam flour with dried oha leaves, iru, crayfish, stockfish and spinach for a hearty vegetable pot.',
+    description: 'Silky pounded yam with a fragrant oha, uziza and spinach vegetable pot built to feed four. Instant pounded-yam flour, dried oha leaves, uziza for a warm peppery finish, fermented iru, crayfish, stockfish and dehydrated spinach for body and colour. A quick, deeply savoury weekday dinner that still feels like a Sunday spread.',
     items: [['YAM-002', 2], ['OHA-001', 1], ['IRU-001', 1], ['CRY-001', 1], ['STK-001', 1], ['DSP-001', 1]],
   },
   {
     sku: 'BRK-BND', name: 'Afro Breakfast Box', type: 'gift_box', savings: 10, serves: 2,
-    description: 'A cheerful morning box: malt drink, Chapman, chin chin, groundnuts, plantain chips and zobo tea.',
+    description: 'A cheerful little box for slow weekend mornings or a thoughtful gift. Rich non-alcoholic malt drink, a chilled Chapman for later, crisp golden chin chin, roasted groundnuts, sweet plantain chips and deep-red hibiscus petals for brewing a ruby jug of zobo. Pairs perfectly with a pot of hot tea and nowhere to be.',
     items: [['MAL-001', 1], ['CHP-001', 1], ['CHI-001', 1], ['GND-001', 1], ['PLC-001', 1], ['HIB-001', 1]],
   },
   {
     sku: 'BRA-BND', name: 'South African Braai & Wine Box', type: 'gift_box', savings: 10, serves: 4,
-    description: 'A taste of the garden route: Pinotage, Chenin Blanc, biltong, suya spice and roasted groundnuts.',
+    description: 'A taste of the Garden Route delivered to your door. A bold Pinotage and a crisp Chenin Blanc to pour alongside, traditional biltong, smoky suya spice to rub over the grill and slow-roasted groundnuts to snack on while the coals catch. Fire up the braai, invite friends over and let the wines breathe.',
     items: [['PIN-001', 1], ['BIL-001', 1], ['SPC-001', 1], ['CHW-001', 1], ['GND-001', 1]],
   },
   {
     sku: 'GHA-BND', name: 'Ghana Banku & Pepper Box', type: 'meal_pack', savings: 12, serves: 6,
-    description: 'Banku mix, ground pepper sauce staples, stockfish, dried prawns, crayfish and palm oil.',
+    description: 'A big Ghanaian feast for six, ready in one pot. Two packs of banku mix to steam into soft, tangy dumplings, ground pepper sauce staples, stockfish, dried prawns, crayfish and red palm oil. The prawns and stockfish build a deep, briny base, while the pepper sauce brings the heat you grind tilapia through. Serve banku, fish and a bowl of that pepper on the side.',
     items: [['BNK-001', 2], ['PSP-001', 1], ['STK-001', 1], ['CRY-001', 1], ['SHR-001', 1], ['PAL-001', 1]],
   },
   {
     sku: 'JWAR-BND', name: 'Jollof Rice Wars Box (NG vs GH)', type: 'taste_box', savings: 15, serves: 8,
-    description: 'Settle the debate at home: Nigerian-style jollof base, Ghanaian-style jollof base, two rices, pepper and dried prawns.',
+    description: 'Settle the greatest debate in West African cooking, right at your own table. You get both perfumed and everyday long-grain rice, a Nigerian-style jollof seasoning, a Ghanaian-style dry jollof base, a five-pepper blend, dried prawns and ground nutmeg. Cook two pots side by side, taste them blind, and let your family cast the deciding vote. Serves eight and makes for a brilliant dinner-party game.',
     items: [['RIC-001', 1], ['RIC-002', 1], ['JOL-001', 1], ['JOL-002', 1], ['PPR-002', 1], ['SHR-001', 1], ['KNR-001', 1]],
   },
   {
     sku: 'VEG-BND', name: 'Vegan Soups & Stews Box', type: 'meal_pack', savings: 12, serves: 4,
-    description: '100% plant-based comfort: egusi, palmnut cream, oha, uziza, dehydrated spinach, palm oil, jollof base and plantain.',
+    description: 'One hundred percent plant-based comfort food that loses nothing in flavour. Ground egusi, smooth palmnut cream, dried oha and uziza leaves, dehydrated spinach, unrefined palm oil, jollof seasoning and sweet plantain. Cook a rich banga-style palmnut soup, a meat-free egusi, or a bright vegetable pot — no animal products anywhere in the box. Serves four generously.',
     items: [['EGU-001', 1], ['PNC-001', 1], ['OHA-001', 1], ['UZI-001', 1], ['DSP-001', 1], ['PAL-001', 1], ['JOL-001', 1], ['PLN-001', 1]],
   },
   {
     sku: 'GLW-BND', name: 'Glow Up: Shea & Hair Care Kit', type: 'gift_box', savings: 10, serves: 1,
-    description: 'Self-care from the village to your vanity: raw shea, black soap, hair butter, coconut oil and body butter.',
+    description: 'Self-care straight from the village to your vanity. Raw unrefined shea butter, traditional black soap, rich hair butter, cold-pressed coconut oil and a deeply nourishing body butter. A complete five-step routine for skin and hair that smells warm and clean, and makes a lovely, useful gift for someone who deserves a little pampering.',
     items: [['SHE-001', 1], ['BSO-001', 1], ['HAI-001', 1], ['COC-001', 1], ['BTR-001', 1]],
   },
   {
     sku: 'STU-BND', name: 'Student Starter Bundle', type: 'starter_pack', savings: 12, serves: 2,
-    description: 'A student-friendly start to a proper kitchen: garri, rice, honey beans, palm oil, crayfish, pepper, jollof seasoning and stock cubes.',
+    description: 'A student-friendly first shop for a proper kitchen. White garri for quick eba and soaked garri, a big bag of rice, creamy honey beans, red palm oil, ground crayfish, jollof pepper mix, smoky jollof seasoning and beef cubes. Enough staples to cook real Nigerian food for two people for weeks on a tight budget — and everything keeps well in a shared kitchen.',
     items: [['GAR-001', 1], ['RIC-001', 1], ['BEA-001', 1], ['PAL-001', 1], ['CRY-001', 1], ['PPR-002', 1], ['JOL-001', 1], ['ONG-001', 1]],
   },
   {
+    sku: 'SUR-BND', name: 'Student Survival Box', type: 'starter_pack', savings: 15, serves: 1,
+    description: 'The first-year essentials, sized for one and priced for a student wallet. Sour Ijebu garri to soak cold with groundnuts and sugar, creamy honey beans, red palm oil, tinned tomato paste, ground pepper, beef cubes, crunchy kuli kuli and roasted groundnuts. Restock-proof and near impossible to get wrong: five-minute suppers on exam nights, or a slow pot of beans when you have time to spare.',
+    items: [['IJE-001', 1], ['BEA-001', 1], ['PAL-001', 1], ['TMP-001', 1], ['PPR-002', 1], ['ONG-001', 1], ['KLK-002', 1], ['GND-001', 1]],
+  },
+  {
+    sku: 'SEX-BND', name: 'Exam-Week Quick Meals Box', type: 'meal_pack', savings: 12, serves: 2,
+    description: 'Study fuel for the weeks when you have no time and even less energy. Everyday long-grain rice, a Ghanaian-style jollof base, tomato paste, beef cubes, ground crayfish, ground pepper, roasted groundnuts and kuli kuli. Almost every dish here is one pot and under twenty minutes, with barely any washing-up — so you can eat properly between revision sessions instead of skipping dinner.',
+    items: [['RIC-002', 1], ['JOL-002', 1], ['TMP-001', 1], ['ONG-001', 1], ['CRY-001', 1], ['PPR-002', 1], ['GND-001', 1], ['KLK-002', 1]],
+  },
+  {
+    sku: 'SBS-BND', name: 'Student Beans & Budget Box', type: 'meal_pack', savings: 12, serves: 2,
+    description: 'Cheap, filling and full of flavour — the box that gets you through to the end of the month. Honey beans and brown beans for big protein-rich pots, tomato paste, red palm oil, ground pepper, beef cubes, ground egusi and white garri. Cook a giant ewa riro or ewa agoyin on Sunday and eat well for pennies a plate all week.',
+    items: [['BEA-001', 1], ['BRN-001', 1], ['TMP-001', 1], ['PAL-001', 1], ['PPR-002', 1], ['ONG-001', 1], ['EGU-001', 1], ['GAR-001', 1]],
+  },
+  {
+    sku: 'SMN-BND', name: 'Meat-Free Student Month Box', type: 'meal_pack', savings: 12, serves: 2,
+    description: 'Plant-based, pocket-friendly and surprisingly filling. Ground egusi, smooth palmnut cream, dried oha leaves, fragrant uziza, dehydrated spinach, red palm oil, smoky jollof seasoning and creamy honey beans. Swap meat for mushrooms if you like, or simply let the egusi and palmnut do the work — either way it still tastes like home, and a little stretches a long way. Serves two across several meals.',
+    items: [['EGU-001', 1], ['PNC-001', 1], ['OHA-001', 1], ['UZI-001', 1], ['DSP-001', 1], ['PAL-001', 1], ['JOL-001', 1], ['BEA-001', 1]],
+  },
+  {
     sku: 'FAM-BND', name: 'Family Feast Pack', type: 'meal_pack', savings: 15, serves: 8,
-    description: 'Feed the whole house: a big rice, honey beans, palm fruit, egusi, crayfish, stockfish, pepper, plantain and seasonings.',
+    description: 'Feed the whole house without a second trip to the shops. Two big bags of rice for a party-size jollof or plain pot, creamy honey beans, frozen palm fruit for banga, two packs of ground egusi, crayfish, stockfish, a five-pepper blend, sweet plantain and beef seasoning. Built around eight generous servings, it is the pack for Sunday lunch, a family gathering or a week of serious meal prep.',
     items: [['RIC-001', 2], ['BEA-001', 1], ['PAL-002', 1], ['EGU-001', 2], ['CRY-001', 1], ['STK-001', 1], ['PPR-002', 1], ['PLN-001', 1], ['ONG-001', 2]],
   },
   {
     sku: 'XMS-BND', name: 'Christmas Celebration Hamper', type: 'gift_box', savings: 15, serves: 6,
-    description: 'A festive hamper for the season: jollof essentials, rice, chin chin, malt, zobo concentrate, groundnuts, plantain chips, palm fruit and goat meat.',
+    description: 'A festive hamper built for the season of plenty. Perfumed rice and two jollof seasonings for the Christmas pot, golden chin chin, malt drink, zobo concentrate to dilute into a ruby jug, roasted groundnuts and plantain chips for nibbling, frozen palm fruit and cubes of goat meat for a slow-braised stew. Arrives as a generous gift box and easily feeds six around the table.',
     items: [['RIC-001', 1], ['JOL-001', 2], ['CHI-001', 1], ['MAL-001', 1], ['ZBK-001', 1], ['GND-001', 1], ['PLC-001', 1], ['PAL-002', 1], ['GOA-001', 1]],
   },
   {
     sku: 'HMP-BND', name: 'Lagos Pantry Hamper', type: 'gift_box', savings: 12, serves: 4,
-    description: 'A generous taste of Lagos: ofada rice, iru, crayfish, palm oil, pepper mix, egusi, kuli kuli and zobo.',
+    description: 'A generous taste of Lagos in one box. Nutty unpolished ofada rice, deeply savoury iru, dried crayfish, red palm oil, ground hot pepper, ground egusi, crunchy kuli kuli and tangy zobo. Everything needed for a fiery ofada stew, a proper egusi, or a snack board with drinks — a lovely introduction for anyone new to the kitchen or a treat for someone who misses home.',
     items: [['OFR-001', 1], ['IRU-001', 1], ['CRY-002', 1], ['PAL-001', 1], ['DPP-001', 1], ['EGU-001', 1], ['KLK-002', 1], ['ZOB-001', 1]],
   },
   {
     sku: 'NYC-BND', name: 'New Yam Festival Box', type: 'taste_box', savings: 12, serves: 6,
-    description: 'Celebrate the new yam: pounded yam flour, oha leaves, uziza, iru, crayfish, stockfish and red palm oil.',
+    description: 'Celebrate the new yam harvest at your own table. Two packs of instant pounded-yam flour for a smooth, stretchy swallow, dried oha leaves, fragrant uziza, fermented iru, ground crayfish, stockfish and unrefined red palm oil. Assemble a fragrant oha and uziza vegetable pot and serve it hot with pounded yam — a festival plate that feeds six and tastes like a celebration.',
     items: [['PNY-001', 2], ['OHA-001', 1], ['UZI-001', 1], ['IRU-001', 1], ['CRY-001', 1], ['STK-001', 1], ['PAL-001', 1]],
   },
 ];
-const insertBundle = db.prepare('INSERT OR IGNORE INTO bundles (sku, name, description, bundle_type, savings_percent, serves, active) VALUES (?,?,?,?,?,?,1)');
-const setBundleServes = db.prepare('UPDATE bundles SET serves = ? WHERE id = ?');
+const upsertBundle = db.prepare(`INSERT INTO bundles (sku, name, description, bundle_type, savings_percent, serves, active) VALUES (?,?,?,?,?,?,1)
+  ON CONFLICT(sku) DO UPDATE SET name = excluded.name, description = excluded.description, bundle_type = excluded.bundle_type, savings_percent = excluded.savings_percent, serves = excluded.serves, active = 1`);
 const insertBundleItem = db.prepare('INSERT OR IGNORE INTO bundle_items (bundle_id, product_id, quantity) VALUES (?,?,?)');
+const clearBundleItems = db.prepare('DELETE FROM bundle_items WHERE bundle_id = ?');
 let addedBundles = 0;
+let refreshedBundles = 0;
 const skippedBundles = [];
 for (const b of bundles) {
   const missing = b.items.filter(([sku]) => !skuId[sku]).map(([sku]) => sku);
@@ -309,13 +332,13 @@ for (const b of bundles) {
     continue;
   }
   const serves = b.serves ?? 0;
-  let id = db.prepare('SELECT id FROM bundles WHERE sku = ?').get(b.sku)?.id;
-  if (!id) {
-    id = Number(insertBundle.run(b.sku, b.name, b.description, b.type, b.savings, serves).lastInsertRowid);
-    addedBundles++;
-  } else {
-    setBundleServes.run(serves, id);
-  }
+  const existing = db.prepare('SELECT id FROM bundles WHERE sku = ?').get(b.sku);
+  if (existing) refreshedBundles++;
+  else addedBundles++;
+  upsertBundle.run(b.sku, b.name, b.description, b.type, b.savings, serves);
+  const id = db.prepare('SELECT id FROM bundles WHERE sku = ?').get(b.sku).id;
+  // Rebuild contents so the bundle always matches the seed definition (and its price).
+  clearBundleItems.run(id);
   for (const [sku, qty] of b.items) insertBundleItem.run(id, skuId[sku], qty);
 }
 
@@ -335,41 +358,73 @@ for (const row of db.prepare('SELECT id, sku FROM bundles').all()) bundleIdBySku
 const recipes = [
   {
     title: 'Smoky Party Jollof', emoji: '🍛', prep_minutes: 60, servings: 6,
-    description: 'The one-pot showstopper: smoky, spicy party rice cooked low and slow.',
+    description: 'The one-pot showstopper that wins every argument: smoky, spicy party rice cooked low and slow until the bottom catches just enough to perfume the whole pot. This is the jollof you make for birthdays, weddings and Sunday visitors, built on a rich pepper base and finished with a heap of fried plantain.',
+    steps: '1. Blend the pepper mix with one onion and a little water until smooth, then reduce the purée in oil for 10 minutes until it darkens and the raw taste disappears.\n2. Stir in the jollof seasoning and crumbled beef cubes; cook 3 minutes so the spices bloom.\n3. Rinse the rice until the water runs clear and add it to the pot, turning gently to coat every grain in the base.\n4. Pour in hot stock or water to sit about 1cm above the rice, cover tightly and cook on the lowest heat for 25–30 minutes.\n5. Resist stirring. When the rice is tender, fluff with a fork, scatter over the ground crayfish and groundnuts, and let the bottom steam-catch for the signature smoky note.\n6. Rest 5 minutes, then serve with fried plantain and a spoon of pepper sauce on the side.',
     items: [['RIC-001', 1, 'long-grain aromatic rice'], ['JOL-001', 2, 'party jollof seasoning'], ['PPR-002', 1, 'five-pepper blend'], ['ONG-001', 2, 'beef cubes'], ['GND-001', 1, 'peppered garnish']],
   },
   {
     title: 'Rich Egusi Soup Night', emoji: '🥘', prep_minutes: 45, servings: 4,
-    description: 'Everything egusi: seeds, palm oil, stockfish and greens — with melt-in-the-mouth goat meat and fufu.',
+    description: 'Everything egusi in one luxurious pot: ground melon seeds, red palm oil, stockfish and greens, simmered with melt-in-the-mouth goat meat and served with a smooth swallow. Deeply nutty, slightly bitter from the iru and glossy with red oil — the kind of soup that makes a Tuesday feel like a celebration.',
+    steps: '1. Season the goat meat with half a crumbled stock cube and simmer in a little water until tender, keeping the stock.\n2. Mix the ground egusi with warm water into a loose paste and set aside.\n3. Heat the palm oil, add the egusi paste and fry gently for 8–10 minutes until it crumbles, smells nutty and releases oil.\n4. Pour in the reserved meat stock and a little more water, add crayfish, stockfish and iru, then simmer 15 minutes until the oil floats.\n5. Return the goat meat, stir in the soaked spinach (ugu), and simmer 5 minutes more; taste for salt.\n6. Serve piping hot with pounded yam, eba or fufu to scoop it all up.',
     items: [['@EGS-BND', 1, 'Egusi Soup Starter Kit'], ['GOA-001', 1, 'goat meat, cubed'], ['FUF-001', 1, 'for the swallow']],
   },
   {
     title: 'Fufu & Ogbono Draw Soup', emoji: '🍲', prep_minutes: 40, servings: 4,
-    description: 'A glossy, comforting draw soup to scoop up with smooth fufu.',
+    description: 'A glossy, comforting draw soup that clings to every mouthful of smooth fufu. The ground ogbono thickens the broth into that beloved stretchy texture, while crayfish, stockfish and dried pepper build a deep, savoury base. Simple, warming and endlessly satisfying.',
+    steps: '1. Soak the stockfish in warm water for 15 minutes to soften and rinse away excess salt.\n2. Boil the stockfish and any meat in seasoned water until tender, reserving the broth.\n3. Mix the ground ogbono with a little warm water, then add it to the simmering broth in small spoonfuls, stirring to avoid lumps.\n4. Add the crayfish, dried pepper and palm oil; simmer 12–15 minutes until the soup thickens and draws.\n5. Adjust the consistency with hot water — it should coat the back of a spoon, not run off it.\n6. Serve with warm fufu or eba, molding a small ball, dipping and swallowing without chewing.',
     items: [['FUF-001', 2], ['OGB-001', 1], ['CRY-001', 1], ['DPP-001', 1], ['PAL-001', 1], ['STK-001', 1]],
   },
   {
     title: 'Pounded Yam & Oha Vegetable Pot', emoji: '🍠', prep_minutes: 35, servings: 4,
-    description: 'Silky pounded yam with an oha, uziza and iru leaf pot.',
+    description: 'Silky pounded yam paired with a fragrant oha, uziza and iru leaf pot. The oha leaves go in late to keep their peppery aroma, while the uziza and iru give the soup its warm, slightly bitter depth. A lighter, greener alternative to a heavy egusi, and quick enough for a weeknight.',
+    steps: '1. Rinse the dried oha and uziza leaves and soak the stockfish until softened; keep the soaking water for extra flavour.\n2. Simmer the stockfish in seasoned water with the iru and crayfish for 15 minutes.\n3. Add the palm oil and a little of the soaking water, then simmer 5 minutes to marry the flavours.\n4. Stir in the uziza and most of the oha, cook 3 minutes, then add the remaining oha off the heat so it stays bright and fragrant.\n5. Prepare the pounded yam to a smooth, stretchy consistency while the soup rests.\n6. Serve the soup hot beside the pounded yam and eat with your hands, scooping and dipping.',
     items: [['YAM-002', 2], ['OHA-001', 1], ['UZI-001', 1], ['IRU-001', 1], ['CRY-001', 1], ['STK-001', 1]],
   },
   {
     title: 'Zobo Cooler & Market Snacks', emoji: '🧃', prep_minutes: 15, servings: 4,
-    description: 'Chilled zobo with roasted maize, chin chin and plantain chips for a relaxed afternoon.',
+    description: 'A chilled pitcher of deep-red zobo with roasted maize, crisp chin chin and sweet plantain chips for a relaxed afternoon. Bright, tangy and lightly spiced, it is the drink-and-nibbles spread you put out when friends drop by — no cooking required, just pouring and sharing.',
+    steps: '1. Pour the zobo concentrate into a large jug and dilute with cold water to taste, about 1 part zobo to 3 parts water.\n2. Add sliced ginger or a squeeze of pineapple juice if you like, then chill for at least an hour.\n3. Roast the maize over a flame or under a hot grill until charred in spots, then cut into short lengths.\n4. Tip the chin chin and plantain chips into separate bowls and add the roasted groundnuts.\n5. Serve the zobo over plenty of ice with the snacks arranged around it for a help-yourself market-style spread.',
     items: [['ZOB-001', 2], ['RMC-001', 1], ['GND-001', 1], ['CHI-001', 1], ['PLC-001', 1]],
   },
   {
     title: 'Braai Evening', emoji: '🍷', prep_minutes: 25, servings: 4,
-    description: 'Fire up the grill: braai box, marinated goat and fresh plantain, with a glass of Pinotage.',
+    description: 'Fire up the grill and let the evening take its time: a South African braai box, goat meat marinated in smoky suya spice and sweet plantain charred over the coals, all with a glass of Pinotage in hand. Smoke, spice and good company — the easiest way to turn dinner into an event.',
+    steps: '1. Rub the goat meat all over with the suya spice and a little oil, then marinate for at least 20 minutes (overnight if you can).\n2. Light the coals and wait until they are grey and glowing — you want steady heat, not flames.\n3. Grill the goat meat 4–5 minutes per side, turning once, until nicely charred but still juicy.\n4. Slice the plantain thickly, brush with a little oil and grill until caramelised and tender.\n5. Arrange the biltong and groundnuts on a board for snacking while the meat rests.\n6. Serve everything hot with a glass of Pinotage or Chenin Blanc, and let everyone graze.',
     items: [['@BRA-BND', 1, 'Braai & Wine Box'], ['GOA-001', 1, 'marinate & grill'], ['PLN-001', 1, 'grilled plantain']],
   },
+  {
+    title: 'Five-Minute Student Garri Bowl', emoji: '🥣', prep_minutes: 5, servings: 1,
+    description: 'The meal every Nigerian student knows by heart: cold, sour Ijebu garri soaked soft and crowned with roasted groundnuts, a spoon of sugar and a splash of cold milk or water. It is ready before the kettle boils, needs no hob and costs almost nothing — the ultimate study-night supper.',
+    steps: '1. Spoon 3 heaped tablespoons of Ijebu garri into a bowl.\n2. Cover with cold water and leave to soak for 2–3 minutes until the grains soften and swell.\n3. Drain off a little of the water so it is pleasantly soupy, not watery.\n4. Sprinkle over a small handful of roasted groundnuts and a teaspoon of sugar, or kuli kuli crumbled for crunch.\n5. Add a splash of cold milk if you have it, stir once and eat straight away before it goes soggy.',
+    items: [['IJE-001', 1, 'sour Ijebu garri'], ['GND-001', 1, 'roasted groundnuts'], ['KLK-002', 1, 'kuli kuli, crumbled']],
+  },
+  {
+    title: 'One-Pot Student Jollof', emoji: '🍚', prep_minutes: 25, servings: 2,
+    description: 'A scaled-down, no-fuss jollof for one or two: everyday long-grain rice simmered in a quick Ghanaian-style base with a handful of crayfish and a crumbled stock cube. One pot, one spoon and almost no washing-up — and the leftovers somehow taste even better the next day.',
+    steps: '1. Rinse the rice under cold water until it runs clear, then drain well.\n2. In a single pot, whisk the jollof base and tomato paste with about a cup of water until smooth.\n3. Add the ground pepper, crayfish and crumbled stock cube, then stir in the rice.\n4. Pour in just enough water to sit about an inch above the rice, cover and simmer on the lowest heat for 18–20 minutes.\n5. Do not stir while it cooks. When the rice is tender, fluff gently with a fork and let the bottom catch a little for a smoky flavour.\n6. Serve straight from the pot with a sprinkle of roasted groundnuts on top.',
+    items: [['RIC-002', 1, 'everyday long-grain rice'], ['JOL-002', 1, 'Ghanaian-style jollof base'], ['TMP-001', 1, 'tomato paste'], ['CRY-001', 1, 'ground crayfish'], ['PPR-002', 1, 'ground pepper'], ['ONG-001', 1, 'beef cube'], ['GND-001', 1, 'to garnish']],
+  },
+  {
+    title: 'Budget Ewa Agoyin & Garri', emoji: '🫘', prep_minutes: 40, servings: 3,
+    description: 'A big pot of soft, smoky beans under a punchy pepper sauce, eaten with cold garri. Cheap to make, heavy on protein and utterly comforting, it is the student meal-prep hero — cook once on Sunday and eat well for days. The secret is mashing the beans and letting the pepper sauce pool in the middle.',
+    steps: '1. Rinse the beans well, then boil in plenty of water until very soft, about 30–35 minutes, topping up the water as needed (a pressure cooker cuts this in half).\n2. Meanwhile, blend the ground pepper with a little water and simmer with the tomato paste and half the palm oil until thick, dark and glossy, about 10 minutes.\n3. Add the crumbled stock cube to the pepper sauce and taste for salt.\n4. Mash the cooked beans roughly with the back of a spoon until creamy but still a little chunky.\n5. Heap the beans on a plate, spoon the pepper sauce over the top and drizzle with the remaining palm oil.\n6. Soak garri in cold water and serve on the side to scoop it all up.',
+    items: [['BEA-001', 1, 'honey beans'], ['BRN-001', 1, 'brown beans'], ['TMP-001', 1, 'tomato paste'], ['PAL-001', 1, 'red palm oil'], ['PPR-002', 1, 'ground pepper'], ['ONG-001', 1, 'beef cube'], ['GAR-001', 1, 'garri, to serve']],
+  },
+  {
+    title: 'Egusi for One', emoji: '🥘', prep_minutes: 30, servings: 2,
+    description: 'A small-pot egusi that skips the market run: ground melon seeds simmered with palm oil, crayfish and spinach, thickened exactly the way you like it. Rich, nutty and ready in half an hour, it is proof that a proper soup does not need a crowd. Serve with garri, semo or pounded yam.',
+    steps: '1. Mix the ground egusi with a little warm water into a loose paste so it will not clump.\n2. Heat the palm oil in a pot, add the egusi paste and fry gently, stirring, until it starts to crumble and smell nutty, about 5 minutes.\n3. Add the crayfish, a crumbled stock cube and one or two cups of water; simmer 10 minutes until the red oil floats on top.\n4. Stir in the soaked dehydrated spinach and simmer 3 more minutes.\n5. Taste for salt, adjust the thickness with a splash of hot water, and serve hot with your favourite swallow.',
+    items: [['EGU-001', 1, 'ground egusi'], ['PAL-001', 1, 'red palm oil'], ['CRY-001', 1, 'ground crayfish'], ['DSP-001', 1, 'dehydrated spinach'], ['ONG-001', 1, 'beef cube']],
+  },
 ];
-const insertRecipe = db.prepare('INSERT INTO recipes (title, description, prep_minutes, servings, emoji, active) VALUES (?,?,?,?,?,1)');
+const insertRecipe = db.prepare('INSERT INTO recipes (title, description, steps, prep_minutes, servings, emoji, active) VALUES (?,?,?,?,?,?,1)');
+const updateRecipe = db.prepare('UPDATE recipes SET description = ?, steps = ?, prep_minutes = ?, servings = ?, emoji = ?, active = 1 WHERE id = ?');
 const insertRecipeIngredient = db.prepare('INSERT INTO recipe_ingredients (recipe_id, product_id, bundle_id, quantity, note) VALUES (?,?,?,?,?)');
+const clearRecipeIngredients = db.prepare('DELETE FROM recipe_ingredients WHERE recipe_id = ?');
 let addedRecipes = 0;
+let refreshedRecipes = 0;
 const skippedRecipes = [];
 for (const r of recipes) {
-  if (db.prepare('SELECT 1 FROM recipes WHERE title = ?').get(r.title)) continue;
   const parts = [];
   let missing = false;
   for (const [key, qty, note] of r.items) {
@@ -384,15 +439,28 @@ for (const r of recipes) {
     }
   }
   if (missing) { skippedRecipes.push(r.title); continue; }
-  const id = Number(insertRecipe.run(r.title, r.description, r.prep_minutes, r.servings, r.emoji).lastInsertRowid);
+  const existing = db.prepare('SELECT id FROM recipes WHERE title = ?').get(r.title);
+  let id;
+  if (existing) {
+    id = existing.id;
+    updateRecipe.run(r.description, r.steps ?? '', r.prep_minutes, r.servings, r.emoji, id);
+    clearRecipeIngredients.run(id);
+    refreshedRecipes++;
+  } else {
+    id = Number(insertRecipe.run(r.title, r.description, r.steps ?? '', r.prep_minutes, r.servings, r.emoji).lastInsertRowid);
+    addedRecipes++;
+  }
   for (const part of parts) insertRecipeIngredient.run(id, part.product_id, part.bundle_id, part.quantity, part.note);
-  addedRecipes++;
 }
 
 console.log(`Seeded ${added} new products (${products.length - added} existing SKUs); refreshed descriptions on ${refreshed} existing SKUs.`);
 console.log(`Tagged ${taggedProducts} products with origin/cuisine/diet + spice level and wholesale prices.`);
-console.log(`Bundles: ${addedBundles} created.${skippedBundles.length ? ` Skipped ${skippedBundles.length} due to missing SKUs: ${skippedBundles.join('; ')}` : ''}`);
-console.log(`Recipes: ${addedRecipes} created.${skippedRecipes.length ? ` Skipped ${skippedRecipes.length} (missing ingredients): ${skippedRecipes.join('; ')}` : ''}`);
+console.log(`Bundles: ${addedBundles} created, ${refreshedBundles} refreshed.${skippedBundles.length ? ` Skipped ${skippedBundles.length} due to missing SKUs: ${skippedBundles.join('; ')}` : ''}`);
+console.log(`Recipes: ${addedRecipes} created, ${refreshedRecipes} refreshed.${skippedRecipes.length ? ` Skipped ${skippedRecipes.length} (missing ingredients): ${skippedRecipes.join('; ')}` : ''}`);
+
+// Record the catalog content version so the Netlify Function knows when a
+// snapshot-backed database is behind the current seed content.
+db.exec(`PRAGMA user_version = ${CATALOG_VERSION}`);
 
 // Guarantee an administrator so the staff dashboard at /admin is usable on a
 // fresh database. Overridable with ADMIN_EMAIL / ADMIN_PASSWORD.

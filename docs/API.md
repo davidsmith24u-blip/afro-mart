@@ -105,7 +105,7 @@ by lifetime spend). Passing a valid `ref` at registration awards the referrer 20
 |---|---|---|
 | GET `/api/recipes` | public | Active recipes with priced ingredients and `items_available` (staff can pass `?all=1`) |
 | GET `/api/recipes/:id` | public | One recipe |
-| POST `/api/recipes`, PUT `/api/recipes/:id` | staff | `{title,description,prep_minutes,servings,emoji,active,ingredients:[{product_id\|bundle_id,quantity,note?}]}` |
+| POST `/api/recipes`, PUT `/api/recipes/:id` | staff | `{title,description,steps,prep_minutes,servings,emoji,active,ingredients:[{product_id\|bundle_id,quantity,note?}]}` (`steps` is a newline-separated method) |
 | DELETE `/api/recipes/:id` | staff | Remove a recipe and its ingredients |
 
 ### Diaspora discovery
