@@ -616,6 +616,204 @@ function recipeCard(recipe) {
   card.append(buy);
   return card;
 }
+
+// ---------- AI kitchen assistant ----------
+// Talks to /api/assistant/*. The matching is done on the server against the
+// real catalogue; the browser only renders results and fills the bag.
+const assistantHistory = [];
+let assistantBusy = false;
+
+function addAssistantItems(items) {
+  let lines = 0;
+  for (const item of items || []) {
+    if (item.bundle_id != null) {
+      const key = `b${item.bundle_id}`;
+      cart[key] = Math.min((cart[key] || 0) + (item.quantity || 1), 10);
+    } else if (item.product_id != null) {
+      cart[item.product_id] = (cart[item.product_id] || 0) + (item.quantity || 1);
+    } else {
+      continue;
+    }
+    lines += 1;
+  }
+  if (lines) saveCart();
+  return lines;
+}
+
+function recipeAddItems(recipe, onlyAvailable) {
+  return (recipe.ingredients || [])
+    .filter((ingredient) => !onlyAvailable || ingredient.in_stock)
+    .map((ingredient) => (ingredient.kind === 'bundle'
+      ? { bundle_id: ingredient.id, quantity: ingredient.quantity }
+      : { product_id: ingredient.id, quantity: ingredient.quantity }));
+}
+
+function assistantSuggestionCard(item, isBundle = false) {
+  const card = el('article', undefined, { className: 'assistant-suggestion' });
+  card.append(el('img', undefined, { src: productPhoto(item), alt: '', className: 'assistant-suggestion-photo', loading: 'lazy' }));
+  const body = el('div', undefined, { className: 'assistant-suggestion-body' });
+  body.append(el('strong', item.name));
+  if (item.price_cents != null) body.append(el('span', money(item.price_cents), { className: 'product-price' }));
+  const add = el('button', '+', { className: 'add-button', type: 'button' });
+  add.title = t('assistant.addAll');
+  add.disabled = !(item.in_stock ?? item.stock > 0);
+  add.onclick = () => say(t('assistant.added', {
+    count: addAssistantItems([isBundle ? { bundle_id: item.id, quantity: 1 } : { product_id: item.id, quantity: 1 }]),
+  }));
+  card.append(body, add);
+  return card;
+}
+
+function assistantRecipeRow(recipe) {
+  const card = el('article', undefined, { className: 'assistant-suggestion' });
+  card.append(el('span', recipe.emoji || '🍽️', { className: 'recipe-emoji', ariaHidden: 'true' }));
+  const body = el('div', undefined, { className: 'assistant-suggestion-body' });
+  body.append(el('strong', recipe.title));
+  body.append(el('span', money(recipe.price_cents), { className: 'product-price' }));
+  const items = recipeAddItems(recipe, true);
+  const add = el('button', '+', { className: 'add-button', type: 'button' });
+  add.title = t('assistant.addAll');
+  add.disabled = !items.length || !recipe.items_available;
+  add.onclick = () => say(t('assistant.added', { count: addAssistantItems(items) }));
+  card.append(body, add);
+  return card;
+}
+
+function assistantMatchCard(match) {
+  const card = el('article', undefined, { className: 'assistant-match' });
+  const head = el('div', undefined, { className: 'assistant-match-head' });
+  head.append(el('span', match.emoji || '🍽️', { className: 'recipe-emoji', ariaHidden: 'true' }));
+  const titles = el('div', undefined, { className: 'assistant-match-titles' });
+  titles.append(el('h3', match.title));
+  titles.append(el('p', `${match.prep_minutes} min · ${money(match.price_cents)}`, { className: 'recipe-meta' }));
+  head.append(titles);
+  head.append(el('span', `${match.coverage}% ${t('assistant.match')}`, { className: 'assistant-coverage' }));
+  card.append(head);
+  if (match.have && match.have.length) card.append(el('p', `${t('assistant.youHave')}: ${match.have.join(', ')}`, { className: 'assistant-have' }));
+  if (match.missing && match.missing.length) {
+    card.append(el('p', t('assistant.missing'), { className: 'assistant-subhead' }));
+    const list = el('ul', undefined, { className: 'assistant-missing' });
+    for (const item of match.missing) {
+      const li = el('li');
+      if (!item.in_stock) li.className = 'out';
+      li.append(el('span', item.name));
+      li.append(el('span', item.in_stock ? money(item.price_cents) : `${money(item.price_cents)} · ${t('assistant.outOfStock')}`, { className: 'recipe-qty' }));
+      list.append(li);
+    }
+    card.append(list);
+  } else {
+    card.append(el('p', t('assistant.haveEverything'), { className: 'assistant-have' }));
+  }
+  const buy = el('div', undefined, { className: 'product-buy' });
+  if (match.add_missing && match.add_missing.length) {
+    const missing = el('button', `${t('assistant.addMissing')} +`, { className: 'add-button', type: 'button' });
+    missing.disabled = !match.items_available;
+    missing.onclick = () => say(t('assistant.added', { count: addAssistantItems(match.add_missing) }));
+    buy.append(missing);
+  }
+  const all = el('button', `${t('assistant.addAll')} +`, { className: 'secondary-button', type: 'button' });
+  all.onclick = () => say(t('assistant.added', { count: addAssistantItems(match.add_all) }));
+  buy.append(all);
+  card.append(buy);
+  return card;
+}
+
+async function cookFromPantry() {
+  if (assistantBusy) return;
+  const pantry = $('assistant-pantry').value.trim();
+  const status = $('assistant-status');
+  const results = $('assistant-results');
+  if (!pantry) { status.textContent = t('assistant.needPantry'); return; }
+  assistantBusy = true;
+  status.textContent = t('assistant.thinking');
+  results.replaceChildren();
+  try {
+    const guests = Math.max(1, Math.min(100, Number($('assistant-guests').value) || 4));
+    const data = await api('/api/assistant/cook', { method: 'POST', body: { pantry, guests } });
+    const cards = [];
+    if (data.tip) cards.push(el('p', `💡 ${data.tip}`, { className: 'assistant-tip' }));
+    for (const match of data.matches) cards.push(assistantMatchCard(match));
+    if (!data.matches.length) {
+      cards.push(el('p', t('assistant.noMatch'), { className: 'assistant-status' }));
+      for (const suggestion of data.suggestions) {
+        const recipe = recipes.find((item) => item.id === suggestion.recipe_id);
+        if (recipe) cards.push(recipeCard(recipe));
+      }
+    }
+    results.replaceChildren(...cards);
+    status.textContent = '';
+  } catch (e) {
+    status.textContent = e.message;
+  } finally {
+    assistantBusy = false;
+  }
+}
+
+function assistantBubble(role, text) {
+  return el('div', text, { className: `assistant-bubble ${role === 'user' ? 'from-user' : 'from-shop'}` });
+}
+
+function renderAssistantChat() {
+  const box = $('assistant-chat');
+  box.replaceChildren(...assistantHistory.map((message) => assistantBubble(message.role, message.content)));
+  box.scrollTop = box.scrollHeight;
+}
+
+async function askAssistant(question) {
+  if (assistantBusy) return;
+  assistantBusy = true;
+  assistantHistory.push({ role: 'user', content: question });
+  renderAssistantChat();
+  const host = $('assistant-chat');
+  const thinking = el('div', t('assistant.askThinking'), { className: 'assistant-bubble from-shop thinking' });
+  host.append(thinking);
+  host.scrollTop = host.scrollHeight;
+  try {
+    const data = await api('/api/assistant/chat', { method: 'POST', body: { messages: assistantHistory.slice(-8) } });
+    assistantHistory.push({ role: 'assistant', content: data.reply });
+    renderAssistantChat();
+    const cards = [
+      ...data.products.map((product) => assistantSuggestionCard(product)),
+      ...data.bundles.map((bundle) => assistantSuggestionCard(bundle, true)),
+      ...data.recipes.map(assistantRecipeRow),
+    ];
+    if (cards.length) {
+      const wrap = el('div', undefined, { className: 'assistant-suggestions' });
+      wrap.append(...cards);
+      host.append(wrap);
+      host.scrollTop = host.scrollHeight;
+    }
+  } catch (e) {
+    assistantHistory.push({ role: 'assistant', content: e.message });
+    renderAssistantChat();
+  } finally {
+    assistantBusy = false;
+  }
+}
+
+function initAssistant() {
+  const badge = $('assistant-badge');
+  if (badge) {
+    const powered = Boolean(settings.ai?.enabled);
+    badge.dataset.i18n = powered ? 'assistant.poweredOn' : 'assistant.poweredOff';
+    badge.textContent = t(badge.dataset.i18n);
+    badge.classList.toggle('on', powered);
+    badge.hidden = false;
+  }
+  $('assistant-cook').onclick = () => { cookFromPantry(); };
+  $('assistant-pantry').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); cookFromPantry(); }
+  });
+  $('assistant-chat-form').onsubmit = (event) => {
+    event.preventDefault();
+    const input = $('assistant-chat-input');
+    const question = input.value.trim();
+    if (!question) return;
+    input.value = '';
+    askAssistant(question);
+  };
+}
+
 function saveCart() { localStorage.setItem('cart', JSON.stringify(cart)); renderCart(); queueCartSnapshot(); }
 function clearCart() { for (const key of Object.keys(cart)) delete cart[key]; saveCart(); }
 
@@ -1061,5 +1259,6 @@ if ('serviceWorker' in navigator) {
     await loadBundles();
     await Promise.all([loadProducts(), loadRecipes(), loadOrders(), loadMember()]);
     planParty().catch(() => {});
+    initAssistant();
   } catch (e) { fail(e); }
 })();

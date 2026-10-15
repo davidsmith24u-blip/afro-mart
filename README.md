@@ -65,6 +65,12 @@ The REST API is mobile-app friendly: a React Native / Expo app can reuse every e
 - A product detail modal with imagery, description, ratings and a review form
 - CI (`.github/workflows/ci.yml`) runs the full test suite on every push and pull request
 
+**AI kitchen assistant**
+- "What can I cook tonight?" — a shopper types what is already in their kitchen and gets real recipes from the catalogue ranked by how much they can already cook, with the exact missing items (and price) addable to the bag in one tap, scaled for the number of guests (`POST /api/assistant/cook`)
+- A catalogue-grounded "Ask us anything" chat that answers with real products, packs and recipes as shoppable cards (`POST /api/assistant/chat`)
+- A staff copywriter that drafts English, German and French product descriptions and applies the English text to the product from the dashboard (`POST /api/assistant/product-copy`)
+- Provider-agnostic and optional: works with any OpenAI-compatible endpoint (`AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL`) or Anthropic (`AI_PROVIDER=anthropic`), and falls back to deterministic alias-aware matching when no key is configured, so nothing breaks offline
+
 ## Installable web app (PWA)
 The storefront is installable and works offline for the app shell. It ships a web app manifest
 (`public/manifest.webmanifest`), an SVG app icon (`public/app-icon.svg`) and a service worker

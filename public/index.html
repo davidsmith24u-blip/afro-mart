@@ -176,6 +176,38 @@
 			<div id="recipe-grid" class="recipe-grid" aria-live="polite"></div>
 		</section>
 
+		<section id="assistant" class="shop-section assistant-section" aria-labelledby="assistant-title">
+			<div class="section-heading">
+				<div><p class="eyebrow" data-i18n="assistant.eyebrow">Your kitchen co-pilot</p><h2 id="assistant-title" data-i18n="assistant.title">What can I cook tonight?</h2></div>
+				<p class="shop-caption" data-i18n="assistant.caption">Tell us what you already have — we match it to our recipes and add only what's missing to your bag.</p>
+			</div>
+			<div class="assistant-grid">
+				<div class="assistant-card">
+					<label for="assistant-pantry" data-i18n="assistant.pantryLabel">What's in your kitchen?</label>
+					<textarea id="assistant-pantry" rows="3" data-i18n-placeholder="assistant.pantryPlaceholder" placeholder="e.g. garri, spinach, palm oil, scotch bonnet, egusi"></textarea>
+					<div class="assistant-controls">
+						<label class="assistant-guests"><span data-i18n="assistant.guests">Guests</span>
+							<input id="assistant-guests" type="number" min="1" max="100" value="4" inputmode="numeric">
+						</label>
+						<button id="assistant-cook" class="checkout-button" type="button" data-i18n="assistant.cook">Find a dish</button>
+					</div>
+					<p id="assistant-status" class="assistant-status" aria-live="polite"></p>
+					<div id="assistant-results" class="assistant-results" aria-live="polite"></div>
+				</div>
+				<div class="assistant-card">
+					<div class="assistant-chat-head">
+						<label for="assistant-chat-input" data-i18n="assistant.askLabel">Ask us anything</label>
+						<span id="assistant-badge" class="assistant-badge" hidden></span>
+					</div>
+					<div id="assistant-chat" class="assistant-chat" aria-live="polite"></div>
+					<form id="assistant-chat-form" class="assistant-chat-form">
+						<input id="assistant-chat-input" data-i18n-placeholder="assistant.askPlaceholder" placeholder="Do you sell fresh ugu? What is good for a student on a budget?">
+						<button class="secondary-button" type="submit" data-i18n="assistant.send">Ask</button>
+					</form>
+				</div>
+			</div>
+		</section>
+
 		<section id="shop" class="shop-section" aria-labelledby="shop-title">
 			<div class="section-heading">
 				<div><p class="eyebrow" data-i18n="shop.eyebrow">A good place to start</p><h2 id="shop-title" data-i18n="shop.title">From our market</h2></div>

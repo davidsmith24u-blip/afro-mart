@@ -328,6 +328,53 @@ main { max-width: 1320px; padding: 0 40px; margin: 0 auto; }
 .recipe-steps { margin: 10px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 7px; }
 .recipe-steps li { color: var(--muted); font-size: 11.5px; line-height: 1.5; }
 
+/* ---------- AI kitchen assistant ---------- */
+.assistant-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.assistant-card { display: flex; flex-direction: column; gap: 12px; padding: 24px; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); box-shadow: var(--shadow-sm); }
+.assistant-card > label { font: 600 15px var(--serif); color: var(--ink); }
+.assistant-card textarea, .assistant-card input[type="number"], .assistant-chat-form input { width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 13px; background: #fffdfd; color: var(--ink); font: 400 13px var(--sans); }
+.assistant-card textarea { resize: vertical; min-height: 72px; }
+.assistant-controls { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.assistant-guests { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 11px; }
+.assistant-guests input { width: 96px; }
+.assistant-controls .checkout-button { margin-left: auto; }
+.assistant-status { min-height: 16px; margin: 0; color: var(--muted); font-size: 11.5px; }
+.assistant-results { display: flex; flex-direction: column; gap: 14px; }
+.assistant-tip { margin: 0; padding: 12px 14px; border-radius: 14px; background: linear-gradient(150deg, #fdf0d8, #f8e0b6); color: var(--clay-deep); font-size: 12.5px; line-height: 1.5; }
+.assistant-match { display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(180deg, #fffdf8, #fbf0dd); }
+.assistant-match-head { display: flex; align-items: center; gap: 12px; }
+.assistant-match-titles { flex: 1; min-width: 0; }
+.assistant-match-head h3 { margin: 0; font: 600 17px/1.15 var(--serif); }
+.assistant-coverage { flex: none; padding: 4px 10px; border-radius: 999px; background: var(--green); color: #fff; font-size: 9.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.assistant-have, .assistant-subhead { margin: 0; font-size: 11.5px; }
+.assistant-have { color: var(--green-deep); }
+.assistant-subhead { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.assistant-missing { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.assistant-missing li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; border-radius: 9px; background: rgb(255 255 255 / 62%); font-size: 11.5px; }
+.assistant-missing li.out { color: var(--muted); }
+.assistant-match .product-buy { flex-wrap: wrap; }
+.assistant-chat-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.assistant-badge { padding: 4px 10px; border-radius: 999px; background: #ecdfd6; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.assistant-badge.on { background: var(--clay); color: #fff7ec; }
+.assistant-chat { flex: 1; display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; padding: 4px; }
+.assistant-chat:empty::before { content: '👋'; opacity: .35; font-size: 22px; margin: auto; }
+.assistant-bubble { max-width: 88%; padding: 10px 13px; border-radius: 15px; font-size: 12px; line-height: 1.5; white-space: pre-wrap; }
+.assistant-bubble.from-user { align-self: flex-end; background: var(--clay); color: #fff7ec; border-bottom-right-radius: 5px; }
+.assistant-bubble.from-shop { align-self: flex-start; background: var(--cream); color: var(--ink); border-bottom-left-radius: 5px; }
+.assistant-bubble.thinking { opacity: .6; font-style: italic; }
+.assistant-chat-form { display: flex; gap: 8px; }
+.assistant-chat-form input { flex: 1; }
+.assistant-suggestions { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.assistant-suggestion { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 13px; background: #fffdf8; }
+.assistant-suggestion-photo { width: 40px; height: 40px; flex: none; border-radius: 10px; object-fit: cover; }
+.assistant-suggestion .recipe-emoji { width: 40px; height: 40px; border-radius: 10px; font-size: 20px; }
+.assistant-suggestion-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.assistant-suggestion-body strong { font-size: 12.5px; }
+.assistant-suggestion .product-price, .assistant-suggestion .recipe-meta { margin: 0; font-size: 12px; }
+.assistant-suggestion .add-button { flex: none; }
+@media (max-width: 1080px) { .assistant-grid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .assistant-card { padding: 18px; } .assistant-chat { max-height: 260px; } }
+
 /* ---------- Bundle subscribe ---------- */
 .bundle-buy { align-items: flex-start; }
 .bundle-actions { display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
@@ -584,4 +631,18 @@ footer p, footer > span { margin: 0; color: #e0c1c1; font-size: 10px; }
 @media (max-width: 760px) {
   .image-row { flex-wrap: wrap; }
   .image-meta { width: auto; }
+}
+
+/* ---------- Admin: AI copywriter ---------- */
+.ai-copy { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.ai-copy select { min-height: 36px; padding: 0 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); font-size: 12px; }
+.ai-copy input { flex: 1 1 260px; }
+.ai-copy-out { display: flex; flex-direction: column; gap: 10px; color: var(--muted); font-size: 12px; }
+.ai-locale { display: flex; align-items: flex-start; gap: 10px; }
+.ai-locale small { flex: none; width: 26px; padding-top: 10px; color: var(--muted); font-weight: 700; }
+.ai-text { flex: 1; min-height: 74px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); font: 400 12px var(--sans); resize: vertical; }
+.ai-locale button { flex: none; align-self: flex-start; }
+@media (max-width: 760px) {
+  .ai-locale { flex-wrap: wrap; }
+  .ai-locale small { width: auto; padding-top: 0; }
 }

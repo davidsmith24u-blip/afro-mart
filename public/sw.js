@@ -1,5 +1,5 @@
 // Afro Mart service worker: an installable, offline-friendly app shell.
-const CACHE = 'afro-mart-v7';
+const CACHE = 'afro-mart-v8';
 const APP_SHELL = [
   '/',
   '/index.html',

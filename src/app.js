@@ -19,6 +19,8 @@ import { registerCateringRoutes } from './catering.js';
 import { registerReviewRoutes } from './reviews.js';
 import { registerImageRoutes } from './images.js';
 import { registerRetentionRoutes } from './retention.js';
+import { registerAssistantRoutes } from './assistant.js';
+import { aiStatus } from './ai.js';
 import { applyProductMeta } from './catalog-meta.js';
 
 const PUBLIC_DIR = resolve(fileURLToPath(new URL('../public', import.meta.url)));
@@ -153,6 +155,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     delivery_fee_default_cents: Math.max(0, Number(process.env.DELIVERY_FEE_DEFAULT_CENTS) || 0),
     has_payment_gateway: Boolean(process.env.PAYMENTS_WEBHOOK_SECRET),
     whatsapp_number: process.env.WHATSAPP_NUMBER || null,
+    ai: aiStatus(),
     facets: {
       origins: ORIGIN_LABELS,
       cuisines: CUISINE_LABELS,
@@ -183,6 +186,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   registerReviewRoutes(api);
   registerImageRoutes(api);
   registerRetentionRoutes(api);
+  registerAssistantRoutes(api);
 
   // ---- Auth ----
   route('POST', '/api/auth/register', (ctx) => {
@@ -849,7 +853,13 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       }
       const ip = clientIp(req);
       const isAuthWrite = req.method === 'POST' && (pathname === '/api/auth/login' || pathname === '/api/auth/register');
-      const withinLimit = isAuthWrite ? allow(`auth:${ip}`, 30, 5 * 60_000) : allow(`api:${ip}`, 900, 60_000);
+      // LLM calls cost money and time, so they get their own much tighter bucket.
+      const isAiWrite = req.method === 'POST' && pathname.startsWith('/api/assistant/');
+      const withinLimit = isAuthWrite
+        ? allow(`auth:${ip}`, 30, 5 * 60_000)
+        : isAiWrite
+          ? allow(`ai:${ip}`, 30, 60_000)
+          : allow(`api:${ip}`, 900, 60_000);
       if (!withinLimit) {
         send(res, 429, { error: 'Too many requests — please slow down and try again shortly' }, { 'Retry-After': '60' });
         return;

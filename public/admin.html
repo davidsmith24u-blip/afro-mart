@@ -21,6 +21,14 @@
 <section><h2>Wholesale accounts</h2><div id="customers"></div></section>
 <section><h2>Product reviews</h2><p class="muted">Approve a review to publish it on the storefront.</p><div id="reviews"></div></section>
 <section><h2>Product images</h2><p class="muted">Upload a photo or paste an image URL, then save it to a product.</p><div id="images"></div></section>
+<section><h2>AI product copy</h2><p class="muted">Draft a fresh description in English, German and French, then apply the English text to the product.</p>
+  <div class="ai-copy">
+    <select id="ai-product"></select>
+    <input id="ai-keywords" placeholder="Optional details to mention (e.g. stone-free, 1 kg, family size)">
+    <button id="ai-generate">Write with AI</button>
+  </div>
+  <div id="ai-copy-out" class="ai-copy-out"></div>
+</section>
 <section><h2>Back-in-stock alerts</h2><button id="notify-restock">Notify waiting customers</button><div id="stock-alerts"></div></section>
 <section><h2>Saved carts</h2><button id="remind-carts">Send abandoned-cart reminders</button><div id="carts"></div></section>
 <section><h2>Audit log</h2><p class="muted">The 100 most recent privileged actions.</p><div id="audit"></div></section>

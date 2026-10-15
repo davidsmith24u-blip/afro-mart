@@ -236,6 +236,10 @@ const load = guard(async () => {
   }
   $('images').replaceChildren(manager);
 
+  const aiSelect = $('ai-product');
+  aiSelect.replaceChildren(el('option', 'Choose a product…', { value: '' }),
+    ...prods.map((p) => el('option', `${p.name} · ${p.sku}`, { value: String(p.id) })));
+
   $('stock-alerts').replaceChildren(table(['id', 'product', 'email', 'created_at'], await api('/api/stock-alerts')));
   const cartRows = (await api('/api/carts')).map((c) => ({
     id: c.id, email: c.email, items: c.item_count, subtotal: money(c.subtotal_cents), updated_at: c.updated_at,
@@ -269,5 +273,38 @@ $('remind-carts').onclick = guard(async () => {
   const r = await api('/api/automations/abandoned-carts', { method: 'POST', body: {} });
   await load();
   return `Sent ${r.reminded} reminder${r.reminded === 1 ? '' : 's'}.`;
+});
+$('ai-generate').onclick = guard(async () => {
+  const productId = Number($('ai-product').value);
+  if (!productId) throw new Error('Choose a product first');
+  const keywords = $('ai-keywords').value.trim();
+  const out = $('ai-copy-out');
+  out.textContent = 'Writing…';
+  let data;
+  try {
+    data = await api('/api/assistant/product-copy', { method: 'POST', body: { product_id: productId, keywords } });
+  } catch (e) {
+    out.textContent = e.message;
+    return '';
+  }
+  const locales = ['en', 'de', 'fr'];
+  out.replaceChildren(...locales.map((code) => {
+    const wrap = el('div', '', { className: 'ai-locale' });
+    wrap.append(el('small', code.toUpperCase()));
+    const area = el('textarea', '', { className: 'ai-text' });
+    area.value = data.descriptions[code] || '';
+    wrap.append(area);
+    if (code === 'en') {
+      const apply = el('button', 'Apply to product');
+      apply.onclick = guard(async () => {
+        await api(`/api/products/${data.product_id}`, { method: 'PUT', body: { description: area.value.trim() } });
+        await load();
+        return `Description applied to ${data.name}.`;
+      });
+      wrap.append(apply);
+    }
+    return wrap;
+  }));
+  return `Generated ${data.name} copy in ${locales.length} languages.`;
 });
 if (token) load();

@@ -153,6 +153,18 @@ the wholesale price on every order line automatically.
 | GET `/api/audit?limit=` | staff | Recent privileged actions (who, what, when) |
 | GET `/api/orders/:id/invoice` | owner or staff | Printable HTML invoice |
 
+### AI assistant
+| Method & path | Access | Description |
+|---|---|---|
+| POST `/api/assistant/cook` `{pantry,guests?}` | public | Match a free-text pantry list to recipes; returns `matches` with coverage, `have`/`missing` items, scaled quantities and `add_missing`/`add_all` bag lines |
+| POST `/api/assistant/chat` `{messages}` | public | Catalogue-grounded shopping chat (1–12 messages); returns `{reply, products, recipes, bundles}` suggestion cards |
+| POST `/api/assistant/product-copy` `{product_id,keywords?}` | staff | Draft EN/DE/FR product descriptions (does not write; apply with `PUT /api/products/:id`) |
+
+The assistant always matches against the live catalogue. When `AI_API_KEY` (or `OPENAI_API_KEY`) is set it
+uses an LLM to parse messy input and phrase replies; otherwise it falls back to deterministic alias-aware
+matching, so the endpoints keep working with no provider configured. `GET /api/config` reports
+`ai: {enabled, provider, model}`. Assistant calls are limited to 30 requests/minute per IP.
+
 Products now include `image_url`, `rating_average` and `rating_count`; staff set `image_url` via
 `POST/PUT /api/products`. API responses are best-effort rate limited per client IP (900 requests/minute;
 30 authentication attempts per 5 minutes), returning `429` with `Retry-After` when exceeded.
