@@ -215,7 +215,6 @@ const STRINGS = {
     'track.missing': 'Please enter both your order number and email.',
     'track.loading': 'Looking up your order…',
     'track.notFound': "We couldn't find an order with those details. Check the number and email and try again.",
-    'footer.staff': 'Staff dashboard',
     'footer.tagline': 'Authentic African Foods — Right to Your Door. Quality service • Trusted sources • Fast & reliable delivery.',
   },
   de: {
@@ -424,7 +423,6 @@ const STRINGS = {
     'track.missing': 'Bitte gib Bestellnummer und E-Mail-Adresse ein.',
     'track.loading': 'Bestellung wird gesucht…',
     'track.notFound': 'Wir konnten keine Bestellung mit diesen Angaben finden. Prüfe Nummer und E-Mail und versuche es erneut.',
-    'footer.staff': 'Mitarbeiter-Dashboard',
     'footer.tagline': 'Echte afrikanische Lebensmittel — direkt zu dir. Qualitätsservice • Vertrauenswürdige Quellen • Schnelle & zuverlässige Lieferung.',
   },
   fr: {
@@ -633,7 +631,6 @@ const STRINGS = {
     'track.missing': 'Veuillez saisir votre numéro de commande et votre e-mail.',
     'track.loading': 'Recherche de votre commande…',
     'track.notFound': "Nous n'avons trouvé aucune commande avec ces informations. Vérifiez le numéro et l'e-mail, puis réessayez.",
-    'footer.staff': 'Tableau de bord',
     'footer.tagline': 'Aliments africains authentiques — livrés chez vous. Service de qualité • Sources de confiance • Livraison rapide et fiable.',
   },
 };

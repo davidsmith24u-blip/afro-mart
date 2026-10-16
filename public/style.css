@@ -415,7 +415,8 @@ footer { min-height: 118px; padding: 26px max(32px, calc((100vw - 1176px) / 2));
 .footer-brand small { color: var(--gold); }
 footer p { margin: 0; color: #e9b9b9; max-width: 760px; line-height: 1.6; }
 .footer-brand .brand-light { color: var(--gold); }
-.footer-staff { color: var(--gold); font-size: 11px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.footer-pref { flex: none; display: inline-flex; align-items: center; gap: 8px; color: #e9b9b9; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.footer-pref select { min-height: 34px; padding: 0 26px 0 11px; border: 1px solid var(--line); border-radius: 999px; background-color: var(--paper); background-image: linear-gradient(45deg, transparent 50%, var(--clay) 50%), linear-gradient(135deg, var(--clay) 50%, transparent 50%); background-position: calc(100% - 15px) 15px, calc(100% - 10px) 15px; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; color: var(--ink-soft); font-size: 11px; font-weight: 600; appearance: none; }
 footer p, footer > span { margin: 0; color: #e0c1c1; font-size: 10px; }
 
 /* ---------- Staff dashboard ---------- */
