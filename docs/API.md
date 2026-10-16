@@ -15,9 +15,9 @@ Errors: `{ "error": "message" }` with 400/401/403/404/409/413.
 | GET `/api/products?category=&q=&cuisine=&origin=&diet=&max_spice=&min_spice=&sort=&limit=&offset=` | public | Active products. `q` understands diaspora synonyms (e.g. *ata rodo* → scotch bonnet, *ugwu* → spinach, *semo* → semovita); `cuisine`/`origin`/`diet` accept comma-separated or repeated values (AND across kinds); `max_spice`/`min_spice` filter 0–5 heat; `sort` is `name \| price_asc \| price_desc \| spice`. Products carry `origin`, `cuisines`, `diets`, `spice_level` plus human labels. Staff also see cost/supplier/inactive |
 | GET `/api/products/:id` | public | One product |
 | POST `/api/products`, PUT `/api/products/:id` | staff | `sku,name,description,category_id,supplier_id,price_cents,cost_cents,stock,reorder_level,reorder_quantity,expiry_date,active` |
-| POST `/api/orders` `{items:[{product_id,quantity} | {bundle_id,quantity}],fulfillment:delivery|pickup,shipping_address?,delivery_service?,shipping_country?,pickup_location_id?,pickup_at?,location_id?,promo_code?}` | user | Place order; bundle lines expand into stock-checked components, decrements stock (per location), awards tiered points, applies bundle + promo discounts and adds the delivery-area fee; delivery is Germany-only and needs an address, pickup needs neither |
-| GET `/api/orders`, GET `/api/orders/:id` | user | Own orders (staff: all, limit/offset pagination) |
-| GET `/api/track?order=&email=` | public | Public delivery tracking: the order number plus the email used to place it returns status, courier, fulfilment and line items; a mismatched email is a 404 |
+| POST `/api/orders` `{items:[{product_id,quantity} | {bundle_id,quantity}],fulfillment:delivery|pickup,shipping_address?,delivery_service?,shipping_country?,pickup_location_id?,pickup_at?,location_id?,promo_code?,guest_email?,guest_name?}` | public (guest or user) | Place an order. Signed-in shoppers are billed to their account and earn tiered points; guests supply `guest_email` (and optional `guest_name`) and are keyed by that email instead. Bundle lines expand into stock-checked components, decrements stock (per location), applies bundle + promo discounts and adds the delivery-area fee; delivery is Germany-only and needs an address, pickup needs neither |
+| GET `/api/orders`, GET `/api/orders/:id` | user | Own orders (staff: all, limit/offset pagination; staff rows add `customer_email`, which resolves to the member email or the guest email) |
+| GET `/api/track?order=&email=` | public | Public delivery tracking: the order number plus the email used to place it returns status, courier, fulfilment and line items; works for member and guest orders, and a mismatched email is a 404 |
 | PATCH `/api/orders/:id/status` `{status}` | staff | `pending,paid,packed,shipped,delivered,cancelled`; fires status-change automations |
 | PATCH `/api/orders/:id/payment` `{status,method?,reference?}` | staff | Set `unpaid/paid/failed/refunded`; `paid` also advances a pending order to `paid` |
 | GET/POST `/api/suppliers`, PUT `/api/suppliers/:id` | staff | Supplier management |
@@ -44,8 +44,8 @@ Errors: `{ "error": "message" }` with 400/401/403/404/409/413.
 | GET `/api/marketing/subscribers` | staff | Subscriber list |
 | GET/POST `/api/marketing/campaigns`, PUT `/api/marketing/campaigns/:id` | staff | Campaigns (`segment,channel,subject,body,scheduled_at?`) |
 | POST `/api/marketing/campaigns/:id/send` | staff | Enqueue messages to every customer in the segment |
-| GET/POST `/api/marketing/promo-codes`, PUT `/api/marketing/promo-codes/:id` | staff | `{code,discount_type:percent|fixed,value,min_total_cents?,max_uses?,expires_at?}` |
-| POST `/api/marketing/promo-codes/validate` `{code,total_cents}` | public | Returns `{code,discount_cents}` |
+| GET/POST `/api/marketing/promo-codes`, PUT `/api/marketing/promo-codes/:id` | staff | `{code,discount_type:percent|fixed,value,min_total_cents?,max_uses?,first_order_only?,expires_at?}`; `first_order_only` restricts a code to a shopper's first order (matched on account or guest email) |
+| POST `/api/marketing/promo-codes/validate` `{code,total_cents,email?}` | public | Returns `{code,discount_cents,discount_type,value,min_total_cents,first_order_only}`; pass `email` (or an auth token) so a `first_order_only` code is checked against the shopper |
 
 ### Communications automation
 | Method & path | Access | Description |

@@ -52,7 +52,9 @@ CREATE TABLE IF NOT EXISTS product_tags (
 );
 CREATE TABLE IF NOT EXISTS orders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL REFERENCES users(id),
+  user_id INTEGER REFERENCES users(id),
+  guest_email TEXT,
+  guest_name TEXT,
   status TEXT NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending','paid','packed','shipped','delivered','cancelled')),
   total_cents INTEGER NOT NULL,
@@ -123,6 +125,7 @@ CREATE TABLE IF NOT EXISTS promo_codes (
   min_total_cents INTEGER NOT NULL DEFAULT 0,
   max_uses INTEGER,
   used_count INTEGER NOT NULL DEFAULT 0,
+  first_order_only INTEGER NOT NULL DEFAULT 0,
   active INTEGER NOT NULL DEFAULT 1,
   expires_at TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -352,6 +355,45 @@ export function openDb(path = ':memory:') {
   }
   if (!orderColumns.includes('payment_reference')) {
     db.exec('ALTER TABLE orders ADD COLUMN payment_reference TEXT');
+  }
+  // Guest checkout: an order can exist without an account, identified by the
+  // email captured at checkout. SQLite cannot drop the NOT NULL on
+  // orders.user_id in place, so a legacy database is rebuilt once, copying every
+  // existing column across inside a transaction. Any failure rolls back and
+  // leaves the original table untouched.
+  const userIdColumn = db.prepare('PRAGMA table_info(orders)').all().find((column) => column.name === 'user_id');
+  if (userIdColumn && userIdColumn.notnull === 1) {
+    const originalSql = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'orders'").get().sql;
+    const rebuiltSql = originalSql
+      .replace(/^CREATE TABLE\s+(IF NOT EXISTS\s+)?orders/i, 'CREATE TABLE orders_new')
+      .replace('user_id INTEGER NOT NULL REFERENCES users(id)', 'user_id INTEGER REFERENCES users(id)')
+      .replace(/\)\s*$/, ', guest_email TEXT, guest_name TEXT\n)');
+    if (rebuiltSql.includes('user_id INTEGER NOT NULL')) {
+      throw new Error('Could not relax orders.user_id NOT NULL while enabling guest checkout');
+    }
+    const copyColumns = db.prepare('PRAGMA table_info(orders)').all().map((column) => column.name);
+    const columnList = copyColumns.map((name) => `"${name}"`).join(', ');
+    const before = db.prepare('SELECT COUNT(*) AS n FROM orders').get().n;
+    db.exec('PRAGMA foreign_keys = OFF');
+    try {
+      db.exec('BEGIN');
+      db.exec(rebuiltSql);
+      db.exec(`INSERT INTO orders_new (${columnList}) SELECT ${columnList} FROM orders`);
+      db.exec('DROP TABLE orders');
+      db.exec('ALTER TABLE orders_new RENAME TO orders');
+      const after = db.prepare('SELECT COUNT(*) AS n FROM orders').get().n;
+      if (after !== before) throw new Error(`orders rebuild lost rows (${before} -> ${after})`);
+      db.exec('COMMIT');
+    } catch (error) {
+      try { db.exec('ROLLBACK'); } catch { /* no transaction in progress */ }
+      throw error;
+    } finally {
+      db.exec('PRAGMA foreign_keys = ON');
+    }
+  }
+  const promoColumns = db.prepare('PRAGMA table_info(promo_codes)').all().map((column) => column.name);
+  if (!promoColumns.includes('first_order_only')) {
+    db.exec('ALTER TABLE promo_codes ADD COLUMN first_order_only INTEGER NOT NULL DEFAULT 0');
   }
   const productColumns = db.prepare('PRAGMA table_info(products)').all().map((column) => column.name);
   if (!productColumns.includes('spice_level')) {

@@ -35,6 +35,8 @@ The app itself has zero npm dependencies: Node.js ≥ 22.13 (built-in `node:http
 **Fulfilment, rewards & recipes**
 - Delivery areas matched by postal prefix, each with a fee and a minimum-order surcharge; store pickup with a location and collection slot; every order records `delivery_fee_cents` and its fulfilment
 - Loyalty tiers (bronze/silver/gold/platinum) that multiply the points earned, plus refer-a-friend codes that reward the referrer on a new signup
+- **Guest checkout:** shoppers can order with just an email — no account required. Guest orders are keyed by that email, stay trackable at the public tracking endpoint, and appear in the staff dashboard with the buyer's email
+- **First-order welcome coupon:** a promo code can be flagged `first_order_only`, so it applies only to a shopper's first order (matched on account or guest email); the seeded `WELCOME10` code (10% off a first order over €20) ships this way
 - Monthly pantry subscriptions: any bundle delivered or collected every 30 days, turned into real, stock-checked orders with `POST /api/subscriptions/process` (staff or a cron job)
 - Recipes that link to the exact products and packs needed to cook a dish, each with a step-by-step cooking method and a one-tap "add all ingredients to bag"
 - Payment status on every order (`unpaid`/`paid`/`failed`/`refunded`) with staff settlement and an integration-ready gateway webhook (`POST /api/payments/webhook`, guarded by `PAYMENTS_WEBHOOK_SECRET`)

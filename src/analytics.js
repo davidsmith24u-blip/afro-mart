@@ -27,7 +27,7 @@ export function overview(db, { locationId = null, days = null } = {}) {
   const locParams = locationId ? [locationId] : [];
   const repeat = db.prepare(
     `SELECT COUNT(*) AS n FROM (
-       SELECT o.user_id FROM orders o WHERE o.status != 'cancelled'${locSql} GROUP BY o.user_id HAVING COUNT(*) > 1)`).get(...locParams).n;
+       SELECT o.user_id FROM orders o WHERE o.status != 'cancelled' AND o.user_id IS NOT NULL${locSql} GROUP BY o.user_id HAVING COUNT(*) > 1)`).get(...locParams).n;
   const customers = db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'customer'").get().n;
   const newCustomers = days
     ? db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'customer' AND created_at >= datetime('now', ?)").get(`-${days} days`).n
@@ -73,10 +73,12 @@ export function topProducts(db, { locationId = null, limit = 10 } = {}) {
 export function topCustomers(db, { locationId = null, limit = 10 } = {}) {
   const filter = salesFilter({ locationId });
   return db.prepare(
-    `SELECT u.id, u.name, u.email, u.loyalty_points, COUNT(o.id) AS orders,
-            COALESCE(SUM(o.total_cents),0) AS revenue_cents
-     FROM users u JOIN orders o ON o.user_id = u.id WHERE ${filter.sql}
-     GROUP BY u.id ORDER BY revenue_cents DESC LIMIT ?`).all(...filter.params, limit);
+    `SELECT COALESCE(u.id, 0) AS id, COALESCE(u.name, o.guest_name, 'Guest') AS name,
+            COALESCE(u.email, o.guest_email) AS email, COALESCE(u.loyalty_points, 0) AS loyalty_points,
+            COUNT(o.id) AS orders, COALESCE(SUM(o.total_cents),0) AS revenue_cents
+     FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE ${filter.sql}
+     GROUP BY COALESCE(u.id, 0), COALESCE(u.email, o.guest_email)
+     ORDER BY revenue_cents DESC LIMIT ?`).all(...filter.params, limit);
 }
 
 export function categoryPerformance(db, { locationId = null } = {}) {

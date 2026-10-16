@@ -344,8 +344,23 @@
 						</div>
 						<p class="payment-note" data-i18n="payment.note">Payments are collected securely. Card and PayPal details are never stored on our servers.</p>
 					</fieldset>
+					<div id="guest-fields" class="guest-fields" hidden>
+						<label for="guest-email" data-i18n="guest.emailLabel">Email for your order</label>
+						<input id="guest-email" type="email" placeholder="you@example.com" autocomplete="email">
+						<label for="guest-name"><span data-i18n="guest.nameLabel">Your name</span> <span data-i18n="guest.nameHint">(optional)</span></label>
+						<input id="guest-name" placeholder="Name" autocomplete="name">
+					</div>
+					<div class="promo-row">
+						<label for="promo" data-i18n="cart.promoLabel">Promo code</label>
+						<div class="promo-input">
+							<input id="promo" placeholder="WELCOME10" autocomplete="off">
+							<button type="button" id="apply-promo" class="secondary-button" data-i18n="cart.promoApply">Apply</button>
+						</div>
+						<p id="promo-note" class="promo-note" role="status" aria-live="polite" data-i18n="cart.promoHint">New here? Use WELCOME10 for 10% off your first order over €20.</p>
+					</div>
 					<div class="cart-total"><span data-i18n="cart.subtotal">Basket subtotal</span><strong id="total">€0.00</strong></div>
 					<p class="fee-line" id="fee-line" hidden></p>
+					<p class="fee-line discount-line" id="promo-line" hidden></p>
 					<div class="cart-total grand-total"><span data-i18n="cart.total">Total to pay</span><strong id="payable">€0.00</strong></div>
 					<button id="checkout" class="checkout-button"><span data-i18n="cart.checkout">Continue to checkout</span> <span aria-hidden="true">→</span></button>
 					<p class="checkout-note" data-i18n="cart.checkoutNote">You'll need an account to place your order.</p>

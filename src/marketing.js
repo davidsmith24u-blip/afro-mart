@@ -39,7 +39,7 @@ export function computeDiscount(promo, totalCents) {
   return Math.max(0, Math.min(raw, totalCents));
 }
 
-export function validatePromo(db, code, totalCents) {
+export function validatePromo(db, code, totalCents, { userId, email } = {}) {
   const promo = db.prepare('SELECT * FROM promo_codes WHERE UPPER(code) = UPPER(?)').get(String(code));
   if (!promo || !promo.active) throw Object.assign(new Error('Promo code is not valid'), { status: 400 });
   if (promo.expires_at && promo.expires_at < new Date().toISOString().slice(0, 10)) {
@@ -50,6 +50,15 @@ export function validatePromo(db, code, totalCents) {
   }
   if (totalCents < promo.min_total_cents) {
     throw Object.assign(new Error('Order total is below the promo code minimum'), { status: 400 });
+  }
+  // A welcome-first-order coupon is reserved for shoppers who have not ordered yet.
+  if (promo.first_order_only) {
+    const prior = userId
+      ? db.prepare("SELECT COUNT(*) AS n FROM orders WHERE user_id = ? AND status != 'cancelled'").get(userId).n
+      : email
+        ? db.prepare("SELECT COUNT(*) AS n FROM orders WHERE guest_email = ? AND status != 'cancelled'").get(String(email).toLowerCase()).n
+        : 0;
+    if (prior > 0) throw Object.assign(new Error('This code is for a first order only'), { status: 400 });
   }
   return promo;
 }
@@ -155,10 +164,11 @@ export function registerMarketingRoutes(api) {
     if (type === 'percent' && value > 100) throw bad('percent discount cannot exceed 100');
     const minTotal = ctx.body.min_total_cents === undefined ? 0 : int(ctx.body.min_total_cents, 'min_total_cents');
     const maxUses = ctx.body.max_uses === undefined || ctx.body.max_uses === null ? null : int(ctx.body.max_uses, 'max_uses', { min: 1 });
+    const firstOrderOnly = ctx.body.first_order_only ? 1 : 0;
     const expiresAt = str(ctx.body.expires_at, 'expires_at', { max: 10, required: false });
     const { lastInsertRowid } = run(
-      'INSERT INTO promo_codes (code, discount_type, value, min_total_cents, max_uses, expires_at) VALUES (?,?,?,?,?,?)',
-      code, type, value, minTotal, maxUses, expiresAt);
+      'INSERT INTO promo_codes (code, discount_type, value, min_total_cents, max_uses, first_order_only, expires_at) VALUES (?,?,?,?,?,?,?)',
+      code, type, value, minTotal, maxUses, firstOrderOnly, expiresAt);
     return reply(201, get('SELECT * FROM promo_codes WHERE id = ?', lastInsertRowid));
   });
   route('PUT', '/api/marketing/promo-codes/:id', (ctx) => {
@@ -171,7 +181,17 @@ export function registerMarketingRoutes(api) {
   });
   route('POST', '/api/marketing/promo-codes/validate', (ctx) => {
     const total = int(ctx.body.total_cents, 'total_cents');
-    const promo = validatePromo(api.db, ctx.body.code ?? '', total);
-    return { code: promo.code, discount_cents: computeDiscount(promo, total) };
+    const promo = validatePromo(api.db, ctx.body.code ?? '', total, {
+      userId: ctx.user ? ctx.user.id : undefined,
+      email: ctx.body.email ? str(ctx.body.email, 'email', { max: 254 }).toLowerCase() : undefined,
+    });
+    return {
+      code: promo.code,
+      discount_cents: computeDiscount(promo, total),
+      discount_type: promo.discount_type,
+      value: promo.value,
+      min_total_cents: promo.min_total_cents,
+      first_order_only: promo.first_order_only,
+    };
   });
 }

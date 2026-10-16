@@ -39,10 +39,11 @@ const load = guard(async () => {
 
   const orders = (await api('/api/orders')).map((o) => ({
     ...o, how: o.fulfillment === 'pickup' ? 'Pickup' : 'Delivery',
+    customer: o.customer_email || (o.user_id ? `member #${o.user_id}` : '—'),
     delivery_service: String(o.delivery_service || '').toUpperCase(),
     payment: o.payment_status, total: money(o.total_cents), raw: o,
   }));
-  $('orders').replaceChildren(table(['id', 'created_at', 'status', 'payment', 'how', 'delivery_service', 'total'], orders, (o) => {
+  $('orders').replaceChildren(table(['id', 'created_at', 'customer', 'status', 'payment', 'how', 'delivery_service', 'total'], orders, (o) => {
     const wrap = el('div', '', { className: 'row-actions' });
     const raw = o.raw;
     if (raw.status !== 'cancelled' && raw.status !== 'delivered') {

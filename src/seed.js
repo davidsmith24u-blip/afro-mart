@@ -216,7 +216,10 @@ if (welcomeTemplate.changes) {
   const templateId = db.prepare("SELECT id FROM message_templates WHERE name = 'Welcome'").get().id;
   db.prepare("INSERT INTO automations (name, event, template_id, channel, active) VALUES ('Welcome email', 'customer.registered', ?, 'email', 1)").run(templateId);
 }
-db.prepare("INSERT OR IGNORE INTO promo_codes (code, discount_type, value, min_total_cents, max_uses, active) VALUES ('WELCOME10', 'percent', 10, 2000, 500, 1)").run();
+db.prepare("INSERT OR IGNORE INTO promo_codes (code, discount_type, value, min_total_cents, max_uses, first_order_only, active) VALUES ('WELCOME10', 'percent', 10, 2000, 500, 1, 1)").run();
+// Upgrade an existing WELCOME10 (seeded before first-order-only support) so the
+// welcome coupon stays reserved for a shopper's first order.
+db.prepare("UPDATE promo_codes SET first_order_only = 1 WHERE code = 'WELCOME10'").run();
 
 // Phase 3.5: curated meal packs & gift boxes backed by the catalog above.
 const skuId = {};

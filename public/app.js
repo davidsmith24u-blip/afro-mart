@@ -33,6 +33,8 @@ let locations = [];
 let settings = {};
 let recipes = [];
 const cart = JSON.parse(localStorage.getItem('cart') || '{}');
+// Promo code the shopper applied at checkout (validated by the server).
+let appliedPromo = null;
 
 // Discovery filters (cuisine / country / diet / heat) + sort, mirrored to the API.
 const filters = { cuisine: new Set(), origin: new Set(), diet: new Set(), maxSpice: '', sort: 'name' };
@@ -207,6 +209,15 @@ function estimateDeliveryFee(subtotal) {
   return fee;
 }
 
+function promoDiscount(subtotal) {
+  if (!appliedPromo) return 0;
+  if (subtotal < (appliedPromo.min_total_cents || 0)) return 0;
+  const raw = appliedPromo.discount_type === 'fixed'
+    ? appliedPromo.value
+    : Math.floor((subtotal * appliedPromo.value) / 100);
+  return Math.max(0, Math.min(raw, subtotal));
+}
+
 function renderTotals() {
   const subtotal = basketSubtotal();
   $('total').textContent = money(subtotal);
@@ -217,7 +228,11 @@ function renderTotals() {
   line.textContent = fulfillment === 'pickup'
     ? 'Store pickup · collection is free'
     : fee > 0 ? `Delivery · ${money(fee)}` : 'Delivery · free for this address';
-  $('payable').textContent = money(subtotal + fee);
+  const discount = promoDiscount(subtotal);
+  const promoLine = $('promo-line');
+  promoLine.hidden = discount <= 0;
+  if (discount > 0) promoLine.textContent = `${t('cart.discount')} · −${money(discount)}`;
+  $('payable').textContent = money(subtotal - discount + fee);
   const note = $('delivery-fee-note');
   if (note) {
     note.textContent = fee > 0
@@ -927,6 +942,8 @@ function renderAccount() {
   a.replaceChildren();
   $('auth').hidden = !!user;
   $('member').hidden = !user;
+  // Guests check out with just an email, so ask for it only when signed out.
+  $('guest-fields').hidden = !!user;
   if (!user) return;
   a.append(`${user.name} · ${user.tier_label} · ${user.loyalty_points} pts `);
   if (user.role !== 'customer') a.append(el('a', 'Dashboard', { href: '/admin' }), ' ');
@@ -1088,9 +1105,36 @@ $('category-links').addEventListener('click', (event) => {
   document.querySelectorAll('.category-shortcut').forEach((item) => item.classList.toggle('is-active', item === button));
   loadProducts().catch(fail);
 });
+$('apply-promo').onclick = async () => {
+  const note = $('promo-note');
+  const code = $('promo').value.trim().toUpperCase();
+  if (!code) {
+    appliedPromo = null;
+    note.textContent = t('cart.promoHint');
+    renderTotals();
+    return;
+  }
+  try {
+    const email = ($('guest-email').value || (user ? user.email : '')).trim() || undefined;
+    const res = await api('/api/marketing/promo-codes/validate', {
+      method: 'POST', body: { code, total_cents: basketSubtotal(), email },
+    });
+    appliedPromo = {
+      code: res.code, discount_type: res.discount_type,
+      value: res.value, min_total_cents: res.min_total_cents,
+    };
+    note.textContent = t('cart.promoApplied', { code: res.code, amount: money(res.discount_cents) });
+  } catch (e) {
+    appliedPromo = null;
+    note.textContent = e.message;
+  }
+  renderTotals();
+};
+
 $('checkout').onclick = async () => {
   try {
-    if (!user) throw new Error('Please log in to check out');
+    const guestEmail = ($('guest-email').value || '').trim();
+    if (!user && !guestEmail) throw new Error(t('guest.emailLabel'));
     const fulfillment = currentFulfillment();
     const items = Object.entries(cart).map(([key, quantity]) => key.startsWith('b')
       ? { bundle_id: Number(key.slice(1)), quantity }
@@ -1102,6 +1146,11 @@ $('checkout').onclick = async () => {
       payment_method: document.querySelector('input[name="payment_method"]:checked')?.value ?? 'card',
       shipping_country: 'DE',
     };
+    if (!user) {
+      body.guest_email = guestEmail;
+      if ($('guest-name').value.trim()) body.guest_name = $('guest-name').value.trim();
+    }
+    if (appliedPromo) body.promo_code = appliedPromo.code;
     if (fulfillment === 'pickup') {
       body.pickup_location_id = Number($('pickup-location').value) || undefined;
       if ($('pickup-at').value) body.pickup_at = $('pickup-at').value;
@@ -1110,11 +1159,21 @@ $('checkout').onclick = async () => {
     }
     const order = await api('/api/orders', { method: 'POST', body });
     clearCart();
+    appliedPromo = null;
+    $('promo').value = '';
+    $('promo-note').textContent = t('cart.promoHint');
     say(fulfillment === 'pickup'
       ? `Order #${order.id} placed — we will have it packed for collection.`
       : `Order #${order.id} placed — thank you!`);
-    user = await api('/api/me'); renderAccount();
-    await Promise.all([loadProducts(), loadOrders(), loadMember()]);
+    if (user) {
+      user = await api('/api/me'); renderAccount();
+      await Promise.all([loadProducts(), loadOrders(), loadMember()]);
+    } else {
+      // Help the guest follow their parcel right away.
+      $('track-order').value = String(order.id);
+      $('track-email').value = guestEmail;
+      await loadProducts();
+    }
   } catch (e) { fail(e); }
 };
 $('q').oninput = () => loadProducts().catch(fail);

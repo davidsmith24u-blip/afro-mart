@@ -385,7 +385,16 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
 
   // ---- Orders ----
   route('POST', '/api/orders', (ctx) => {
-    const user = requireUser(ctx);
+    // Guests can check out with just an email; an account is optional. Signed-in
+    // shoppers keep their order history and earn loyalty points.
+    const user = ctx.user || null;
+    let guestEmail = null;
+    let guestName = null;
+    if (!user) {
+      guestEmail = str(ctx.body.guest_email ?? ctx.body.email, 'guest_email', { max: 254 }).toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(guestEmail)) throw bad('guest_email is invalid');
+      guestName = str(ctx.body.guest_name, 'guest_name', { max: 120, required: false }) ?? null;
+    }
     const fulfillment = ctx.body.fulfillment === 'pickup' ? 'pickup' : 'delivery';
     const address = str(ctx.body.shipping_address ?? '', 'shipping_address', { max: 500, required: fulfillment === 'delivery' }) ?? '';
     const deliveryService = str(ctx.body.delivery_service ?? 'dhl', 'delivery_service', { max: 16 }).toLowerCase();
@@ -432,37 +441,40 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
         const p = get('SELECT * FROM products WHERE id = ? AND active = 1', pid);
         if (!p) throw bad(`Product ${pid} not available`);
         if (stockAt(db, p.id, locationId) < qty) throw new HttpError(409, `Insufficient stock for ${p.name}`);
-        const unit = user.account_type === 'restaurant' && p.wholesale_price_cents != null
+        const unit = user && user.account_type === 'restaurant' && p.wholesale_price_cents != null
           ? p.wholesale_price_cents : p.price_cents;
         total += unit * qty;
         lines.push({ p, qty, unit });
       }
-      const promo = promoCode ? validatePromo(db, promoCode, total) : null;
+      const promo = promoCode
+        ? validatePromo(db, promoCode, total, { userId: user ? user.id : undefined, email: guestEmail || undefined })
+        : null;
       const discount = Math.min(total, (promo ? computeDiscount(promo, total) : 0) + bundleDiscount);
       const deliveryFee = fulfillment === 'delivery' ? deliveryFeeFor(db, address, total) : 0;
       const payable = total - discount + deliveryFee;
       if (promo) run('UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?', promo.id);
-      const tier = tierFor(lifetimeSpendCents(db, user.id));
-      const points = pointsFor(payable, tier);
+      // Guests have no account to credit, so loyalty points are reserved for members.
+      const points = user ? pointsFor(payable, tierFor(lifetimeSpendCents(db, user.id))) : 0;
       const paymentReference = `pay_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
       const { lastInsertRowid: oid } = run(
-        `INSERT INTO orders (user_id, total_cents, discount_cents, promo_code, location_id, points_earned, shipping_address, delivery_service, shipping_country,
+        `INSERT INTO orders (user_id, guest_email, guest_name, total_cents, discount_cents, promo_code, location_id, points_earned, shipping_address, delivery_service, shipping_country,
            fulfillment, pickup_location_id, pickup_at, delivery_fee_cents, payment_status, payment_method, payment_reference)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-        user.id, payable, discount, promoCode, locationId, points, address, deliveryService, country,
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        user ? user.id : null, guestEmail, guestName, payable, discount, promoCode, locationId, points, address, deliveryService, country,
         fulfillment, pickupLocationId, pickupAt, deliveryFee, 'unpaid', paymentMethod, paymentReference);
       for (const { p, qty, unit } of lines) {
         run('INSERT INTO order_items (order_id, product_id, quantity, unit_price_cents) VALUES (?,?,?,?)', oid, p.id, qty, unit);
         adjustStock(db, p.id, locationId, -qty);
       }
-      run('UPDATE users SET loyalty_points = loyalty_points + ? WHERE id = ?', points, user.id);
+      if (user) run('UPDATE users SET loyalty_points = loyalty_points + ? WHERE id = ?', points, user.id);
       return get('SELECT * FROM orders WHERE id = ?', oid);
     });
 
     // Placing an order converts any saved cart, so recovery emails stop.
-    run('UPDATE carts SET recovered_at = CURRENT_TIMESTAMP WHERE user_id = ? AND recovered_at IS NULL', user.id);
+    if (user) run('UPDATE carts SET recovered_at = CURRENT_TIMESTAMP WHERE user_id = ? AND recovered_at IS NULL', user.id);
     comms.emit('order.placed', {
-      email: user.email, name: user.name, order_id: order.id,
+      email: user ? user.email : guestEmail, name: user ? user.name : (guestName || 'Guest'),
+      order_id: order.id,
       total_cents: order.total_cents, location_id: order.location_id, fulfillment: order.fulfillment,
     });
     const lowSelling = all(
@@ -484,7 +496,8 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const user = requireUser(ctx);
     const rows = user.role === 'customer'
       ? all('SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC', user.id)
-      : all(`SELECT * FROM orders ORDER BY id DESC
+      : all(`SELECT o.*, COALESCE(u.email, o.guest_email) AS customer_email
+              FROM orders o LEFT JOIN users u ON u.id = o.user_id ORDER BY o.id DESC
               LIMIT ${Math.min(Math.max(Number(ctx.query.get('limit')) || 500, 1), 2000)}
               OFFSET ${Math.max(Number(ctx.query.get('offset')) || 0, 0)}`);
     return rows.map(orderWithItems);
@@ -503,7 +516,9 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const o = get('SELECT * FROM orders WHERE id = ?', ctx.params.id);
     if (!o || (user.role === 'customer' && o.user_id !== user.id)) throw notFound();
     const order = orderWithItems(o);
-    const buyer = get('SELECT name, email FROM users WHERE id = ?', o.user_id);
+    const buyer = o.user_id
+      ? get('SELECT name, email FROM users WHERE id = ?', o.user_id)
+      : { name: o.guest_name || 'Guest', email: o.guest_email || '' };
     const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
     const eur = (cents) => (cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
     const rows = order.items
@@ -543,8 +558,11 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const email = str(ctx.query.get('email'), 'email', { max: 200 }).toLowerCase();
     const o = get('SELECT * FROM orders WHERE id = ?', orderId);
     if (!o) throw notFound();
-    const owner = get('SELECT email FROM users WHERE id = ?', o.user_id);
-    if (!owner || String(owner.email).toLowerCase() !== email) throw notFound();
+    // Members are matched on their account email; guest orders on the email used
+    // at checkout, so a guest can still follow their parcel.
+    const owner = o.user_id ? get('SELECT email FROM users WHERE id = ?', o.user_id) : null;
+    const ownerEmail = owner ? owner.email : o.guest_email;
+    if (!ownerEmail || String(ownerEmail).toLowerCase() !== email) throw notFound();
     const items = all(
       `SELECT oi.quantity, oi.unit_price_cents, p.name
        FROM order_items oi LEFT JOIN products p ON p.id = oi.product_id
