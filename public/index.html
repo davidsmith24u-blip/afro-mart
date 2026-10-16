@@ -4,14 +4,34 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 	<meta name="theme-color" content="#a8401d">
-	<meta name="description" content="AFROMART — Authentic African Foods Right to Your Door. African groceries, spices and everyday staples with fast reliable delivery across Germany. Track your delivery. Free delivery over €50.">
+	<meta name="description" content="AFROMART — African groceries delivered across Germany for Africans who want a taste of home. Spices, staples and everyday brands, with fast reliable delivery. Free delivery over €50.">
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="AFROMART">
+	<meta property="og:title" content="AFROMART | Authentic African Foods — Right to Your Door">
+	<meta property="og:description" content="African groceries, spices and everyday staples delivered across Germany — foods that help you remember home. Free delivery over €50.">
+	<meta name="twitter:card" content="summary_large_image">
 	<title>AFROMART | Authentic African Foods — Right to Your Door</title>
 	<link rel="manifest" href="/manifest.webmanifest">
 	<link rel="icon" href="/app-icon.svg" type="image/svg+xml">
 	<link rel="apple-touch-icon" href="/app-icon.svg">
 	<link rel="stylesheet" href="/style.css">
+	<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "GroceryStore",
+		"name": "AFROMART",
+		"description": "Authentic African groceries, spices and everyday staples delivered across Germany — foods that help you remember home.",
+		"url": "https://afro-mart-store.netlify.app/",
+		"image": "https://afro-mart-store.netlify.app/app-icon.svg",
+		"logo": "https://afro-mart-store.netlify.app/app-icon.svg",
+		"areaServed": { "@type": "Country", "name": "Germany" },
+		"currenciesAccepted": "EUR, USD, GBP",
+		"paymentAccepted": "PayPal, Credit Card, Klarna",
+		"priceRange": "€€"
+	}
+	</script>
 </head>
 <body>
 	<svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">
@@ -97,6 +117,25 @@
 
 	<main>
 		<p id="msg" class="message" role="status" aria-live="polite"></p>
+
+		<section class="trust-strip" aria-label="Why shop with Afro Mart">
+			<div class="trust-item">
+				<span class="trust-icon" aria-hidden="true">🔒</span>
+				<div><strong data-i18n="trust.pay.title">Secure payment</strong><span data-i18n="trust.pay.body">PayPal &amp; cards</span></div>
+			</div>
+			<div class="trust-item">
+				<span class="trust-icon" aria-hidden="true">🚚</span>
+				<div><strong data-i18n="trust.ship.title">Free delivery over €50</strong><span data-i18n="trust.ship.body">Within Germany</span></div>
+			</div>
+			<div class="trust-item">
+				<span class="trust-icon" aria-hidden="true">⭐</span>
+				<div><strong data-i18n="trust.reviews.title">Real customer reviews</strong><span data-i18n="trust.reviews.body">Verified purchases</span></div>
+			</div>
+			<div class="trust-item">
+				<span class="trust-icon" aria-hidden="true">📦</span>
+				<div><strong data-i18n="trust.track.title">Live order tracking</strong><span data-i18n="trust.track.body">From our shelf to your door</span></div>
+			</div>
+		</section>
 
 		<section class="roots" aria-labelledby="roots-title">
 			<div class="section-heading centered">
@@ -359,6 +398,14 @@
 				<button type="submit" class="checkout-button" data-i18n="track.button">Track my order</button>
 			</form>
 			<div id="track-result" class="track-result" aria-live="polite"></div>
+		</section>
+
+		<section id="contact" class="shop-section contact-section" aria-labelledby="contact-title" hidden>
+			<div class="section-heading">
+				<div><p class="eyebrow" data-i18n="contact.area">Delivering to every corner of Germany.</p><h2 id="contact-title" data-i18n="contact.title">Talk to us</h2></div>
+				<p class="shop-caption" data-i18n="contact.caption">A question about a product, an order, or a bulk request? We are happy to help.</p>
+			</div>
+			<div id="contact-actions" class="contact-actions"></div>
 		</section>
 	</main>
 

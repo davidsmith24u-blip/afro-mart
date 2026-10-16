@@ -791,8 +791,28 @@ async function askAssistant(question) {
   }
 }
 
-function initAssistant() {
-  const badge = $('assistant-badge');
+// Contact card — only shown when a real channel is configured, so the
+// storefront never advertises a phone number or address we do not have.
+function initContact() {
+  const section = $('contact');
+  if (!section) return;
+  const host = $('contact-actions');
+  const wa = settings.whatsapp_number ? String(settings.whatsapp_number).replace(/[^\d]/g, '') : '';
+  const email = settings.support_email;
+  const links = [];
+  if (wa) {
+    const a = el('a', `💬 ${t('contact.whatsapp')}`, { className: 'contact-button', href: `https://wa.me/${wa}` });
+    a.target = '_blank';
+    a.rel = 'noopener';
+    links.push(a);
+  }
+  if (email) links.push(el('a', `✉️ ${t('contact.email')}`, { className: 'contact-button ghost', href: `mailto:${email}` }));
+  links.push(el('a', `📦 ${t('contact.track')}`, { className: 'contact-button ghost', href: '#track' }));
+  host.replaceChildren(...links, el('p', t('contact.reply'), { className: 'contact-note' }));
+  section.hidden = false;
+}
+
+function initAssistant() {  const badge = $('assistant-badge');
   if (badge) {
     const powered = Boolean(settings.ai?.enabled);
     badge.dataset.i18n = powered ? 'assistant.poweredOn' : 'assistant.poweredOff';
@@ -1260,5 +1280,6 @@ if ('serviceWorker' in navigator) {
     await Promise.all([loadProducts(), loadRecipes(), loadOrders(), loadMember()]);
     planParty().catch(() => {});
     initAssistant();
+    initContact();
   } catch (e) { fail(e); }
 })();

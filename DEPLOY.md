@@ -41,7 +41,12 @@ A token with only `repo` (classic) or `contents: write` (fine-grained) scope is 
 5. Add environment variables (Site settings → Environment variables):
    - **`AUTH_SECRET`** — a long random string (required so sessions survive restarts)
    - Optional: `DELIVERY_FEE_DEFAULT_CENTS`, `PAYMENTS_WEBHOOK_SECRET`, `WHATSAPP_NUMBER`,
+     `SUPPORT_EMAIL`, `AI_API_KEY`, `AI_MODEL`, `AI_BASE_URL`, `AI_PROVIDER`,
      `COMMS_WEBHOOK_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`
+
+   `WHATSAPP_NUMBER` (international format, digits only) and `SUPPORT_EMAIL` are optional; when set, the
+   storefront shows a contact section with a WhatsApp chat button and an email link. `AI_API_KEY` enables
+   the AI assistant and copywriter; with no key they fall back to built-in smart matching.
 6. **Deploy site**.
 
 From then on, every push to `main` redeploys. Pull requests get their own Deploy Previews.

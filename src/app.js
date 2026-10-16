@@ -31,6 +31,8 @@ const MIME = {
   '.svg': 'image/svg+xml',
   '.jpg': 'image/jpeg',
   '.webmanifest': 'application/manifest+json',
+  '.xml': 'application/xml; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
 };
 const MAX_BODY = 4_000_000;
 const ORDER_STATUSES = ['pending', 'paid', 'packed', 'shipped', 'delivered', 'cancelled'];
@@ -155,6 +157,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     delivery_fee_default_cents: Math.max(0, Number(process.env.DELIVERY_FEE_DEFAULT_CENTS) || 0),
     has_payment_gateway: Boolean(process.env.PAYMENTS_WEBHOOK_SECRET),
     whatsapp_number: process.env.WHATSAPP_NUMBER || null,
+    support_email: process.env.SUPPORT_EMAIL || null,
     ai: aiStatus(),
     facets: {
       origins: ORIGIN_LABELS,
