@@ -53,10 +53,23 @@ From then on, every push to `main` redeploys. Pull requests get their own Deploy
 
 ## 3. Verify the live site
 
-- `https://<site>.netlify.app/api/config` — app config
-- `https://<site>.netlify.app/api/products` — catalog (seeds 115 products on first request)
-- `https://<site>.netlify.app/` — storefront
-- `https://<site>.netlify.app/admin` — staff dashboard (`ADMIN_EMAIL` / `ADMIN_PASSWORD`)
+The store is live at **https://afromartz.biz/** (custom domain) and
+**https://afro-mart-store.netlify.app/** (Netlify URL).
+
+- `https://afromartz.biz/` — storefront
+- `https://afromartz.biz/api/config` — app config
+- `https://afromartz.biz/api/products` — catalog (seeds products on first request)
+- `https://afromartz.biz/admin` — staff dashboard (`ADMIN_EMAIL` / `ADMIN_PASSWORD`)
+
+## Custom domain (`afromartz.biz`)
+
+`afromartz.biz` is the custom domain of the `afro-mart-store` site (apex + `www`, on Netlify DNS).
+Netlify issues and renews the TLS certificate automatically once the domain resolves to the site.
+
+⚠️ On the current (free/dev) plan Netlify allows **at most 3 custom-domain changes per hour per
+site** — attaching, detaching and alias edits all count. Detaching also **deletes the managed
+`NETLIFY` DNS records** for the domain, so don't detach it as a diagnostic: the domain will 404
+until it is re-attached.
 
 ## Alternative: deploy without Git
 
