@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://afro-mart-store.netlify.app/sitemap.xml
+Sitemap: https://afromartz.biz/sitemap.xml
