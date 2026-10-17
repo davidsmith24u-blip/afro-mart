@@ -63,35 +63,48 @@
 	</div>
 
 	<header class="site-header">
-		<a class="brand" href="/" aria-label="AFROMART home">
-			<svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#afromart-emblem"></use></svg>
-			<span class="brand-words brand-bold">AFRO<span class="brand-red">MART</span><small data-i18n="brand.tagline">AUTHENTIC AFRICAN FOODS — RIGHT TO YOUR DOOR</small></span>
-		</a>
-		<label class="search-box">
-			<span class="sr-only">Search the store</span>
-			<span class="search-icon" aria-hidden="true">⌕</span>
-			<input id="q" placeholder="What are you cooking today?" autocomplete="off" data-i18n-placeholder="search.placeholder">
-			<kbd>SEARCH</kbd>
-		</label>
-		<div class="header-actions">
-			<button id="install-app" class="install-app" type="button" aria-label="Install Afro Mart app" hidden><span aria-hidden="true">↓</span> <span data-i18n="nav.install">Install app</span></button>
-			<label class="pref-select">
-				<span class="sr-only" data-i18n="currency.label">Currency</span>
-				<select id="currency" aria-label="Currency"></select>
-			</label>
-			<span id="acct"></span>
-			<a class="cart-link" href="#shopping-cart"><span class="cart-icon" aria-hidden="true">🧺</span> <span data-i18n="nav.bag">Bag</span> <span id="cart-count">0</span></a>
+		<div class="header-bar">
+			<a class="brand" href="/" aria-label="AFROMART home">
+				<svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#afromart-emblem"></use></svg>
+				<span class="brand-words brand-bold">AFRO<span class="brand-red">MART</span><small data-i18n="brand.tagline">AUTHENTIC AFRICAN FOODS — RIGHT TO YOUR DOOR</small></span>
+			</a>
+			<form id="search-form" class="search-box" role="search">
+				<span class="sr-only">Search the store</span>
+				<span class="search-icon" aria-hidden="true">⌕</span>
+				<input id="q" placeholder="What are you cooking today?" autocomplete="off" data-i18n-placeholder="search.placeholder">
+				<button class="search-go" type="submit" data-i18n="nav.search">Search</button>
+			</form>
+			<div class="header-actions">
+				<button id="install-app" class="install-app" type="button" aria-label="Install Afro Mart app" hidden><span aria-hidden="true">↓</span> <span data-i18n="nav.install">Install app</span></button>
+				<label class="pref-select">
+					<span class="sr-only" data-i18n="currency.label">Currency</span>
+					<select id="currency" aria-label="Currency"></select>
+				</label>
+				<span id="acct"></span>
+				<a class="cart-link" href="#shopping-cart"><span class="cart-icon" aria-hidden="true">🧺</span> <span data-i18n="nav.bag">Bag</span> <span id="cart-count">0</span></a>
+			</div>
 		</div>
-	</header>
 
-	<nav class="category-nav" aria-label="Shop categories">
-		<div class="category-nav-inner">
-			<span class="category-label" aria-hidden="true" data-i18n="nav.eyebrow">Shop by aisle</span>
-			<button class="category-shortcut is-active" data-category="" data-i18n="nav.everything">Everything</button>
-			<div id="category-links"></div>
-			<label class="category-select-label"><span data-i18n="nav.browse">Browse</span> <select id="cat" aria-label="Filter products by category"><option value="" data-i18n="nav.allCategories">All categories</option></select></label>
-		</div>
-	</nav>
+		<nav class="service-nav" aria-label="Store sections">
+			<div class="service-nav-inner">
+				<a href="#shop" data-i18n="nav.shop">Shop</a>
+				<a href="#recipes" data-i18n="nav.recipes">Recipes</a>
+				<a href="#assistant" data-i18n="nav.assistant">Kitchen helper</a>
+				<a href="#catering" data-i18n="nav.catering">Catering</a>
+				<a href="#track" data-i18n="nav.track">Track order</a>
+				<a href="#contact" id="nav-contact" data-i18n="nav.contact">Contact</a>
+			</div>
+		</nav>
+
+		<nav class="category-nav" aria-label="Shop categories">
+			<div class="category-nav-inner">
+				<span class="category-label" aria-hidden="true" data-i18n="nav.eyebrow">Shop by aisle</span>
+				<button class="category-shortcut is-active" data-category="" data-i18n="nav.everything">Everything</button>
+				<div id="category-links"></div>
+				<label class="category-select-label"><span data-i18n="nav.browse">Browse</span> <select id="cat" aria-label="Filter products by category"><option value="" data-i18n="nav.allCategories">All categories</option></select></label>
+			</div>
+		</nav>
+	</header>
 
 	<section class="hero" aria-labelledby="hero-title">
 		<img class="hero-image" src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=2200&q=85" alt="A colourful market stall piled high with fresh produce" fetchpriority="high">
@@ -107,7 +120,7 @@
 			<div class="hero-offer">Free delivery on orders over €50 within Germany</div>
 			<div class="hero-actions">
 				<a class="hero-cta" href="#shop" data-i18n="hero.shop">Shop the market</a>
-				<a class="hero-cta ghost" href="#bundles" data-i18n="hero.bundles">Explore bundles</a>
+				<a class="hero-cta ghost" href="#recipes" data-i18n="recipes.title">Recipes from home</a>
 			</div>
 		</div>
 		<div class="hero-emblem" aria-hidden="true">
@@ -194,17 +207,6 @@
 			</div>
 		</section>
 
-		<section id="bundles" class="shop-section bundles-section" aria-labelledby="bundles-title">
-			<div class="section-heading">
-				<div><p class="eyebrow" data-i18n="bundles.eyebrow">Curated for your table</p><h2 id="bundles-title" data-i18n="bundles.title">Packs that feel like home</h2></div>
-				<p class="shop-caption" data-i18n="bundles.caption">Student bundles • Family packs • Christmas packs • Hampers — more choices for every occasion.</p>
-			</div>
-			<div class="bundle-cats">
-				<span class="chip">Student Bundles</span><span class="chip">Family Packs</span><span class="chip">Christmas Packs</span><span class="chip">Hampers</span><span class="chip">Party Packs</span><span class="chip">Starter Kits</span><span class="chip">Taste Boxes</span><span class="chip">Gift Boxes</span>
-			</div>
-			<div id="bundle-grid" class="product-grid" aria-live="polite"></div>
-		</section>
-
 		<section id="recipes" class="shop-section recipes-section" aria-labelledby="recipes-title">
 			<div class="section-heading">
 				<div><p class="eyebrow" data-i18n="recipes.eyebrow">Cook a dish tonight</p><h2 id="recipes-title" data-i18n="recipes.title">Recipes from home</h2></div>
@@ -255,21 +257,9 @@
 		</section>
 
 		<section id="catering" class="shop-section catering-section" aria-labelledby="catering-title">
-			<div class="section-heading">
-				<div><p class="eyebrow" data-i18n="catering.eyebrow">Feeding a crowd?</p><h2 id="catering-title" data-i18n="catering.title">Party, catering &amp; wholesale</h2></div>
-				<p class="shop-caption" data-i18n="catering.caption">Plan a celebration in a couple of taps: find the packs that cover your guests, scale a recipe, or ask us to quote for a restaurant or event.</p>
-			</div>
-			<div class="catering-grid">
-				<div class="catering-card">
-					<label for="party-guests" data-i18n="catering.guests">How many guests?</label>
-					<div class="party-controls">
-						<input id="party-guests" type="number" min="1" max="1000" value="30" inputmode="numeric">
-						<button id="plan-party" class="secondary-button" type="button" data-i18n="catering.plan">Plan my party</button>
-					</div>
-					<div id="party-results" class="party-results" aria-live="polite"></div>
-				</div>
-				<div class="catering-card">
-					<h3 data-i18n="catering.quote.title">Request a catering quote</h3>
+			<div class="catering-grid catering-grid-single">
+				<div class="catering-card catering-quote">
+					<h2 id="catering-title" data-i18n="catering.quote.title">Request a catering quote</h2>
 					<form id="quote-form" class="quote-form">
 						<input id="quote-name" placeholder="Your name" required data-i18n-placeholder="catering.name">
 						<input id="quote-email" type="email" placeholder="Email address" required data-i18n-placeholder="catering.email">
@@ -281,7 +271,6 @@
 						<textarea id="quote-message" rows="3" placeholder="Tell us what you need" data-i18n-placeholder="catering.message"></textarea>
 						<button type="submit" class="checkout-button" data-i18n="catering.send">Send request</button>
 					</form>
-					<p class="wholesale-note"><strong data-i18n="catering.wholesale.title">Restaurant or shop owner?</strong> <span data-i18n="catering.wholesale.body">Open a trade account to unlock wholesale pricing across the catalogue.</span></p>
 				</div>
 			</div>
 		</section>

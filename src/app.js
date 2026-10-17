@@ -14,6 +14,7 @@ import { registerSubscriptionRoutes } from './subscriptions.js';
 import { registerRecipeRoutes } from './recipes.js';
 import { applyReferral, referralCode, tierFor, lifetimeSpendCents, pointsFor } from './loyalty.js';
 import { registerDiscoveryRoutes, expandQuery, attachTags, ORIGIN_LABELS, CUISINE_LABELS, DIET_LABELS } from './discovery.js';
+import { IN_SCOPE_SQL, CATEGORY_IN_SCOPE_SQL } from './launch-scope.js';
 import { BASE_CURRENCY, currencyList } from './currencies.js';
 import { registerCateringRoutes } from './catering.js';
 import { registerReviewRoutes } from './reviews.js';
@@ -244,7 +245,12 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   });
 
   // ---- Categories ----
-  route('GET', '/api/categories', () => all('SELECT * FROM categories ORDER BY name'));
+  route('GET', '/api/categories', (ctx) => {
+    const staff = ctx.user && ctx.user.role !== 'customer';
+    return staff
+      ? all('SELECT * FROM categories ORDER BY name')
+      : all(`SELECT * FROM categories c WHERE ${CATEGORY_IN_SCOPE_SQL} ORDER BY c.name`);
+  });
   route('POST', '/api/categories', (ctx) => {
     requireStaff(ctx);
     const name = str(ctx.body.name, 'name', { max: 100 });
@@ -257,9 +263,16 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
   route('GET', '/api/products', (ctx) => {
     const staff = ctx.user && ctx.user.role !== 'customer';
     const wholesale = ctx.user && ctx.user.account_type === 'restaurant';
+    // The public shop shows the current launch scope (see launch-scope.js).
+    // `?catalog=all` returns the full active catalogue so the storefront can
+    // price and render items reached through recipes and the kitchen assistant.
+    const fullCatalog = ctx.query.get('catalog') === 'all';
     const where = [];
     const params = [];
-    if (!staff) where.push('p.active = 1');
+    if (!staff) {
+      where.push('p.active = 1');
+      if (!fullCatalog) where.push(IN_SCOPE_SQL);
+    }
     const cat = ctx.query.get('category');
     if (cat) { where.push('p.category_id = ?'); params.push(Number(cat) || 0); }
 

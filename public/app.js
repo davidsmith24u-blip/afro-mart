@@ -546,9 +546,14 @@ function readFileAsBase64(file) {
 async function loadBundles() {
   const data = await api('/api/bundles');
   bundles = data;
+  bundleCatalog.clear();
   bundles.forEach((bundle) => bundleCatalog.set(bundle.id, bundle));
+  // Packs now surface through recipes (and the kitchen assistant) rather than a
+  // dedicated section, so only render when the grid is on the page.
+  const grid = $('bundle-grid');
+  if (!grid) return;
   const glyph = { meal_pack: '🍲', starter_pack: '🥘', party_pack: '🎉', gift_box: '🎁', taste_box: '⚖️' };
-  $('bundle-grid').replaceChildren(...(bundles.length ? bundles.map((bundle) => {
+  grid.replaceChildren(...(bundles.length ? bundles.map((bundle) => {
     const card = el('article', undefined, { className: 'product-card bundle-card' });
     const art = el('div', undefined, { className: 'product-art' });
     art.dataset.tone = 'pantry';
@@ -1176,8 +1181,19 @@ $('checkout').onclick = async () => {
     }
   } catch (e) { fail(e); }
 };
-$('q').oninput = () => loadProducts().catch(fail);
+let searchTimer;
+$('q').oninput = () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadProducts().catch(fail), 250);
+};
 $('cat').onchange = () => loadProducts().catch(fail);
+$('search-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  clearTimeout(searchTimer);
+  loadProducts()
+    .then(() => $('shop')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    .catch(fail);
+});
 document.querySelectorAll('input[name="fulfillment"]').forEach((radio) => radio.addEventListener('change', applyFulfillment));
 $('addr').addEventListener('input', renderTotals);
 $('track-form').onsubmit = async (event) => {
@@ -1208,38 +1224,7 @@ $('track-form').onsubmit = async (event) => {
   }
 };
 
-// ---------- Catering: party planner & quote request ----------
-async function planParty() {
-  const spot = $('party-results');
-  const guests = Math.min(Math.max(Number($('party-guests').value) || 20, 1), 1000);
-  $('party-guests').value = String(guests);
-  try {
-    const plan = await api(`/api/catering/party?guests=${guests}`);
-    const top = plan.suggestions.slice(0, 4);
-    if (!top.length) {
-      spot.replaceChildren(el('p', 'Ask us for a custom plan for your event.', { className: 'empty-state' }));
-      return;
-    }
-    spot.replaceChildren(...top.map((s) => {
-      const row = el('div', undefined, { className: 'party-result' });
-      const details = el('div', undefined, { className: 'party-details' });
-      details.append(el('strong', s.name));
-      details.append(el('span', `${money(s.unit_price_cents)} · ${t('catering.covers', { n: s.serves })}`, { className: 'party-meta' }));
-      row.append(details);
-      row.append(el('span', t('catering.packs', { n: s.packs_needed }), { className: 'party-packs' }));
-      row.append(el('strong', money(s.total_price_cents), { className: 'party-total' }));
-      const add = el('button', 'Add to bag +', { className: 'add-button', type: 'button' });
-      add.onclick = () => {
-        cart[`b${s.id}`] = Math.min((cart[`b${s.id}`] || 0) + s.packs_needed, 10);
-        saveCart();
-        say(`Added ${s.packs_needed} × ${s.name} to your bag.`);
-      };
-      row.append(add);
-      return row;
-    }));
-  } catch (e) { fail(e); }
-}
-$('plan-party').onclick = () => planParty();
+// ---------- Catering: quote request ----------
 $('quote-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   try {
@@ -1336,8 +1321,12 @@ if ('serviceWorker' in navigator) {
     applyFulfillment();
     await loadFacets();
     await loadBundles();
+    // Pricing/render data for lines that recipes and the assistant add to the
+    // bag even when the shop grid (launch scope) is not showing them.
+    await api('/api/products?catalog=all')
+      .then((everything) => everything.forEach((product) => productCatalog.set(product.id, product)))
+      .catch(() => {});
     await Promise.all([loadProducts(), loadRecipes(), loadOrders(), loadMember()]);
-    planParty().catch(() => {});
     initAssistant();
     initContact();
   } catch (e) { fail(e); }

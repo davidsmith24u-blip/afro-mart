@@ -2,6 +2,7 @@
 // (origin / cuisine / diet / heat) and tag hydration for product payloads.
 
 import { ORIGIN_LABELS, CUISINE_LABELS, DIET_LABELS } from './catalog-meta.js';
+import { IN_SCOPE_SQL } from './launch-scope.js';
 
 export { ORIGIN_LABELS, CUISINE_LABELS, DIET_LABELS };
 
@@ -106,19 +107,24 @@ export function attachTags(db, rows) {
 export function registerDiscoveryRoutes(api) {
   const { route, all } = api;
 
-  route('GET', '/api/discovery/facets', () => {
+  route('GET', '/api/discovery/facets', (ctx) => {
+    const staff = ctx.user && ctx.user.role !== 'customer';
+    const scope = staff ? '1 = 1' : IN_SCOPE_SQL;
     const facetList = (kind, labels) =>
       all(
         `SELECT t.value, COUNT(*) AS count
          FROM product_tags t JOIN products p ON p.id = t.product_id
-         WHERE t.kind = ? AND p.active = 1
+         LEFT JOIN categories c ON c.id = p.category_id
+         WHERE t.kind = ? AND p.active = 1 AND ${scope}
          GROUP BY t.value ORDER BY count DESC, t.value`,
         kind,
       ).map((row) => ({ value: row.value, label: labels[row.value] || row.value, count: row.count }));
 
     const spiceLevels = all(
-      `SELECT spice_level AS level, COUNT(*) AS count FROM products WHERE active = 1
-       GROUP BY spice_level ORDER BY spice_level`,
+      `SELECT p.spice_level AS level, COUNT(*) AS count FROM products p
+       LEFT JOIN categories c ON c.id = p.category_id
+       WHERE p.active = 1 AND ${scope}
+       GROUP BY p.spice_level ORDER BY p.spice_level`,
     ).map((row) => ({ level: row.level, label: SPICE_LABELS[row.level] || String(row.level), count: row.count }));
 
     return {
