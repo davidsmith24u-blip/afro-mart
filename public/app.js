@@ -343,11 +343,10 @@ async function loadProducts() {
     return 'pantry';
   };
   $('products').replaceChildren(...(products.length ? products.map((product, index) => {
-    const card = el('article', undefined, { className: 'product-card', tabIndex: 0, role: 'button' });
-    card.onclick = () => openProduct(product);
-    card.onkeydown = (event) => {
-      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openProduct(product); }
-    };
+    // Rendered as a link so crawlers can follow every product to its own indexable
+    // page (src/seo.js). Clicking still opens the quick-view modal instead of leaving.
+    const card = el('a', undefined, { className: 'product-card', href: product.path || '#' });
+    card.onclick = (event) => { event.preventDefault(); openProduct(product); };
     const art = el('div', undefined, { className: 'product-art' });
     art.dataset.tone = toneFor(product.category);
     const photo = el('img', undefined, {
@@ -380,7 +379,14 @@ async function loadProducts() {
       priceWrap.append(el('strong', money(product.price_cents), { className: 'product-price' }));
     }
     const add = el('button', product.stock > 0 ? 'Add to bag +' : 'Sold out', { className: 'add-button', disabled: product.stock <= 0, type: 'button' });
-    add.onclick = (event) => { event.stopPropagation(); cart[product.id] = Math.min((cart[product.id] || 0) + 1, product.stock); saveCart(); };
+    // preventDefault matters now the card is a link: without it the browser would
+    // follow the href as well as adding to the bag.
+    add.onclick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      cart[product.id] = Math.min((cart[product.id] || 0) + 1, product.stock);
+      saveCart();
+    };
     buy.append(priceWrap, add);
     if (product.stock > 0 && product.stock <= 5) buy.append(el('span', 'Only a few left', { className: 'stock-label' }));
     info.append(buy);
@@ -848,6 +854,23 @@ function initContact() {
   links.push(el('a', `📦 ${t('contact.track')}`, { className: 'contact-button ghost', href: '#track' }));
   host.replaceChildren(...links, el('p', t('contact.reply'), { className: 'contact-note' }));
   section.hidden = false;
+}
+
+// Product pages link back with `/?add=<id>#shopping-cart` so a visitor arriving from
+// Google can drop the item straight into the bag. The id is consumed, then removed
+// from the address bar so a refresh or a shared link does not re-add it.
+function applyAddParam() {
+  const params = new URLSearchParams(location.search);
+  const id = Number(params.get('add'));
+  if (!id) return;
+  params.delete('add');
+  const query = params.toString();
+  history.replaceState(null, '', location.pathname + (query ? `?${query}` : '') + location.hash);
+  const product = productCatalog.get(id);
+  if (!product || product.stock <= 0) return;
+  cart[id] = Math.min((cart[id] || 0) + 1, product.stock);
+  saveCart();
+  say(`${product.name} added to your bag.`);
 }
 
 function initAssistant() {  const badge = $('assistant-badge');
@@ -1378,6 +1401,7 @@ if ('serviceWorker' in navigator) {
       .catch(() => {});
     await Promise.all([loadProducts(), loadRecipes(), loadOrders(), loadMember()]);
     renderDepartments();
+    applyAddParam();
     initAssistant();
     initContact();
   } catch (e) { fail(e); }

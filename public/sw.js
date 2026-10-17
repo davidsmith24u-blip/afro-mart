@@ -1,5 +1,5 @@
 // Afro Mart service worker: an installable, offline-friendly app shell.
-const CACHE = 'afro-mart-v14';
+const CACHE = 'afro-mart-v15';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -8,6 +8,7 @@ const APP_SHELL = [
   '/i18n.js',
   '/manifest.webmanifest',
   '/app-icon.svg',
+  '/logo.png',
   '/products/produce.jpg',
   '/products/african-drinks.jpg',
   '/products/staples.jpg',
@@ -51,7 +52,10 @@ self.addEventListener('fetch', (event) => {
       const response = await fetch(request);
       if (response && response.ok && response.type === 'basic') {
         const copy = response.clone();
-        const key = request.mode === 'navigate' ? '/index.html' : request;
+        // Only the site root is the cached shell; a product page navigation must not
+        // overwrite it, or offline visitors would get a product page for '/'.
+        const url = new URL(request.url);
+        const key = request.mode === 'navigate' && url.pathname === '/' ? '/index.html' : request;
         caches.open(CACHE).then((cache) => cache.put(key, copy));
       }
       return response;

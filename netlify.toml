@@ -21,6 +21,19 @@
   to = "/.netlify/functions/api/:splat"
   status = 200
 
+# Crawlable product pages and the live sitemap, served by the same Function so the
+# HTML carries Product structured data (see src/seo.js). public/sitemap.xml is gone —
+# the sitemap is generated from the catalogue so it can never go stale.
+[[redirects]]
+  from = "/product/*"
+  to = "/.netlify/functions/api/product/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/.netlify/functions/api/sitemap.xml"
+  status = 200
+
 # The staff dashboard lives at /admin (the Node server maps it to admin.html).
 [[redirects]]
   from = "/admin"

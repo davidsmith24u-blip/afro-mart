@@ -23,6 +23,9 @@ import { registerRetentionRoutes } from './retention.js';
 import { registerAssistantRoutes } from './assistant.js';
 import { aiStatus } from './ai.js';
 import { applyProductMeta } from './catalog-meta.js';
+import {
+  productPath, productIdFromSlug, renderProductPage, renderSitemap, newNonce, cspWithNonce,
+} from './seo.js';
 
 const PUBLIC_DIR = resolve(fileURLToPath(new URL('../public', import.meta.url)));
 const MIME = {
@@ -335,6 +338,8 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       ...params, ...(limit ? [limit, offset] : []));
     attachTags(db, rows);
     for (const row of rows) {
+      // The crawlable product page (see src/seo.js) — the storefront links to it.
+      row.path = productPath(row);
       if (wholesale) {
         row.is_wholesale = true;
         row.effective_price_cents = row.wholesale_price_cents ?? row.price_cents;
@@ -354,6 +359,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
        FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?`, ctx.params.id);
     if (!p || (!p.active && !staff)) throw notFound();
     const [row] = attachTags(db, [p]);
+    row.path = productPath(row);
     if (wholesale) {
       row.is_wholesale = true;
       row.effective_price_cents = row.wholesale_price_cents ?? row.price_cents;
@@ -858,6 +864,52 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     }
   }
 
+  // ---- Crawlable product pages + sitemap (see src/seo.js) ----
+  // The storefront is a single-page app, so products have no URL of their own. These
+  // server-rendered pages give each one a real address with Product structured data,
+  // which is what product rich results are built from. Public scope only: hidden or
+  // out-of-scope products 404 here just as they are hidden in the shop.
+  const PRODUCT_COLUMNS = `p.id, p.sku, p.name, p.description, p.category_id, c.name AS category,
+      p.price_cents, p.stock, p.spice_level, p.image_url,
+      (SELECT ROUND(AVG(r.rating), 1) FROM product_reviews r WHERE r.product_id = p.id AND r.status = 'approved') AS rating_average,
+      (SELECT COUNT(*) FROM product_reviews r WHERE r.product_id = p.id AND r.status = 'approved') AS rating_count`;
+
+  function serveProductPage(slug, res) {
+    const id = productIdFromSlug(slug);
+    if (!id) throw notFound();
+    const product = get(
+      `SELECT ${PRODUCT_COLUMNS}
+       FROM products p LEFT JOIN categories c ON c.id = p.category_id
+       WHERE p.id = ? AND p.active = 1 AND ${IN_SCOPE_SQL}`, id);
+    if (!product) throw notFound();
+    attachTags(db, [product]);
+
+    const related = all(
+      `SELECT p.id, p.name, p.price_cents, p.image_url, c.name AS category
+       FROM products p LEFT JOIN categories c ON c.id = p.category_id
+       WHERE p.active = 1 AND p.id != ? AND ${IN_SCOPE_SQL}
+       ${product.category_id ? 'AND p.category_id = ?' : ''}
+       ORDER BY p.name LIMIT 4`,
+      ...(product.category_id ? [product.id, product.category_id] : [product.id]));
+
+    const nonce = newNonce();
+    send(res, 200, renderProductPage(product, { related, nonce }), {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Security-Policy': cspWithNonce(nonce),
+      'Cache-Control': 'public, max-age=0, must-revalidate',
+    });
+  }
+
+  function serveSitemap(res) {
+    const rows = all(
+      `SELECT p.id, p.name FROM products p LEFT JOIN categories c ON c.id = p.category_id
+       WHERE p.active = 1 AND ${IN_SCOPE_SQL} ORDER BY p.name`);
+    send(res, 200, renderSitemap(rows), {
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=0, must-revalidate',
+    });
+  }
+
   // ---- Rate limiting (best-effort, in-memory, per client IP) ----
   const hits = new Map();
   const allow = (key, limit, windowMs) => {
@@ -883,6 +935,9 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       }
       if (!pathname.startsWith('/api/')) {
         if (req.method !== 'GET') throw notFound();
+        const page = /^\/product\/([A-Za-z0-9._~-]+)$/.exec(pathname);
+        if (page) return serveProductPage(page[1], res);
+        if (pathname === '/sitemap.xml') return serveSitemap(res);
         return await serveStatic(url.pathname, res);
       }
       const ip = clientIp(req);
