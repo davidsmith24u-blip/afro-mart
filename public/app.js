@@ -605,6 +605,7 @@ async function loadBundles() {
 async function loadRecipes() {
   recipes = await api('/api/recipes');
   const grid = $('recipe-grid');
+  if (!grid) return; // recipes section removed from the storefront; data still feeds the kitchen helper
   if (!recipes.length) {
     grid.replaceChildren(el('p', 'Recipes are simmering — check back soon.', { className: 'empty-state' }));
     return;
