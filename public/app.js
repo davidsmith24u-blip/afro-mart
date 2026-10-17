@@ -2,6 +2,22 @@ import { LOCALES, LOCALE_LABELS, translate } from '/i18n.js';
 
 const $ = (id) => document.getElementById(id);
 
+// Safety net: if a script error stops the storefront from booting (for example a
+// stale cached bundle served against fresh HTML right after a deploy), show a
+// one-tap recovery instead of leaving the market silently blank.
+window.addEventListener('error', () => {
+  const message = document.getElementById('msg');
+  const market = document.getElementById('products');
+  if (!message || !market || market.querySelector('.product-card') || message.dataset.bootFailed) return;
+  message.dataset.bootFailed = '1';
+  message.textContent = 'This page could not finish loading. Please reload to get the latest version. ';
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.textContent = 'Reload';
+  retry.addEventListener('click', () => window.location.reload());
+  message.appendChild(retry);
+});
+
 let locale = localStorage.getItem('locale') || 'en';
 if (!LOCALES.includes(locale)) locale = 'en';
 let displayCurrency = localStorage.getItem('currency') || 'EUR';

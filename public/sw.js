@@ -1,5 +1,5 @@
 // Afro Mart service worker: an installable, offline-friendly app shell.
-const CACHE = 'afro-mart-v13';
+const CACHE = 'afro-mart-v14';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -43,31 +43,26 @@ self.addEventListener('fetch', (event) => {
   // Never serve API responses from cache; always go to the network.
   if (url.pathname.startsWith('/api/')) return;
 
-  // Navigations: fresh shell when online, cached shell when offline.
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put('/index.html', copy));
-          return response;
-        })
-        .catch(() => caches.match('/index.html').then((cached) => cached || caches.match('/')))
-    );
-    return;
-  }
-
-  // Static assets: cache first, then network, and populate the cache on miss.
-  event.respondWith(
-    caches.match(request).then((cached) => {
+  // The page and its shell assets always come from the network when online so a
+  // fresh index.html can never be paired with a stale cached script after a
+  // deploy. The cache stays as the offline fallback.
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(request);
+      if (response && response.ok && response.type === 'basic') {
+        const copy = response.clone();
+        const key = request.mode === 'navigate' ? '/index.html' : request;
+        caches.open(CACHE).then((cache) => cache.put(key, copy));
+      }
+      return response;
+    } catch {
+      const cached = await caches.match(request);
       if (cached) return cached;
-      return fetch(request).then((response) => {
-        if (response.ok && response.type === 'basic') {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      });
-    })
-  );
+      if (request.mode === 'navigate') {
+        const shell = (await caches.match('/index.html')) || (await caches.match('/'));
+        if (shell) return shell;
+      }
+      throw new Error('offline');
+    }
+  })());
 });
