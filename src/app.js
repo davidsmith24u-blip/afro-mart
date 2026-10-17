@@ -839,7 +839,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
         : 'application/json',
       'X-Content-Type-Options': 'nosniff',
       'X-API-Version': '1',
-      'Content-Security-Policy': "default-src 'self'; img-src 'self' https: data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'sha256-6/SCuzi3l368PQt/BgOUJQCNrkXnrnQkDMSj6CdRhEI='; img-src 'self' https: data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
       'Referrer-Policy': 'same-origin',
       ...cors(),
       ...headers,

@@ -28,12 +28,14 @@
   status = 200
 
 # Security headers for the statically-served storefront and dashboard.
-# The app has no inline scripts or inline event handlers, so the CSP can stay strict;
-# the invoice styles live in /invoice.css rather than an inline <style> block.
+# No inline scripts or inline event handlers are used, so the CSP stays strict. The
+# one exception is the inline JSON-LD block in public/index.html, allow-listed by its
+# sha256 hash. If that block changes, update the hash here and in src/app.js — the
+# test/structured-data.test.js test fails if they drift apart.
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; img-src 'self' https: data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'sha256-6/SCuzi3l368PQt/BgOUJQCNrkXnrnQkDMSj6CdRhEI='; img-src 'self' https: data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     X-Frame-Options = "SAMEORIGIN"

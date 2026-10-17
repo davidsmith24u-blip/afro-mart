@@ -17,23 +17,12 @@
 	<title>AFROMART | Authentic African Foods — Right to Your Door</title>
 	<link rel="manifest" href="/manifest.webmanifest">
 	<link rel="icon" href="/app-icon.svg" type="image/svg+xml">
-	<link rel="apple-touch-icon" href="/app-icon.svg">
+	<link rel="apple-touch-icon" href="/logo.png">
 	<link rel="stylesheet" href="/style.css">
-	<script type="application/ld+json">
-	{
-		"@context": "https://schema.org",
-		"@type": "GroceryStore",
-		"name": "AFROMART",
-		"description": "Authentic African groceries, spices and everyday staples delivered across Germany — foods that help you remember home.",
-		"url": "https://afromartz.biz/",
-		"image": "https://afromartz.biz/app-icon.svg",
-		"logo": "https://afromartz.biz/app-icon.svg",
-		"areaServed": { "@type": "Country", "name": "Germany" },
-		"currenciesAccepted": "EUR, USD, GBP",
-		"paymentAccepted": "PayPal, Credit Card, Klarna",
-		"priceRange": "€€"
-	}
-	</script>
+	<!-- Store identity for rich results. Single line on purpose: the inline JSON-LD is
+	     allowed by a CSP sha256 hash (see netlify.toml and src/app.js), so its bytes must
+	     not change. test/structured-data.test.js fails loudly if the hash goes stale. -->
+	<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"OnlineStore","@id":"https://afromartz.biz/#store","name":"AFROMART","alternateName":"Afro Mart","url":"https://afromartz.biz/","logo":{"@type":"ImageObject","url":"https://afromartz.biz/logo.png","width":512,"height":512},"image":"https://afromartz.biz/logo.png","description":"Authentic African groceries, spices and everyday staples delivered across Germany, for a taste of home.","slogan":"Authentic African foods, right to your door","areaServed":{"@type":"Country","name":"Germany"},"currenciesAccepted":"EUR, USD, GBP","paymentAccepted":"PayPal, Credit Card, Klarna","priceRange":"10-100 EUR","knowsLanguage":["en","de","fr"]},{"@type":"WebSite","@id":"https://afromartz.biz/#website","url":"https://afromartz.biz/","name":"AFROMART","inLanguage":["en","de","fr"],"publisher":{"@id":"https://afromartz.biz/#store"}}]}</script>
 </head>
 <body>
 	<svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">

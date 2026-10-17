@@ -1,0 +1,4 @@
+# The inline JSON-LD in public/index.html is allow-listed by a CSP sha256 hash, so its
+# bytes must be identical on every platform — a CRLF checkout would change the hash and
+# silently block rich results. Pin that file to LF.
+public/index.html text eol=lf
