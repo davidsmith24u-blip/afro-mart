@@ -25,6 +25,8 @@ function money(cents) {
 let token = localStorage.getItem('token');
 let user = null;
 let products = [];
+let activeCategory = '';
+let categoryList = [];
 const productCatalog = new Map();
 let bundles = [];
 const bundleCatalog = new Map();
@@ -275,7 +277,7 @@ function fillFulfillmentOptions() {
 async function loadProducts() {
   const p = new URLSearchParams();
   if ($('q').value) p.set('q', $('q').value);
-  if ($('cat').value) p.set('category', $('cat').value);
+  if (activeCategory) p.set('category', activeCategory);
   if (filters.cuisine.size) p.set('cuisine', [...filters.cuisine].join(','));
   if (filters.origin.size) p.set('origin', [...filters.origin].join(','));
   if (filters.diet.size) p.set('diet', [...filters.diet].join(','));
@@ -1103,13 +1105,51 @@ async function session(fn) {
 $('login').onclick = () => session(() => api('/api/auth/login', { method: 'POST', body: { email: $('email').value, password: $('pw').value } }));
 $('register').onclick = () => session(() => api('/api/auth/register', { method: 'POST', body: { name: $('name').value, email: $('email').value, password: $('pw').value, ref: $('ref').value || undefined } }));
 $('logout').onclick = logout;
-$('category-links').addEventListener('click', (event) => {
-  const button = event.target.closest('[data-category]');
-  if (!button) return;
-  $('cat').value = button.dataset.category;
-  document.querySelectorAll('.category-shortcut').forEach((item) => item.classList.toggle('is-active', item === button));
-  loadProducts().catch(fail);
+// ---------- Departments: a parallel grid of category tiles ----------
+const departmentEmoji = {
+  'dry goods': '🌾', 'fresh produce': '🥬', beverages: '🥤', spices: '🌶️', frozen: '❄️',
+  snacks: '🥜', 'oils & condiments': '🫙', 'rice & grains': '🍚', 'meat & fish': '🐟',
+  'health & beauty': '🧴',
+};
+const departmentGlyph = (name) => departmentEmoji[(name || '').toLowerCase()] || '🧺';
+
+function selectDepartment(id) {
+  activeCategory = id || '';
+  document.querySelectorAll('.department-tile').forEach((tile) => {
+    tile.classList.toggle('is-active', (tile.dataset.category || '') === activeCategory);
+  });
+  loadProducts()
+    .then(() => $('shop')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    .catch(fail);
+}
+
+function departmentTile(id, name, count) {
+  const tile = el('button', undefined, { className: 'department-tile', type: 'button' });
+  tile.dataset.category = id ? String(id) : '';
+  if (!id) tile.classList.add('is-active');
+  const text = el('span', undefined, { className: 'department-text' });
+  text.append(el('span', name, { className: 'department-name' }));
+  text.append(el('span', count ? `${count} item${count === 1 ? '' : 's'}` : t('departments.all'), { className: 'department-meta' }));
+  tile.append(el('span', departmentGlyph(name), { className: 'department-emoji', ariaHidden: 'true' }), text);
+  return tile;
+}
+
+function renderDepartments() {
+  const grid = $('department-grid');
+  if (!grid) return;
+  const counts = new Map();
+  for (const product of products) counts.set(product.category, (counts.get(product.category) || 0) + 1);
+  grid.replaceChildren(
+    departmentTile('', t('nav.everything'), 0),
+    ...categoryList.map((category) => departmentTile(category.id, category.name, counts.get(category.name) || 0)),
+  );
+}
+
+$('department-grid')?.addEventListener('click', (event) => {
+  const tile = event.target.closest('.department-tile');
+  if (tile) selectDepartment(tile.dataset.category);
 });
+
 $('apply-promo').onclick = async () => {
   const note = $('promo-note');
   const code = $('promo').value.trim().toUpperCase();
@@ -1186,7 +1226,6 @@ $('q').oninput = () => {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => loadProducts().catch(fail), 250);
 };
-$('cat').onchange = () => loadProducts().catch(fail);
 $('search-form').addEventListener('submit', (event) => {
   event.preventDefault();
   clearTimeout(searchTimer);
@@ -1304,12 +1343,7 @@ if ('serviceWorker' in navigator) {
     if (!currencies.some((c) => c.code === displayCurrency)) displayCurrency = currencies[0].code;
     deliveryAreas = areas;
     locations = stores;
-    for (const category of categories) {
-      $('cat').append(el('option', category.name, { value: category.id }));
-      const shortcut = el('button', category.name, { className: 'category-shortcut' });
-      shortcut.dataset.category = String(category.id);
-      $('category-links').append(shortcut);
-    }
+    categoryList = categories;
     fillFulfillmentOptions();
     fillPreferenceSelectors();
     applyI18n();
@@ -1327,6 +1361,7 @@ if ('serviceWorker' in navigator) {
       .then((everything) => everything.forEach((product) => productCatalog.set(product.id, product)))
       .catch(() => {});
     await Promise.all([loadProducts(), loadRecipes(), loadOrders(), loadMember()]);
+    renderDepartments();
     initAssistant();
     initContact();
   } catch (e) { fail(e); }
