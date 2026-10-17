@@ -178,6 +178,9 @@ const products = [
   ['AGB-001', 'Agbalumo (African star apple) 500g', 'Tart-sweet African star apple with a chewy skin and tangy flesh — a nostalgic seasonal treat eaten straight from the hand.', 'Fresh Produce', 699, 430, 12, 4, 16],
   ['WSK-001', 'Wara (soft cheese) 250g', 'Fresh, squeaky Nigerian wara cheese — grill it as a snack or drop it into soups and stews for a mild, milky richness.', 'Fresh Produce', 799, 500, 12, 4, 16],
   ['AKR-002', 'Akara (bean fritter) mix 500g', 'Peeled, ground bean flour blended with pepper and spice — whip with water and fry golden akara balls in minutes.', 'Dry Goods', 699, 430, 16, 5, 22],
+  ['CHF-001', 'Chilli flakes 100g', 'Dried crushed chilli flakes for adding heat and flavour to your favourite meals.', 'Spices', 349, 200, 24, 8, 32],
+  ['STW-001', 'Dry stew mix 200g', 'A dry stew base seasoning mix — follow the instructions on the back of the pouch for a rich, properly seasoned pot.', 'Spices', 699, 430, 18, 6, 24],
+  ['EWA-001', 'Ewa agoyin beans mix 500g', 'A dry beans-and-pepper mix for classic ewa agoyin — follow the instructions on the back of the pouch for soft beans in a smoky pepper sauce.', 'Dry Goods', 699, 450, 16, 5, 22],
 ];
 let added = 0;
 let refreshed = 0;

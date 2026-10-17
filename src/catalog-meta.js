@@ -82,6 +82,7 @@ const SPICE_OVERRIDES = {
   'SHR-002': 2, 'NDL-001': 2, 'GING-001': 2,
   'OHA-001': 1, 'BTL-001': 1, 'WTL-001': 1, 'OKP-001': 1, 'SCL-001': 1,
   'TTS-001': 1, 'OKR-001': 1, 'GG-001': 1, 'KOL-001': 1, 'ZOB-001': 1,
+  'CHF-001': 4, 'EWA-001': 3,
 };
 
 const SPICE_BY_CATEGORY = { Spices: 3, 'Fresh Produce': 1 };
