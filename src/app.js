@@ -24,7 +24,8 @@ import { registerAssistantRoutes } from './assistant.js';
 import { aiStatus } from './ai.js';
 import { applyProductMeta } from './catalog-meta.js';
 import {
-  productPath, productIdFromSlug, renderProductPage, renderSitemap, newNonce, cspWithNonce,
+  productPath, productIdFromSlug, renderProductPage, renderSitemap, renderProductFeed,
+  newNonce, cspWithNonce,
 } from './seo.js';
 
 const PUBLIC_DIR = resolve(fileURLToPath(new URL('../public', import.meta.url)));
@@ -910,6 +911,20 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     });
   }
 
+  // Google Merchant Center product feed (free Shopping listings), generated from the
+  // same in-scope catalogue as the sitemap. See renderProductFeed in src/seo.js.
+  function serveFeed(res) {
+    const rows = all(
+      `SELECT p.id, p.sku, p.name, p.description, p.category_id, c.name AS category,
+         p.price_cents, p.stock, p.image_url
+       FROM products p LEFT JOIN categories c ON c.id = p.category_id
+       WHERE p.active = 1 AND ${IN_SCOPE_SQL} ORDER BY p.name`);
+    send(res, 200, renderProductFeed(rows), {
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=0, must-revalidate',
+    });
+  }
+
   // ---- Rate limiting (best-effort, in-memory, per client IP) ----
   const hits = new Map();
   const allow = (key, limit, windowMs) => {
@@ -938,6 +953,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
         const page = /^\/product\/([A-Za-z0-9._~-]+)$/.exec(pathname);
         if (page) return serveProductPage(page[1], res);
         if (pathname === '/sitemap.xml') return serveSitemap(res);
+        if (pathname === '/feed.xml') return serveFeed(res);
         return await serveStatic(url.pathname, res);
       }
       const ip = clientIp(req);

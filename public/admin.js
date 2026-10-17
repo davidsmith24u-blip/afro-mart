@@ -1,6 +1,8 @@
 const $ = (id) => document.getElementById(id);
 const money = (c) => (c / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
 let token = localStorage.getItem('token');
+// Kept outside load() so a save/upload round-trip doesn't reset the worklist filter.
+let onlyMissingPhotos = false;
 const el = (tag, text, attrs = {}) => Object.assign(Object.assign(document.createElement(tag), { textContent: text ?? '' }), attrs);
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -201,12 +203,35 @@ const load = guard(async () => {
   }));
 
   const imageProducts = await api('/api/products?limit=200');
+  const missingPhoto = imageProducts.filter((p) => !p.image_url);
+  const photoCard = el('div', '', { className: 'card' });
+  photoCard.append(el('small', 'Products needing a photo'), el('h3', String(missingPhoto.length)));
+  $('summary').append(photoCard);
+
+  const tools = el('div', '', { className: 'image-tools' });
+  const onlyMissing = el('input', '', { type: 'checkbox' });
+  onlyMissing.id = 'only-missing';
+  onlyMissing.checked = onlyMissingPhotos;
+  onlyMissing.disabled = missingPhoto.length === 0;
+  const toggle = el('label', '', { htmlFor: 'only-missing' });
+  toggle.append(onlyMissing, document.createTextNode(
+    ` Only products without a photo (${missingPhoto.length} of ${imageProducts.length})`,
+  ));
+  const copyList = el('button', 'Copy list for sourcing');
+  copyList.onclick = guard(async () => {
+    if (!missingPhoto.length) return 'Every product already has a photo.';
+    const list = missingPhoto.map((p) => `${p.name} · ${p.sku}`).join('\n');
+    try { await navigator.clipboard.writeText(list); } catch { return 'Could not reach the clipboard — copy from the list instead.'; }
+    return `${missingPhoto.length} products copied to the clipboard.`;
+  });
+  tools.append(toggle, copyList);
+
   const manager = el('div', '', { className: 'image-manager' });
-  for (const p of imageProducts) {
-    const row = el('div', '', { className: 'image-row' });
+  const buildRow = (p) => {
+    const row = el('div', '', { className: p.image_url ? 'image-row' : 'image-row needs-photo' });
     const thumb = el('img', '', { src: p.image_url || '/products/staples.jpg', alt: p.name, className: 'image-thumb' });
     const meta = el('div', '', { className: 'image-meta' });
-    meta.append(el('strong', p.name), el('small', p.sku));
+    meta.append(el('strong', p.name), el('small', p.image_url ? p.sku : `${p.sku} · needs a photo`));
     const input = el('input', '', { className: 'image-url', value: p.image_url || '' });
     input.placeholder = '/api/images/12 or https://…';
     const file = el('input', '', { type: 'file', className: 'image-file' });
@@ -233,9 +258,18 @@ const load = guard(async () => {
       return `${p.name} image uploaded.`;
     });
     row.append(thumb, meta, input, file, save);
-    manager.append(row);
-  }
-  $('images').replaceChildren(manager);
+    return row;
+  };
+  const renderManager = () => {
+    onlyMissingPhotos = onlyMissing.checked;
+    const shown = onlyMissingPhotos ? missingPhoto : imageProducts;
+    manager.replaceChildren(...(shown.length
+      ? shown.map(buildRow)
+      : [el('p', 'Nothing to show here — every product already has a photo.', { className: 'muted' })]));
+  };
+  onlyMissing.onchange = renderManager;
+  renderManager();
+  $('images').replaceChildren(tools, manager);
 
   const aiSelect = $('ai-product');
   aiSelect.replaceChildren(el('option', 'Choose a product…', { value: '' }),

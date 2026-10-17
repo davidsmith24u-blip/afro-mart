@@ -676,6 +676,9 @@ footer p, footer > span { margin: 0; color: #e0c1c1; font-size: 10px; }
 .image-meta small { color: var(--muted); }
 .image-url { flex: 1 1 220px; }
 .image-file { flex: 0 1 190px; font-size: 11px; }
+.image-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.image-tools label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+.image-row.needs-photo { border-color: var(--ochre); background: #fffaf1; }
 @media (max-width: 760px) {
   .image-row { flex-wrap: wrap; }
   .image-meta { width: auto; }

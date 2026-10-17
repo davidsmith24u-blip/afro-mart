@@ -16,15 +16,16 @@ function app() {
 }
 
 // Netlify rewrites /api/* to /.netlify/functions/api/*, and the storefront's
-// /product/* and /sitemap.xml to the same Function; depending on the runtime it sees
-// either the original path or the rewritten one. Normalise both to the shape the app
-// expects (/api/... for the API, /product/... and /sitemap.xml for the pages).
+// /product/*, /sitemap.xml and /feed.xml to the same Function; depending on the runtime
+// it sees either the original path or the rewritten one. Normalise both to the shape the
+// app expects (/api/... for the API, /product/..., /sitemap.xml and /feed.xml for pages).
 function requestUrl(request) {
   const url = new URL(request.url);
   const marker = '/.netlify/functions/api';
   if (url.pathname === marker || url.pathname.startsWith(marker + '/')) {
     const rest = url.pathname.slice(marker.length);
-    const isPage = rest === '/sitemap.xml' || rest === '/product' || rest.startsWith('/product/');
+    const isPage = rest === '/sitemap.xml' || rest === '/feed.xml'
+      || rest === '/product' || rest.startsWith('/product/');
     return new URL((isPage ? '' : '/api') + rest + url.search, 'http://localhost');
   }
   return new URL(url.pathname + url.search, 'http://localhost');

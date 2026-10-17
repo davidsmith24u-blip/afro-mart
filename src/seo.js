@@ -221,6 +221,61 @@ ${relatedHtml(related, product.category)}
 `;
 }
 
+// Google Merchant Center wants a top-level taxonomy path, not our own department names
+// (which mean nothing to Google). Everything here is a grocery item.
+const GOOGLE_CATEGORY = 'Food, Beverages & Tobacco > Food Items';
+
+const truncate = (text, max) => {
+  const flat = String(text ?? '').replace(/\s+/g, ' ').trim();
+  return flat.length > max ? `${flat.slice(0, max - 3).trimEnd()}...` : flat;
+};
+
+// XML 1.0 forbids most control characters outright — there is no escape sequence for
+// them, so a stray one from an imported spreadsheet would make the whole feed malformed.
+// Escaping first, then dropping them, keeps the document well-formed no matter what.
+const xmlText = (value) =>
+  escapeHtml(value).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '');
+
+// Google identifies an item by a stable, unique id; the SKU is the natural one, with a
+// fallback for products created without one.
+const feedId = (product) => product.sku || `afromart-${product.id}`;
+
+// Merchant Center product feed (RSS 2.0 + the `g:` namespace). This is the listing side
+// of the same catalogue: Google fetches /feed.xml on a schedule and uses it for free
+// Shopping listings, while the product pages carry the on-site structured data. Both are
+// limited to the launch scope, so the feed can never advertise something the shop hides.
+export function renderProductFeed(products) {
+  const items = products.map((product) => {
+    const type = product.category
+      ? `      <g:product_type>${xmlText(product.category)}</g:product_type>\n`
+      : '';
+    return `    <item>
+      <g:id>${xmlText(feedId(product))}</g:id>
+      <g:title>${xmlText(truncate(product.name, 150))}</g:title>
+      <g:description>${xmlText(truncate(productDescription(product), 5000))}</g:description>
+      <g:link>${xmlText(productUrl(product))}</g:link>
+      <g:image_link>${xmlText(productImageUrl(product))}</g:image_link>
+      <g:availability>${product.stock > 0 ? 'in stock' : 'out of stock'}</g:availability>
+      <g:price>${decimal(product.price_cents)} EUR</g:price>
+      <g:condition>new</g:condition>
+      <g:brand>AFROMART</g:brand>
+      <g:identifier_exists>no</g:identifier_exists>
+${type}      <g:google_product_category>${xmlText(GOOGLE_CATEGORY)}</g:google_product_category>
+    </item>`;
+  }).join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+  <channel>
+    <title>AFROMART</title>
+    <link>${SITE_URL}/</link>
+    <description>African groceries delivered across Germany.</description>
+${items}
+  </channel>
+</rss>
+`;
+}
+
 export function renderSitemap(products) {
   const urls = products
     .map((product) => `  <url>\n    <loc>${escapeHtml(productUrl(product))}</loc>\n`

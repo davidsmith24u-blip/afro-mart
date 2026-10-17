@@ -34,6 +34,12 @@
   to = "/.netlify/functions/api/sitemap.xml"
   status = 200
 
+# Google Merchant Center product feed (free Shopping listings), same Function.
+[[redirects]]
+  from = "/feed.xml"
+  to = "/.netlify/functions/api/feed.xml"
+  status = 200
+
 # The staff dashboard lives at /admin (the Node server maps it to admin.html).
 [[redirects]]
   from = "/admin"

@@ -166,6 +166,26 @@ test('seo: the sitemap lists in-scope product pages', async () => {
   assert.ok(!res.body.includes(productSlug(hidden)), 'hidden departments stay out');
 });
 
+test('seo: the merchant feed lists in-scope products with prices and stock', async () => {
+  const res = await get('/feed.xml');
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('content-type'), /application\/xml/);
+  assert.ok(res.body.includes('xmlns:g="http://base.google.com/ns/1.0"'));
+
+  assert.ok(res.body.includes('<g:id>NG-1</g:id>'), 'the SKU is the item id');
+  assert.ok(res.body.includes('Ijebu Garri'));
+  assert.ok(res.body.includes(`<g:link>${SITE_URL}/product/ijebu-garri-${inStock.id}</g:link>`));
+  assert.ok(res.body.includes('<g:image_link>http'), 'image links are absolute');
+  assert.ok(res.body.includes('<g:price>5.00 EUR</g:price>'));
+  assert.ok(res.body.includes('<g:availability>in stock</g:availability>'));
+  assert.ok(res.body.includes('<g:availability>out of stock</g:availability>'));
+  assert.ok(res.body.includes('<g:condition>new</g:condition>'));
+  assert.ok(res.body.includes('<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items</g:google_product_category>'));
+
+  assert.ok(!res.body.includes('Biltong'), 'out-of-scope products stay out of the feed');
+  assert.ok(!res.body.includes('Red Palm Oil'), 'hidden departments stay out of the feed');
+});
+
 test('seo: HTML escaping keeps a hostile product name inert', async () => {
   const nasty = (await call('POST', '/api/products', {
     sku: 'XSS-1',

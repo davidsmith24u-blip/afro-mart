@@ -48,7 +48,8 @@ A token with only `repo` (classic) or `contents: write` (fine-grained) scope is 
    storefront shows a contact section with a WhatsApp chat button and an email link. `AI_API_KEY` enables
    the AI assistant and copywriter; with no key they fall back to built-in smart matching.
    `SITE_URL` only matters if the store moves to another domain — it is what the product
-   pages, canonical tags and sitemap advertise (it defaults to `https://afromartz.biz`).
+   pages, canonical tags, sitemap and Merchant Center feed advertise (it defaults to
+   `https://afromartz.biz`).
 6. **Deploy site**.
 
 From then on, every push to `main` redeploys. Pull requests get their own Deploy Previews.
@@ -66,6 +67,10 @@ The store is live at **https://afromartz.biz/** (custom domain) and
   Product/Offer/Breadcrumb structured data (see `src/seo.js`); hidden or out-of-scope
   products 404 here exactly as they do in the shop
 - `https://afromartz.biz/sitemap.xml` — generated from the catalogue; `robots.txt` points at it
+- `https://afromartz.biz/feed.xml` — Google Merchant Center product feed (RSS 2.0 + the `g:`
+  namespace), generated from the same in-scope catalogue. Paste that URL into Merchant Center
+  → Products → Feeds → Scheduled fetch to get free Shopping listings. Items whose only photo is
+  a category placeholder may be disapproved — see the "Products needing a photo" panel in `/admin`.
 
 ## Custom domain (`afromartz.biz`)
 
