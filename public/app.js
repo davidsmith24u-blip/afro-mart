@@ -853,7 +853,7 @@ function initContact() {
   }
   if (email) links.push(el('a', `✉️ ${t('contact.email')}`, { className: 'contact-button ghost', href: `mailto:${email}` }));
   links.push(el('a', `📦 ${t('contact.track')}`, { className: 'contact-button ghost', href: '#track' }));
-  host.replaceChildren(...links, el('p', t('contact.reply'), { className: 'contact-note' }));
+  host.replaceChildren(...links, el('p', 'Store pickup in Bochum • We deliver throughout Germany', { className: 'contact-note' }), el('p', t('contact.reply'), { className: 'contact-note' }));
   section.hidden = false;
 }
 
@@ -1369,6 +1369,24 @@ if ('serviceWorker' in navigator) {
       .catch(() => {});
   });
 }
+
+// Category filter links in sticky nav
+document.querySelectorAll('.service-nav a[data-cat-filter]').forEach(a => {
+  a.addEventListener('click', (e) => {
+    e.preventDefault();
+    const cat = a.getAttribute('data-cat-filter');
+    const sel = $('cat');
+    if (sel) {
+      sel.value = cat;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    $('shop')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+// Mobile menu toggle
+$('mobile-menu-btn')?.addEventListener('click', () => {
+  document.querySelector('.service-nav')?.classList.toggle('open');
+});
 
 (async () => {
   try {

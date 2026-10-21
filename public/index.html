@@ -42,25 +42,27 @@
 		</symbol>
 	</svg>
 
-	<div class="announcement">
-		<div class="announcement-inner">
-			<span aria-hidden="true">✳</span>
-			<span data-i18n="announce.1">Free delivery on orders over €50 within Germany</span>
-			<span class="announcement-dot" aria-hidden="true">•</span>
-			<span data-i18n="announce.2">Now pick up in store, or set up a monthly pantry pack</span>
-		</div>
-	</div>
+	<!-- Announcement moved into sticky header for compactness -->
 
-	<header class="site-header">
+	<header class="site-header site-header-sticky">
+		<div class="announcement">
+			<div class="announcement-inner">
+				<span aria-hidden="true">✳</span>
+				<span data-i18n="announce.1">Free delivery on orders over €50 within Germany</span>
+				<span class="announcement-dot" aria-hidden="true">•</span>
+				<span>Store pickup in Bochum • We deliver throughout Germany</span>
+			</div>
+		</div>
 		<div class="header-bar">
+			<button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Menu">☰</button>
 			<a class="brand" href="/" aria-label="AFROMART home">
 				<svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#afromart-emblem"></use></svg>
-				<span class="brand-words brand-bold">AFRO<span class="brand-red">MART</span><small data-i18n="brand.tagline">AUTHENTIC AFRICAN FOODS — RIGHT TO YOUR DOOR</small></span>
+				<span class="brand-words brand-bold">AFRO<span class="brand-red">MART</span><small data-i18n="brand.tagline">AUTHENTIC AFRICAN FOODS</small></span>
 			</a>
 			<form id="search-form" class="search-box" role="search">
 				<span class="sr-only">Search the store</span>
 				<span class="search-icon" aria-hidden="true">⌕</span>
-				<input id="q" placeholder="What are you cooking today?" autocomplete="off" data-i18n-placeholder="search.placeholder">
+				<input id="q" placeholder="Search products (ata rodo, ugwu, semo...)" autocomplete="off" data-i18n-placeholder="search.placeholder">
 				<button class="search-go" type="submit" data-i18n="nav.search">Search</button>
 			</form>
 			<div class="header-actions">
@@ -76,7 +78,13 @@
 
 		<nav class="service-nav" aria-label="Store sections">
 			<div class="service-nav-inner">
-				<a href="#shop" data-i18n="nav.shop">Shop</a>
+				<a href="#shop" data-i18n="nav.shop">Shop All</a>
+				<a href="#shop" data-cat-filter="Dry Goods">Dry Goods</a>
+				<a href="#shop" data-cat-filter="Spices">Spices</a>
+				<a href="#shop" data-cat-filter="Snacks">Snacks</a>
+				<a href="#shop" data-cat-filter="Beverages">Drinks</a>
+				<a href="#shop" data-cat-filter="Rice & Grains">Rice & Grains</a>
+				<a href="#shop" data-cat-filter="Meat & Fish">Meat & Fish</a>
 				<a href="#assistant" data-i18n="nav.assistant">Kitchen helper</a>
 				<a href="#catering" data-i18n="nav.catering">Catering</a>
 				<a href="#track" data-i18n="nav.track">Track order</a>
@@ -97,7 +105,7 @@
 			<div class="hero-welcome" aria-label="Welcome in multiple languages">
 				<span>Welcome</span> <span>Bienvenue</span> <span>Willkommen</span> <span>Karibu</span> <span>Akwaaba</span> <span>Bienvenidos</span> <span>Ekaabo</span>
 			</div>
-			<div class="hero-offer">Store pickup in Bochum — we deliver throughout Germany. Free delivery on orders over €50 within Germany.</div>
+			<div class="hero-offer">Store pickup in Bochum • We deliver throughout Germany • Free delivery over €50</div>
 			<div class="hero-actions">
 				<a class="hero-cta" href="#shop" data-i18n="hero.shop">Shop the market</a>
 			</div>
@@ -124,28 +132,28 @@
 
 		<section class="trust-strip" aria-label="Why shop with Afro Mart">
 			<div class="trust-item">
-				<span class="trust-icon" aria-hidden="true">🔒</span>
-				<div><strong data-i18n="trust.pay.title">Secure payment</strong><span data-i18n="trust.pay.body">PayPal &amp; cards</span></div>
-			</div>
-			<div class="trust-item">
 				<span class="trust-icon" aria-hidden="true">🚚</span>
-				<div><strong data-i18n="trust.ship.title">Free delivery over €50</strong><span data-i18n="trust.ship.body">Within Germany</span></div>
+				<div><strong>Free delivery over €50</strong><span>Germany-wide</span></div>
 			</div>
 			<div class="trust-item">
-				<span class="trust-icon" aria-hidden="true">⭐</span>
-				<div><strong data-i18n="trust.reviews.title">Real customer reviews</strong><span data-i18n="trust.reviews.body">Verified purchases</span></div>
+				<span class="trust-icon" aria-hidden="true">🏬</span>
+				<div><strong>Store pickup in Bochum</strong><span>Fee-free</span></div>
+			</div>
+			<div class="trust-item">
+				<span class="trust-icon" aria-hidden="true">🧺</span>
+				<div><strong>Hand-packed</strong><span>Quality checked</span></div>
 			</div>
 			<div class="trust-item">
 				<span class="trust-icon" aria-hidden="true">📦</span>
-				<div><strong data-i18n="trust.track.title">Live order tracking</strong><span data-i18n="trust.track.body">From our shelf to your door</span></div>
+				<div><strong>Live order tracking</strong><span>From our shelf to your door</span></div>
 			</div>
 		</section>
 
 		<section class="roots" aria-labelledby="roots-title">
 			<div class="section-heading centered">
-				<p class="eyebrow" data-i18n="promise.eyebrow">Quality service • Trusted sources • Fast & reliable delivery</p>
-				<h2 id="roots-title" data-i18n="promise.title">Quality service • Trusted sources • Fast &amp; reliable delivery</h2>
-				<p class="shop-caption" data-i18n="promise.caption">Store pickup in Bochum — we deliver throughout Germany. Track your delivery in real time. Free delivery on orders over €50 within Germany.</p>
+				<p class="eyebrow">Store pickup in Bochum • We deliver throughout Germany</p>
+				<h2 id="roots-title">Authentic African Foods — Right to Your Door</h2>
+				<p class="shop-caption">Quality service • Trusted sources • Fast &amp; reliable delivery across Germany.</p>
 			</div>
 			<div class="roots-grid">
 				<article class="root-card">
