@@ -853,7 +853,7 @@ function initContact() {
   }
   if (email) links.push(el('a', `✉️ ${t('contact.email')}`, { className: 'contact-button ghost', href: `mailto:${email}` }));
   links.push(el('a', `📦 ${t('contact.track')}`, { className: 'contact-button ghost', href: '#track' }));
-  host.replaceChildren(...links, el('p', 'Store pickup in Bochum • We deliver throughout Germany', { className: 'contact-note' }), el('p', t('contact.reply'), { className: 'contact-note' }));
+  host.replaceChildren(...links, el('p', 'Store pickup in Bochum • We deliver throughout Germany • Free delivery over €50 within Bochum', { className: 'contact-note' }), el('p', t('contact.reply'), { className: 'contact-note' }));
   section.hidden = false;
 }
 

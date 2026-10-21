@@ -10,7 +10,7 @@ export const LOCALE_CURRENCY = { en: 'EUR', de: 'EUR', fr: 'EUR' };
 
 const STRINGS = {
   en: {
-    'announce.1': 'Free delivery on orders over €50 within Germany',
+    'announce.1': 'Free delivery over €50 within Bochum',
     'announce.2': 'Now pick up in store, or set up a monthly pantry pack',
     'brand.tagline': 'AUTHENTIC AFRICAN FOODS — RIGHT TO YOUR DOOR',
     'search.placeholder': 'What are you cooking today?',
@@ -34,7 +34,7 @@ const STRINGS = {
     'currency.label': 'Currency',
     'hero.eyebrow': 'For Africans across Germany',
     'hero.title': 'Authentic African Foods — Right to Your Door',
-    'hero.body': 'Foods that help you remember home. Quality service • Trusted sources • Fast & reliable delivery. Track your delivery in real time. Free delivery on orders over €50 within Germany.',
+    'hero.body': 'Foods that help you remember home. Quality service • Trusted sources • Fast & reliable delivery. Free delivery over €50 within Bochum.',
     'nav.track': 'Track order',
     'hero.shop': 'Shop the market',
     'hero.bundles': 'Explore bundles',
