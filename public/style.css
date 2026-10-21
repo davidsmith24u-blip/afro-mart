@@ -142,7 +142,7 @@ main { max-width: 1320px; padding: 0 40px; margin: 0 auto; }
 .hero { position: relative; width: 100%; min-height: 460px; overflow: hidden; display: flex; align-items: center; margin: 0 0 56px; background: radial-gradient(800px 420px at 20% 10%, #c05a2f 0%, var(--clay-deep) 70%); color: #fff; }
 .hero-image, .hero-shade, .hero-pattern { position: absolute; inset: 0; width: 100%; height: 100%; }
 .hero-image { object-fit: cover; object-position: center 46%; }
-.hero-shade { background: linear-gradient(90deg, rgb(46 16 8 / 90%) 0%, rgb(70 24 10 / 72%) 42%, rgb(70 24 10 / 22%) 100%); }
+.hero-shade { background: linear-gradient(90deg, rgb(46 16 8 / 75%) 0%, rgb(70 24 10 / 55%) 38%, rgb(70 24 10 / 18%) 100%); }
 .hero-pattern { opacity: .5; background-image: radial-gradient(circle at 88% 22%, rgb(224 161 47 / 34%) 0, transparent 42%); }
 .hero::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: repeating-linear-gradient(90deg, var(--clay) 0 26px, var(--ochre) 26px 38px, var(--green) 38px 64px, var(--indigo) 64px 76px, var(--gold) 76px 88px); }
 .hero-copy { position: relative; z-index: 2; width: min(1240px, calc(100% - 80px)); margin: 0 auto; padding: 64px 0; }
