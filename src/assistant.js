@@ -244,7 +244,7 @@ export function registerAssistantRoutes(api) {
         ].filter(Boolean).join('\n\n');
         reply = (await aiChat(history, {
           system:
-            'You are the friendly shopping assistant for Afro Mart, an African grocery in Bochum, Germany, ' +
+            'You are the friendly shopping assistant for Afro Mart, an African grocery in Bochum, Germany. We offer store pickup in Bochum and deliver throughout Germany. ' +
             'delivering across Germany. Answer in the language the customer used (English, German or French). ' +
             'Be warm and concise (under 90 words). Use only the products listed below; never invent items or prices. ' +
             'All prices are in euros. If nothing matches, say so and suggest browsing the shop.\n\n' + context,

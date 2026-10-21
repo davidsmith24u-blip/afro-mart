@@ -210,8 +210,11 @@ for (const p of db.prepare('SELECT id, sku, name, price_cents, cost_cents, categ
 }
 
 // Phase 3 demo data: a primary store location, a welcome automation and a promo code.
-if (!db.prepare('SELECT 1 FROM locations WHERE is_primary = 1').get()) {
-  db.prepare("INSERT INTO locations (name, address, city, postal_code, country, phone, active, is_primary) VALUES ('Berlin Store', 'Ohlauer Straße 12', 'Berlin', '10999', 'DE', '+49 30 12345678', 1, 1)").run();
+const hasPrimary = db.prepare('SELECT 1 FROM locations WHERE is_primary = 1').get();
+if (!hasPrimary) {
+  db.prepare("INSERT INTO locations (name, address, city, postal_code, country, phone, active, is_primary) VALUES ('Bochum Store', 'Bochum', 'Bochum', '', 'DE', '+49 15567101378', 1, 1)").run();
+} else {
+  db.prepare("UPDATE locations SET name='Bochum Store', city='Bochum', address='Bochum', postal_code='', country='DE', phone='+49 15567101378' WHERE is_primary=1").run();
 }
 const welcomeTemplate = db.prepare(
   "INSERT INTO message_templates (name, channel, subject, body) VALUES ('Welcome', 'email', 'Welcome to Afro Mart, {{name}} 🧡', 'Hi {{name}},\\n\\nWelcome to Afro Mart — your neighborhood source for African groceries. Start shopping and get 10% off your first order with code WELCOME10.') ON CONFLICT(name) DO NOTHING").run();
