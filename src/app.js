@@ -161,7 +161,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     loyalty_points_per_euro: 1,
     delivery_fee_default_cents: Math.max(0, Number(process.env.DELIVERY_FEE_DEFAULT_CENTS) || 0),
     has_payment_gateway: Boolean(process.env.PAYMENTS_WEBHOOK_SECRET),
-    whatsapp_number: process.env.WHATSAPP_NUMBER || null,
+    whatsapp_number: process.env.WHATSAPP_NUMBER || '+4915567101378',
     support_email: process.env.SUPPORT_EMAIL || null,
     ai: aiStatus(),
     facets: {
