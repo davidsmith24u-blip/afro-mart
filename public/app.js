@@ -576,8 +576,13 @@ async function loadBundles() {
   // dedicated section, so only render when the grid is on the page.
   const grid = $('bundle-grid');
   if (!grid) return;
+  if (!bundles.length) {
+    const section = $('packs');
+    if (section) section.hidden = true;
+    return;
+  }
   const glyph = { meal_pack: '🍲', starter_pack: '🥘', party_pack: '🎉', gift_box: '🎁', taste_box: '⚖️' };
-  grid.replaceChildren(...(bundles.length ? bundles.map((bundle) => {
+  grid.replaceChildren(...bundles.slice(0, 6).map((bundle) => {
     const card = el('article', undefined, { className: 'product-card bundle-card' });
     const art = el('div', undefined, { className: 'product-art' });
     art.dataset.tone = 'pantry';
@@ -600,7 +605,7 @@ async function loadBundles() {
     info.append(buy);
     card.append(art, info);
     return card;
-  }) : [el('p', 'Bundles are being assembled at our warehouse — check back soon.', { className: 'empty-state' })]));
+  }));
 }
 async function loadRecipes() {
   recipes = await api('/api/recipes');
@@ -1163,14 +1168,33 @@ function selectDepartment(id) {
     .catch(fail);
 }
 
+const departmentPhoto = (name) => {
+  const key = (name || '').toLowerCase();
+  if (key.includes('spice') || key.includes('oil') || key.includes('season')) return '/products/spices.jpg';
+  if (key.includes('rice') || key.includes('grain') || key.includes('dry') || key.includes('flour')) return '/products/staples.jpg';
+  if (key.includes('drink') || key.includes('beverage') || key.includes('juice')) return '/products/african-drinks.jpg';
+  if (key.includes('produce') || key.includes('fresh') || key.includes('veg') || key.includes('fruit')) return '/products/produce.jpg';
+  if (key.includes('wine')) return '/products/wine.jpg';
+  return '';
+};
+
 function departmentTile(id, name, count) {
   const tile = el('button', undefined, { className: 'department-tile', type: 'button' });
   tile.dataset.category = id ? String(id) : '';
   if (!id) tile.classList.add('is-active');
+  const art = el('span', undefined, { className: 'department-art' });
+  const photo = id ? departmentPhoto(name) : '';
+  if (photo) {
+    art.append(el('img', undefined, { src: photo, alt: '', loading: 'lazy', decoding: 'async' }));
+  } else {
+    art.append(el('span', departmentGlyph(name), { className: 'department-emoji' }));
+  }
+  art.append(el('span', '→', { className: 'department-arrow' }));
   const text = el('span', undefined, { className: 'department-text' });
   text.append(el('span', name, { className: 'department-name' }));
-  text.append(el('span', count ? `${count} item${count === 1 ? '' : 's'}` : t('departments.all'), { className: 'department-meta' }));
-  tile.append(el('span', departmentGlyph(name), { className: 'department-emoji', ariaHidden: 'true' }), text);
+  const label = count ? `${count} ${t(count === 1 ? 'departments.item' : 'departments.items')}` : t('departments.all');
+  text.append(el('span', label, { className: 'department-meta' }));
+  tile.append(art, text);
   return tile;
 }
 
