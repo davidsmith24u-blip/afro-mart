@@ -16,9 +16,10 @@ if (!supplier) {
   const result = db.prepare("INSERT INTO suppliers (name, country, contact_name) VALUES ('Lagos Wholesale Foods', 'Nigeria', 'Ade')").run();
   supplier = { id: Number(result.lastInsertRowid) };
 }
-// Descriptions are refreshed on existing SKUs so catalog copy stays up to date.
+// Descriptions, names and prices are refreshed on existing SKUs so the catalog
+// copy and the current price list stay up to date (stock stays untouched).
 const ins = db.prepare(`INSERT INTO products (sku, name, description, category_id, supplier_id, price_cents, cost_cents, stock, reorder_level, reorder_quantity)
-  VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(sku) DO UPDATE SET description = excluded.description`);
+  VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(sku) DO UPDATE SET name = excluded.name, description = excluded.description, price_cents = excluded.price_cents, cost_cents = excluded.cost_cents`);
 const products = [
   ['GAR-001', 'Garri (white) 2kg', 'Premium white cassava granules — sprinkled into warm water and stirred, they become a smooth, fluffy eba ready to scoop up soup.', 'Dry Goods', 899, 600, 40, 10, 50],
   ['YAM-001', 'Yam flour (Elubo) 1kg', 'Finely milled yam flour for soft, stretchy pounded yam in minutes — pair with egusi, okra or a rich vegetable soup.', 'Dry Goods', 699, 450, 8, 10, 40],
@@ -53,10 +54,10 @@ const products = [
   ['IRU-001', 'Iru (Locust Beans) 100g', 'Traditionally fermented locust beans whose deep, savoury punch anchors efo riro and countless stews — a little goes a long way.', 'Oils & Condiments', 299, 180, 18, 6, 24],
   ['KNR-001', 'Knorr chicken cubes 8-pack', 'The classic chicken-flavoured cubes for everyday cooking — the savoury base behind countless West African pots.', 'Oils & Condiments', 249, 140, 40, 12, 55],
   ['GND-001', 'Roasted Groundnuts 250g', 'Slow-roasted groundnuts with a deep, toasty crunch — snack on them, or grind fresh for sauces and soups.', 'Snacks', 499, 290, 28, 9, 38],
-  ['TIG-001', 'Tigernut powder 250g', 'Finely milled tigernut for creamy dairy-free milk, smoothies and pap — naturally sweet with a subtle nutty finish.', 'Dry Goods', 899, 570, 16, 5, 22],
+  ['TIG-001', 'Tigernut powder 250g', 'Finely milled tigernut for creamy dairy-free milk, smoothies and pap — naturally sweet with a subtle nutty finish.', 'Dry Goods', 349, 209, 16, 5, 22],
   ['OFA-001', 'Dry Ayamashe / Ofada Mix 100g', 'A punchy pepper-and-spice mix for Ayamashe and Ofada sauce — the fiery, smoky partner for ofada rice and assorted meat.', 'Spices', 599, 360, 20, 7, 28],
   ['JOL-002', 'Dry Jollof Base Mix 100g', 'A concentrated tomato, pepper and spice base for quick jollof that still tastes slow-cooked and smoky.', 'Spices', 549, 330, 24, 8, 32],
-  ['EGM-001', 'Dry Egusi Mix 200g', 'Ground melon seeds pre-blended with classic soup spices — fry in palm oil, add stock, and your egusi is halfway done.', 'Spices', 849, 530, 18, 6, 24],
+  ['EGM-001', 'Dry Egusi Mix 250g', 'Ground melon seeds pre-blended with classic soup spices — fry in palm oil, add stock, and your egusi is halfway done.', 'Spices', 449, 269, 18, 6, 24],
   ['ZOB-001', 'Zobo Drink 500ml', 'Ready-to-drink zobo with a bright hibiscus-red colour, ginger warmth and fruity tang — refreshing straight from the fridge.', 'Beverages', 399, 230, 24, 8, 32],
   ['CHP-001', 'Chapman fruit drink 330ml', 'Nigerian-inspired Chapman — citrusy, fruity and gently spiced, poured over ice for bar-side flavour at home.', 'Beverages', 349, 200, 24, 8, 32],
   ['MAL-001', 'Malt drink 330ml', 'Rich, non-alcoholic malt with deep toasted-barley flavour — the classic anytime drink for chin chin and suya.', 'Beverages', 299, 170, 30, 10, 40],
@@ -181,6 +182,35 @@ const products = [
   ['CHF-001', 'Chilli flakes 100g', 'Dried crushed chilli flakes for adding heat and flavour to your favourite meals.', 'Spices', 349, 200, 24, 8, 32],
   ['STW-001', 'Dry stew mix 200g', 'A dry stew base seasoning mix — follow the instructions on the back of the pouch for a rich, properly seasoned pot.', 'Spices', 699, 430, 18, 6, 24],
   ['EWA-001', 'Ewa agoyin beans mix 500g', 'A dry beans-and-pepper mix for classic ewa agoyin — follow the instructions on the back of the pouch for soft beans in a smoky pepper sauce.', 'Dry Goods', 699, 450, 16, 5, 22],
+  // ---- Final price list (October 2026) — buy items ----
+  ['PON-002', 'Fresh Ponmo (small) 150g', 'Tender small-cut cow skin (ponmo) that turns silky and jelly-rich in stews and pepper soup — freshly packed, straight for the pot.', 'Meat & Fish', 799, 479, 14, 4, 18],
+  ['PON-003', 'Fresh Ponmo (medium) 150g', 'Medium-cut ponmo with a bit more bite — freshly packed for ewedu, pepper soup and big weekend stews.', 'Meat & Fish', 999, 599, 12, 4, 16],
+  ['SNL-002', 'Fresh Snail (small) 15 pcs', 'Fifteen cleaned small snails with that classic deep flavour — wash, season and simmer into pepper soup or egusi.', 'Meat & Fish', 1099, 659, 10, 3, 14],
+  ['SNL-003', 'Fresh Snail (medium) 5 pcs', 'Five cleaned medium snails, meaty and tender — the hearty choice for pepper soup, egusi and native soups.', 'Meat & Fish', 899, 539, 12, 3, 15],
+  ['SNL-004', 'Fresh Snail (large) 5 pcs', 'Five cleaned large snails with the fullest bite — portion in for a proper snail pepper soup.', 'Meat & Fish', 1099, 659, 10, 3, 14],
+  ['CRY-003', 'Crayfish 30g', 'A small pouch of clean dried crayfish — the instant West African umami lift for soups, stews and rice.', 'Spices', 150, 90, 40, 10, 45],
+  ['CRY-004', 'Crayfish 60g', 'A bigger pouch of dried crayfish — enough depth for a full pot of egusi, ewedu or jollof.', 'Spices', 250, 150, 36, 10, 40],
+  ['CAT-003', 'Catfish (1 piece)', 'One catfish piece, cleaned and smoked — drop straight into pepper soup or a pot of egusi.', 'Meat & Fish', 350, 210, 20, 6, 26],
+  ['CAT-004', 'Catfish (2 pieces)', 'Two cleaned catfish pieces — a full pot of pepper soup or egusi, ready to go.', 'Meat & Fish', 649, 389, 18, 6, 24],
+  ['DPP-002', 'Dry pepper 300g', 'Fiery ground dry pepper with a clean, lasting heat — the every-pot seasoning for stews, rice and marinades.', 'Spices', 399, 239, 30, 10, 40],
+  ['YAM-004', 'Yam flour (Elubo) 500g', 'Finely milled yam (elubo) for silky amala — stir into hot water and serve with ewedu and gbegiri.', 'Dry Goods', 399, 239, 24, 8, 32],
+  ['TUF-001', 'Tuwo/rice flour 500g', 'Fine rice flour for smooth tuwo — stir, knead and scoop it with your favourite soup.', 'Dry Goods', 349, 209, 26, 8, 34],
+  ['TUF-002', 'Tuwo/rice flour 1kg', 'A kilo of fine rice flour for family-size tuwo — smooth, soft and ready in minutes.', 'Dry Goods', 599, 359, 20, 6, 28],
+  ['IRU-002', 'Iru (locust beans) 30g', 'Fermented locust beans with the deep savoury punch every efo riro needs — a little goes a long way.', 'Spices', 149, 89, 30, 10, 40],
+  ['IRU-003', 'Iru (locust beans) 60g', 'A bigger portion of fermented locust beans — the savoury anchor for efo riro, ewedu and stews.', 'Spices', 249, 149, 26, 8, 34],
+  ['GND-002', 'Roasted groundnuts 200g', 'Slow-roasted groundnuts with a toasty crunch — snack straight from the bag or grind fresh for sauce.', 'Snacks', 199, 119, 30, 10, 40],
+  ['TIG-003', 'Tigernut powder 100g', 'Finely milled tigernut for single-serve tiger nut milk, smoothies and pap — naturally sweet.', 'Dry Goods', 149, 89, 26, 8, 34],
+  ['TIG-004', 'Tigernut powder 500g', 'A big pouch of finely milled tigernut — family jugs of tiger nut milk, baking and beyond.', 'Dry Goods', 549, 329, 16, 5, 24],
+  ['ZOB-002', 'Zobo pouch 250ml', 'A 250ml pouch of zobo concentrate — dilute with water and ice for an instant ruby-red zobo.', 'Beverages', 99, 59, 36, 12, 48],
+  ['CHI-002', 'Chinchin 100g', 'Pocket pouch of golden, crisp chin chin with a gentle sweetness — moreish by the handful.', 'Snacks', 149, 89, 40, 12, 48],
+  ['CHI-003', 'Chinchin 200g', 'Golden, crisp chin chin to share — classic party-bowl crunch with a cold malt.', 'Snacks', 249, 149, 32, 10, 40],
+  ['CHI-004', 'Chinchin 500g', 'The big 500g bag of golden chin chin — parties, road trips and everyone reaching for more.', 'Snacks', 499, 299, 24, 8, 32],
+  ['PLC-002', 'Plantain chips 100g', 'Thin, crispy plantain slices with a whisper of salt — a pocket-size bag that never survives the trip.', 'Snacks', 189, 113, 40, 12, 48],
+  ['PLC-003', 'Plantain chips 200g', 'Crispy salted plantain chips to share — savoury, snackable and gone way too fast.', 'Snacks', 349, 209, 32, 10, 40],
+  ['PLC-004', 'Plantain chips 500g', 'The 500g family bag of crispy plantain chips — movie nights, picnics and properly big appetites.', 'Snacks', 549, 329, 24, 8, 32],
+  ['EGM-002', 'Egusi mix 500g', 'The big bag of pre-spiced ground melon seeds — fry in palm oil, add stock and your egusi is halfway done.', 'Spices', 849, 509, 20, 6, 26],
+  ['JOL-003', 'Jollof & stew base 250g', 'A concentrated tomato, pepper and spice base for party jollof and everyday stew — tastes slow-cooked.', 'Spices', 349, 209, 28, 8, 36],
+  ['JOL-004', 'Jollof & stew base 500g', 'The 500g pot of jollof and stew base — enough flavour base for the whole weekend of cooking.', 'Spices', 749, 449, 22, 6, 28],
 ];
 let added = 0;
 let refreshed = 0;
