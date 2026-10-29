@@ -93,19 +93,16 @@
 	</header>
 
 	<section class="hero hero-home" aria-labelledby="hero-title">
-		<img class="hero-image" src="hero-market.jpg" srcset="hero-market-900.jpg 900w, hero-market.jpg 1600w" sizes="100vw" alt="A colourful market stall piled high with fresh produce" fetchpriority="high" decoding="async">
-		<div class="hero-shade"></div>
-		<div class="hero-pattern" aria-hidden="true"></div>
 		<div class="hero-copy">
 			<p class="eyebrow" data-i18n="hero.eyebrow">Your taste of home</p>
 			<h1 id="hero-title" data-i18n="hero.title">African flavours, delivered to your door.</h1>
 			<p class="hero-sub" data-i18n="hero.body">Authentic groceries, spices and cooking essentials. Delivery across Germany or free pickup in Bochum.</p>
 			<div class="hero-actions">
 				<a class="hero-cta primary-cta" href="#shop" data-i18n="hero.shop">Shop all products</a>
-				<a class="hero-cta ghost" href="#departments" data-i18n="hero.browse">Browse categories</a>
 			</div>
 			<p class="hero-offer" data-i18n="hero.offer">Free delivery over €50 within Bochum · WELCOME10 for 10% off your first order</p>
 		</div>
+		<img class="hero-photo" src="hero-market.jpg" srcset="hero-market-900.jpg 900w, hero-market.jpg 1600w" sizes="(max-width: 760px) 92vw, 1240px" alt="Bowls of African staples — garri, peppers, beans and yam on a market table" fetchpriority="high" decoding="async">
 		<p class="hero-note"><span aria-hidden="true">✳</span> <span data-i18n="hero.note">Rooted in Africa. Made for every day.</span></p>
 	</section>
 
@@ -147,60 +144,6 @@
 			<div id="bundle-grid" class="bundle-grid"></div>
 		</section>
 
-		<section class="roots" aria-labelledby="roots-title">
-			<div class="section-heading centered">
-				<p class="eyebrow" data-i18n="promise.eyebrow">The Afro Mart promise</p>
-				<h2 id="roots-title" data-i18n="promise.title">Like a neighbour who knows your kitchen</h2>
-				<p class="shop-caption" data-i18n="promise.caption">You should not have to cross a continent for a taste of home. So we bring the pantry to your street.</p>
-			</div>
-			<div class="roots-grid">
-				<article class="root-card">
-					<span class="root-icon" aria-hidden="true">🌾</span>
-					<h3 data-i18n="promise.a.title">From home</h3>
-					<p data-i18n="promise.a.body">Ground crayfish, egusi, ofada rice, palm oil and golden garri — the true staples of home cooking, sourced with care.</p>
-				</article>
-				<article class="root-card">
-					<span class="root-icon" aria-hidden="true">🧺</span>
-					<h3 data-i18n="promise.b.title">Packed with love</h3>
-					<p data-i18n="promise.b.body">Every order is picked, weighed and hand-packed, then checked twice before it leaves our shelf for your door.</p>
-				</article>
-				<article class="root-card">
-					<span class="root-icon" aria-hidden="true">🏡</span>
-					<h3 data-i18n="promise.c.title">At your table</h3>
-					<p data-i18n="promise.c.body">Store pickup in Bochum or delivery throughout Germany. Track your order from dispatch to your door.</p>
-				</article>
-			</div>
-		</section>
-
-		<section id="discover" class="shop-section discover-section" aria-labelledby="discover-title">
-			<div class="section-heading">
-				<div><p class="eyebrow" data-i18n="discover.eyebrow">Find your home flavours</p><h2 id="discover-title" data-i18n="discover.title">Shop by cuisine, diet &amp; heat</h2></div>
-				<p class="shop-caption" data-i18n="discover.caption">Search in your own language — try “ata rodo”, “ugwu” or “semo”. Then narrow by cuisine or diet.</p>
-			</div>
-			<div class="discover-bar">
-				<div class="discover-group">
-					<span class="discover-label" data-i18n="discover.origin">Country</span>
-					<div id="origin-chips" class="chip-row"></div>
-				</div>
-				<div class="discover-group">
-					<span class="discover-label" data-i18n="discover.cuisine">Cuisine</span>
-					<div id="cuisine-chips" class="chip-row"></div>
-				</div>
-				<div class="discover-group">
-					<span class="discover-label" data-i18n="discover.diet">Diet</span>
-					<div id="diet-chips" class="chip-row"></div>
-				</div>
-				<div class="discover-group">
-					<span class="discover-label" data-i18n="discover.heat">Heat</span>
-					<div id="spice-chips" class="chip-row"></div>
-				</div>
-				<div class="discover-group discover-sort">
-					<label for="sort" class="discover-label" data-i18n="discover.sort">Sort</label>
-					<select id="sort"></select>
-					<button id="clear-filters" class="text-button" type="button" data-i18n="discover.clear">Clear filters</button>
-				</div>
-			</div>
-		</section>
 
 		<section id="assistant" class="shop-section assistant-section" aria-labelledby="assistant-title">
 			<div class="section-heading">
@@ -234,6 +177,37 @@
 			</div>
 		</section>
 
+		<section id="discover" class="shop-section discover-section" aria-labelledby="discover-title">
+			<div class="section-heading">
+				<div><p class="eyebrow" data-i18n="discover.eyebrow">Find your home flavours</p><h2 id="discover-title" data-i18n="discover.title">Shop by cuisine, diet &amp; heat</h2></div>
+				<p class="shop-caption" data-i18n="discover.caption">Search in your own language — try “ata rodo”, “ugwu” or “semo”. Then narrow by cuisine or diet.</p>
+			</div>
+			<div class="discover-bar">
+				<div class="discover-group">
+					<span class="discover-label" data-i18n="discover.origin">Country</span>
+					<div id="origin-chips" class="chip-row"></div>
+				</div>
+				<div class="discover-group">
+					<span class="discover-label" data-i18n="discover.cuisine">Cuisine</span>
+					<div id="cuisine-chips" class="chip-row"></div>
+				</div>
+				<div class="discover-group">
+					<span class="discover-label" data-i18n="discover.diet">Diet</span>
+					<div id="diet-chips" class="chip-row"></div>
+				</div>
+				<div class="discover-group">
+					<span class="discover-label" data-i18n="discover.heat">Heat</span>
+					<div id="spice-chips" class="chip-row"></div>
+				</div>
+				<div class="discover-group discover-sort">
+					<label for="sort" class="discover-label" data-i18n="discover.sort">Sort</label>
+					<select id="sort"></select>
+					<button id="clear-filters" class="text-button" type="button" data-i18n="discover.clear">Clear filters</button>
+				</div>
+			</div>
+		</section>
+
+
 		<section id="shop" class="shop-section" aria-labelledby="shop-title">
 			<div class="section-heading">
 				<div><p class="eyebrow" data-i18n="shop.eyebrow">A good place to start</p><h2 id="shop-title" data-i18n="shop.title">From our market</h2></div>
@@ -243,22 +217,29 @@
 			<div id="products" class="product-grid" aria-live="polite"></div>
 		</section>
 
-		<section id="catering" class="shop-section catering-section" aria-labelledby="catering-title">
-			<div class="catering-grid catering-grid-single">
-				<div class="catering-card catering-quote">
-					<h2 id="catering-title" data-i18n="catering.quote.title">Request a catering quote</h2>
-					<form id="quote-form" class="quote-form">
-						<input id="quote-name" placeholder="Your name" required data-i18n-placeholder="catering.name">
-						<input id="quote-email" type="email" placeholder="Email address" required data-i18n-placeholder="catering.email">
-						<div class="quote-row">
-							<input id="quote-phone" placeholder="Phone (optional)" data-i18n-placeholder="catering.phone">
-							<input id="quote-date" type="date" aria-label="Event date">
-						</div>
-						<input id="quote-guests" type="number" min="1" placeholder="Guests" data-i18n-placeholder="catering.headcount">
-						<textarea id="quote-message" rows="3" placeholder="Tell us what you need" data-i18n-placeholder="catering.message"></textarea>
-						<button type="submit" class="checkout-button" data-i18n="catering.send">Send request</button>
-					</form>
-				</div>
+
+		<section class="roots" aria-labelledby="roots-title">
+			<div class="section-heading centered">
+				<p class="eyebrow" data-i18n="promise.eyebrow">The Afro Mart promise</p>
+				<h2 id="roots-title" data-i18n="promise.title">Like a neighbour who knows your kitchen</h2>
+				<p class="shop-caption" data-i18n="promise.caption">You should not have to cross a continent for a taste of home. So we bring the pantry to your street.</p>
+			</div>
+			<div class="roots-grid">
+				<article class="root-card">
+					<span class="root-icon" aria-hidden="true">🌾</span>
+					<h3 data-i18n="promise.a.title">From home</h3>
+					<p data-i18n="promise.a.body">Ground crayfish, egusi, ofada rice, palm oil and golden garri — the true staples of home cooking, sourced with care.</p>
+				</article>
+				<article class="root-card">
+					<span class="root-icon" aria-hidden="true">🧺</span>
+					<h3 data-i18n="promise.b.title">Packed with love</h3>
+					<p data-i18n="promise.b.body">Every order is picked, weighed and hand-packed, then checked twice before it leaves our shelf for your door.</p>
+				</article>
+				<article class="root-card">
+					<span class="root-icon" aria-hidden="true">🏡</span>
+					<h3 data-i18n="promise.c.title">At your table</h3>
+					<p data-i18n="promise.c.body">Store pickup in Bochum or delivery throughout Germany. Track your order from dispatch to your door.</p>
+				</article>
 			</div>
 		</section>
 
@@ -276,6 +257,25 @@
 				<div class="story-art" aria-hidden="true">
 					<svg viewBox="0 0 48 48"><use href="#afromart-emblem"></use></svg>
 					<div class="story-band"></div>
+				</div>
+			</div>
+		</section>
+
+		<section id="catering" class="shop-section catering-section" aria-labelledby="catering-title">
+			<div class="catering-grid catering-grid-single">
+				<div class="catering-card catering-quote">
+					<h2 id="catering-title" data-i18n="catering.quote.title">Request a catering quote</h2>
+					<form id="quote-form" class="quote-form">
+						<input id="quote-name" placeholder="Your name" required data-i18n-placeholder="catering.name">
+						<input id="quote-email" type="email" placeholder="Email address" required data-i18n-placeholder="catering.email">
+						<div class="quote-row">
+							<input id="quote-phone" placeholder="Phone (optional)" data-i18n-placeholder="catering.phone">
+							<input id="quote-date" type="date" aria-label="Event date">
+						</div>
+						<input id="quote-guests" type="number" min="1" placeholder="Guests" data-i18n-placeholder="catering.headcount">
+						<textarea id="quote-message" rows="3" placeholder="Tell us what you need" data-i18n-placeholder="catering.message"></textarea>
+						<button type="submit" class="checkout-button" data-i18n="catering.send">Send request</button>
+					</form>
 				</div>
 			</div>
 		</section>

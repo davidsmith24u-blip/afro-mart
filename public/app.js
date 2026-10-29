@@ -1158,6 +1158,20 @@ const departmentEmoji = {
 };
 const departmentGlyph = (name) => departmentEmoji[(name || '').toLowerCase()] || '🧺';
 
+// Friendlier storefront labels + one-line subtitles for the "Shop your favourites"
+// cards. Missing entries fall back to the catalogue category name.
+const departmentDisplay = {
+  'dry goods': 'departments.catStaples',
+  spices: 'departments.catSpices',
+};
+const departmentSubs = {
+  'dry goods': 'departments.subStaples',
+  spices: 'departments.subSpices',
+  'rice & grains': 'departments.subRice',
+  snacks: 'departments.subSnacks',
+  beverages: 'departments.subDrinks',
+};
+
 function selectDepartment(id) {
   activeCategory = id || '';
   document.querySelectorAll('.department-tile').forEach((tile) => {
@@ -1178,22 +1192,26 @@ const departmentPhoto = (name) => {
   return '';
 };
 
-function departmentTile(id, name, count) {
+function departmentTile(id, name, count, options = {}) {
   const tile = el('button', undefined, { className: 'department-tile', type: 'button' });
   tile.dataset.category = id ? String(id) : '';
-  if (!id) tile.classList.add('is-active');
+  if (options.pack) tile.dataset.pack = '1';
+  if (!id && !options.pack) tile.classList.add('is-active');
   const art = el('span', undefined, { className: 'department-art' });
-  const photo = id ? departmentPhoto(name) : '';
+  const photo = !options.pack && id ? departmentPhoto(name) : '';
   if (photo) {
     art.append(el('img', undefined, { src: photo, alt: '', loading: 'lazy', decoding: 'async' }));
   } else {
-    art.append(el('span', departmentGlyph(name), { className: 'department-emoji' }));
+    art.append(el('span', options.glyph || departmentGlyph(name), { className: 'department-emoji' }));
   }
+  const label = options.pack ? t('departments.catPacks') : (id && departmentDisplay[name.toLowerCase()] ? t(departmentDisplay[name.toLowerCase()]) : name);
   art.append(el('span', '→', { className: 'department-arrow' }));
   const text = el('span', undefined, { className: 'department-text' });
-  text.append(el('span', name, { className: 'department-name' }));
-  const label = count ? `${count} ${t(count === 1 ? 'departments.item' : 'departments.items')}` : t('departments.all');
-  text.append(el('span', label, { className: 'department-meta' }));
+  text.append(el('span', label, { className: 'department-name' }));
+  const subKey = options.pack ? 'departments.subPacks' : (id ? departmentSubs[name.toLowerCase()] : '');
+  if (subKey) text.append(el('span', t(subKey), { className: 'department-sub' }));
+  const meta = count ? `${count} ${t(count === 1 ? 'departments.item' : 'departments.items')}` : t('departments.all');
+  text.append(el('span', meta, { className: 'department-meta' }));
   tile.append(art, text);
   return tile;
 }
@@ -1206,12 +1224,18 @@ function renderDepartments() {
   grid.replaceChildren(
     departmentTile('', t('nav.everything'), 0),
     ...categoryList.map((category) => departmentTile(category.id, category.name, counts.get(category.name) || 0)),
+    departmentTile('', '', 0, { pack: true, glyph: '🎁' }),
   );
 }
 
 $('department-grid')?.addEventListener('click', (event) => {
   const tile = event.target.closest('.department-tile');
-  if (tile) selectDepartment(tile.dataset.category);
+  if (!tile) return;
+  if (tile.dataset.pack) {
+    $('packs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  selectDepartment(tile.dataset.category);
 });
 
 $('apply-promo').onclick = async () => {
