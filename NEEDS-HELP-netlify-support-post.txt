@@ -1,0 +1,56 @@
+# Netlify support post — copy/paste this into a new topic at https://answers.netlify.com
+# Category: Support (or "Deploys"). Tags: deployment, billing.
+# Log in at forum with the same email: davidsmith24u@gmail.com
+# Title (paste as the topic title):
+#
+#   Free team stuck in operational mode — production deploys return 403 (team davidsmith24u)
+#
+# Body (paste everything below this line):
+
+Hi Netlify Support,
+
+My Free team `davidsmith24u` appears to be incorrectly stuck in operational mode, so all
+production deploys are blocked with 403. This looks like the known 2026 credit-flag issue
+reported by several other Free teams. Could you please clear/reset the operational-credit
+flag so production deploys can resume?
+
+Details:
+
+- Account (Owner): davidsmith24u@gmail.com
+- Account slug: `davidsmith24u`  (account id 647ca1af3fcd7d3792424d21)
+- Site: `afro-mart-store` — https://afromartz.biz
+- Site ID: 63cd6661-357e-46c8-967d-9a3514aa9bb8
+
+Evidence from `GET /api/v1/accounts/...`:
+
+- `"in_operational_mode": true`
+- `"grace_topup_granted_at": "2026-10-29T16:27:17.504Z"` (a grace top-up was granted today)
+- `"usages_exceeded": []` — empty
+- `"sites_with_usage_exceeded": []` — empty
+- `"configurable_limits_exceeded": []` — empty
+- Plan: Free (`credit-free`), credits included 300
+- `"days_until_disabled": null`, `"scheduled_downgrade_date": null`
+
+What happens:
+
+- `POST /sites/{site_id}/deploys` (created by Netlify CLI v27, `netlify deploy --prod`)
+  returns **403 Forbidden** with an empty body — both the CLI and a raw API call.
+- Read endpoints and builds all work; the site itself is fine.
+- Everything worked earlier the same day: published deploys at
+  `2026-10-29T16:10:11Z` and `2026-10-29T16:17:46Z`, then deploys started 403-ing.
+- A **draft** deploy succeeds, and I confirmed the block is production-only
+  (lifting it internally via the API attached the draft; the CLI `--prod` path is what 403s).
+
+I've verified: I am the account owner, the site is `current`/published and not disabled,
+no usage caps are exceeded, and billing shows $0.00 owed.
+
+Production deploys were working normally right up until today. Please review the team and
+clear the stuck operational-credit flag so I can deploy to production again. This block is
+delaying updates to a live shop (https://afromartz.biz).
+
+Thank you!
+
+# After posting:
+# - Watch for a Netlify staff reply; they usually clear the flag within a day or two.
+# - Meanwhile I can keep using the upload-then-promote workaround for any site changes.
+# - If the flag auto-resets on Nov 16 (next billing period), this becomes moot.
