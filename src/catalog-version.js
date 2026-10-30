@@ -3,4 +3,4 @@
 // `PRAGMA user_version` on a cold start and re-runs the seed when the stored
 // catalog is older, so content updates reach a snapshot-backed production DB
 // without discarding orders or customers.
-export const CATALOG_VERSION = 6;
+export const CATALOG_VERSION = 7;

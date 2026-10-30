@@ -22,7 +22,6 @@ const ins = db.prepare(`INSERT INTO products (sku, name, description, category_i
   VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(sku) DO UPDATE SET name = excluded.name, description = excluded.description, price_cents = excluded.price_cents, cost_cents = excluded.cost_cents`);
 const products = [
   ['GAR-001', 'Garri (white) 2kg', 'Premium white cassava granules — sprinkled into warm water and stirred, they become a smooth, fluffy eba ready to scoop up soup.', 'Dry Goods', 899, 600, 40, 10, 50],
-  ['YAM-001', 'Yam flour (Elubo) 1kg', 'Finely milled yam flour for soft, stretchy pounded yam in minutes — pair with egusi, okra or a rich vegetable soup.', 'Dry Goods', 699, 450, 8, 10, 40],
   ['PLN-001', 'Plantain (bunch)', 'Fresh green plantain, great for frying, roasting or pounding — keep it on the counter and choose your ripeness.', 'Fresh Produce', 499, 300, 25, 8, 30],
   ['HIB-001', 'Hibiscus tea (Zobo) 250g', 'Deep-red hibiscus petals for a ruby jug of zobo — steep with ginger and pineapple, then pour over ice.', 'Beverages', 599, 350, 30, 10, 40],
   ['SPC-001', 'Suya spice 100g', 'The signature suya rub of roasted peanuts, ginger and chilli — coat beef, chicken or plantain and grill for street-side flavour.', 'Spices', 449, 250, 60, 15, 60],
@@ -34,31 +33,20 @@ const products = [
   ['YAM-002', 'Pounded yam flour 1.5kg', 'Quick-cooking yam flour for soft, stretchy pounded yam no one will guess was not pounded by hand.', 'Dry Goods', 1199, 780, 16, 6, 24],
   ['MAI-001', 'White maize meal 2kg', 'Stone-ground white maize meal — the smooth, comforting base of nshima, sadza and pap for any relish or stew.', 'Dry Goods', 999, 650, 20, 7, 28],
   ['TEF-001', 'Teff flour 1kg', 'Fine, naturally gluten-free teff flour for airy Ethiopian injera and soft flatbreads with an earthy, slightly sour tang.', 'Dry Goods', 1499, 1000, 14, 5, 20],
-  ['CRY-001', 'Ground crayfish 150g', 'Finely ground dried crayfish that melts into soups, stews and rice — an instant, unmistakable West African umami lift.', 'Spices', 699, 430, 20, 7, 25],
   ['PSP-001', 'Pepper soup spice 100g', 'Fragrant grains of selim, uziza and warming peppers — the shortcut to a properly mouth-tingling pepper soup.', 'Spices', 499, 300, 25, 8, 35],
   ['JOL-001', 'Jollof rice seasoning 100g', 'Smoky tomato, pepper and spice blend that gives rice that party-jollof colour and deep flavour every time.', 'Spices', 449, 260, 35, 10, 45],
   ['BER-001', 'Berbere spice blend 100g', 'A bold Ethiopian-inspired blend of bird’s-eye chilli and warm aromatics — the deep red soul of doro wat and stews.', 'Spices', 599, 350, 18, 6, 25],
   ['PAL-001', 'Red palm oil 1L', 'Deep-orange, unrefined palm oil straight from the mill — the rich base of egusi, banga and jollof. Gently warm it if it solidifies in cool weather.', 'Oils & Condiments', 1299, 850, 20, 7, 28],
   ['GNP-001', 'Roasted groundnut paste 500g', 'Creamy paste of slow-roasted groundnuts — silky for groundnut soup and sauces, brilliant on toast and in smoothies.', 'Oils & Condiments', 899, 580, 18, 6, 24],
-  ['CHI-001', 'Chinchin 300g', 'Golden, crisp chin chin with a gentle sweetness — moreish by the handful, at parties, or with a cold malt.', 'Snacks', 699, 420, 30, 10, 40],
-  ['PLC-001', 'Plantain Chips 150g', 'Thin, crispy plantain slices with a whisper of salt — savoury, snackable and gone way too fast.', 'Snacks', 399, 220, 32, 10, 45],
   ['PUF-001', 'Puff puff mix 500g', 'Just add water and fry for soft, golden puff puff — roll in sugar while warm for the full celebration feel.', 'Snacks', 599, 360, 24, 8, 32],
   ['CAS-001', 'Frozen cassava leaves 500g', 'Prepped, chopped cassava leaves flash-frozen for saka-saka, pondu and stews — earthy, tender greens in minutes.', 'Frozen', 799, 500, 15, 5, 22],
   ['TAM-001', 'Tamarind drink concentrate 500ml', 'Sweet-tart tamarind concentrate for an ice-cold refreshing drink in minutes — or add its tang to sauces and marinades.', 'Beverages', 899, 560, 18, 6, 24],
   ['BAO-001', 'Baobab fruit powder 150g', 'Bright, citrusy baobab powder rich in vitamin C — blend into smoothies, porridge and yoghurt or whisk into a tangy drink.', 'Dry Goods', 999, 650, 12, 4, 18],
-  ['SNL-001', 'Dried Snails 100g', 'Smoky, chewy dried snails that perfume soups and stews with deep flavour — soak, then simmer into egusi or pepper soup.', 'Dry Goods', 1299, 850, 12, 4, 18],
-  ['CAT-001', 'Dried Catfish Cuts 200g', 'Clean, smoked catfish pieces with a rich smoky flavour — the base of catfish pepper soup or a big pot of egusi.', 'Dry Goods', 1099, 720, 16, 5, 22],
-  ['CAT-002', 'Whole Dried Catfish (1 piece)', 'One whole smoked catfish, cured and ready for the pot — break it up to enrich soups, stews and jollof.', 'Dry Goods', 1499, 980, 10, 4, 16],
-  ['PON-001', 'Dried Ponmo 100g', 'Dried cow skin that softens to a silky, jelly-rich texture in stews and pepper soup — stock up, it disappears fast.', 'Dry Goods', 599, 360, 20, 7, 28],
-  ['CRY-002', 'Dried Crayfish 100g', 'Sun-dried, aromatic crayfish that adds depth to soups, rice and stews — a true West African pantry essential.', 'Dry Goods', 699, 430, 20, 7, 28],
-  ['IRU-001', 'Iru (Locust Beans) 100g', 'Traditionally fermented locust beans whose deep, savoury punch anchors efo riro and countless stews — a little goes a long way.', 'Oils & Condiments', 299, 180, 18, 6, 24],
   ['KNR-001', 'Knorr chicken cubes 8-pack', 'The classic chicken-flavoured cubes for everyday cooking — the savoury base behind countless West African pots.', 'Oils & Condiments', 249, 140, 40, 12, 55],
-  ['GND-001', 'Roasted Groundnuts 250g', 'Slow-roasted groundnuts with a deep, toasty crunch — snack on them, or grind fresh for sauces and soups.', 'Snacks', 499, 290, 28, 9, 38],
   ['TIG-001', 'Tigernut powder 250g', 'Finely milled tigernut for creamy dairy-free milk, smoothies and pap — naturally sweet with a subtle nutty finish.', 'Dry Goods', 349, 209, 16, 5, 22],
   ['OFA-001', 'Dry Ayamashe / Ofada Mix 100g', 'A punchy pepper-and-spice mix for Ayamashe and Ofada sauce — the fiery, smoky partner for ofada rice and assorted meat.', 'Spices', 599, 360, 20, 7, 28],
   ['JOL-002', 'Dry Jollof Base Mix 100g', 'A concentrated tomato, pepper and spice base for quick jollof that still tastes slow-cooked and smoky.', 'Spices', 549, 330, 24, 8, 32],
   ['EGM-001', 'Dry Egusi Mix 250g', 'Ground melon seeds pre-blended with classic soup spices — fry in palm oil, add stock, and your egusi is halfway done.', 'Spices', 449, 269, 18, 6, 24],
-  ['ZOB-001', 'Zobo Drink 500ml', 'Ready-to-drink zobo with a bright hibiscus-red colour, ginger warmth and fruity tang — refreshing straight from the fridge.', 'Beverages', 399, 230, 24, 8, 32],
   ['CHP-001', 'Chapman fruit drink 330ml', 'Nigerian-inspired Chapman — citrusy, fruity and gently spiced, poured over ice for bar-side flavour at home.', 'Beverages', 349, 200, 24, 8, 32],
   ['MAL-001', 'Malt drink 330ml', 'Rich, non-alcoholic malt with deep toasted-barley flavour — the classic anytime drink for chin chin and suya.', 'Beverages', 299, 170, 30, 10, 40],
   ['AMT-001', 'Amstel Malta 330ml', 'Smooth, full-bodied non-alcoholic malt with a clean malty finish — chilled, it is a household favourite.', 'Beverages', 299, 170, 24, 8, 32],
@@ -98,7 +86,6 @@ const products = [
   ['ACH-001', 'Achi thickener 100g', 'A ground West African seed that thickens soups to a smooth, silky draw — stir in gradually and simmer.', 'Dry Goods', 399, 250, 18, 6, 24],
   // ---- Seasonings ----
   ['ONG-001', 'Seasoning cubes (beef) 8-pack', 'Beef-flavoured cubes that deepen every pot — crumble one into soups, stews, rice and sauces for quick savour.', 'Spices', 249, 140, 36, 12, 48],
-  ['DPP-001', 'Ground dried pepper (hot) 100g', 'Fiery ground scotch bonnet with a fine, even heat — a spoonful instantly wakes up soups, rice and stews.', 'Spices', 399, 240, 20, 7, 28],
   ['PPR-002', 'Jollof pepper mix 100g', 'A five-pepper blend built for party-style jollof — roast it low and slow for that rich, smoky, orange-red colour.', 'Spices', 499, 300, 18, 6, 24],
   // ---- More drinks & snacks ----
   ['CHP-002', 'Chapman syrup 750ml', 'A splash turns soda and ice into a showstopping pitcher of Chapman — sweet-tart, fruity and ready in seconds.', 'Beverages', 699, 450, 15, 5, 22],
@@ -158,7 +145,6 @@ const products = [
   ['EFO-001', 'Efo tete (African spinach) 400g', 'Frozen chopped African spinach with a tender, earthy leaf — perfect for efo riro, efo elegusi and quick vegetable soups.', 'Frozen', 549, 340, 16, 5, 22],
   ['MFN-001', 'Moin moin mix 500g', 'A seasoned bean-flour blend to steam the classic savoury bean pudding — just add water, pepper and oil, then wrap and cook.', 'Dry Goods', 749, 470, 16, 5, 22],
   ['KOK-001', 'Kokoro (maize & garri snack) 150g', 'Crunchy, lightly sweet maize-and-garri sticks — the addictive Lagos street snack, best shared with a cold drink.', 'Snacks', 349, 200, 20, 7, 28],
-  ['ZBK-001', 'Zobo drink concentrate 500ml', 'A ready hibiscus-and-ginger concentrate — dilute with water and ice for a deep-red zobo that tastes just like the market.', 'Beverages', 649, 390, 18, 6, 24],
   ['KUN-001', 'Kunu (millet drink) mix 500g', 'A smooth millet-and-ginger blend for the creamy northern drink — whisk with cold water for a cooling, lightly spiced kunu.', 'Beverages', 599, 360, 18, 6, 24],
   ['TGM-001', 'Tiger nut milk (kunnu aya) 1L', 'Rich, naturally sweet tiger nut milk — a dairy-free Nigerian favourite that is lovely chilled, over ice or blended with dates.', 'Beverages', 699, 420, 18, 6, 24],
   ['BEA-001', 'Honey beans (oloyin) 2kg', 'Creamy, sweet oloyin beans that cook soft and hold their shape — the classic choice for ewa agoyin, akara and moin moin.', 'Rice & Grains', 1099, 720, 16, 5, 22],
@@ -180,7 +166,6 @@ const products = [
   ['WSK-001', 'Wara (soft cheese) 250g', 'Fresh, squeaky Nigerian wara cheese — grill it as a snack or drop it into soups and stews for a mild, milky richness.', 'Fresh Produce', 799, 500, 12, 4, 16],
   ['AKR-002', 'Akara (bean fritter) mix 500g', 'Peeled, ground bean flour blended with pepper and spice — whip with water and fry golden akara balls in minutes.', 'Dry Goods', 699, 430, 16, 5, 22],
   ['CHF-001', 'Chilli flakes 100g', 'Dried crushed chilli flakes for adding heat and flavour to your favourite meals.', 'Spices', 349, 200, 24, 8, 32],
-  ['STW-001', 'Dry stew mix 200g', 'A dry stew base seasoning mix — follow the instructions on the back of the pouch for a rich, properly seasoned pot.', 'Spices', 699, 430, 18, 6, 24],
   ['EWA-001', 'Ewa agoyin beans mix 500g', 'A dry beans-and-pepper mix for classic ewa agoyin — follow the instructions on the back of the pouch for soft beans in a smoky pepper sauce.', 'Dry Goods', 699, 450, 16, 5, 22],
   // ---- Final price list (October 2026) — buy items ----
   ['PON-002', 'Fresh Ponmo (small) 150g', 'Tender small-cut cow skin (ponmo) that turns silky and jelly-rich in stews and pepper soup — freshly packed, straight for the pot.', 'Meat & Fish', 799, 479, 14, 4, 18],
@@ -220,6 +205,20 @@ for (const [sku, name, description, category, price, cost, stock, level, quantit
   const { changes } = ins.run(sku, name, description, cats[category], supplier.id, price, cost, stock, level, quantity);
   if (changes) (existingId ? refreshed++ : added++);
 }
+
+
+// Retired on 2026-10-29: superseded by the final buy price list (the new SKUs in
+// the catalog above). Deactivate in place so they vanish from the shop, sitemap
+// and checkout but stay in the admin for historical orders that reference them.
+const RETIRED_SKUS = [
+  'CRY-001', 'CRY-002', 'SNL-001', 'SNL-S20', 'SNL-M4', 'SNL-L4', 'CAT-001',
+  'CAT-002', 'PON-001', 'IRU-001', 'DPP-001', 'YAM-001', 'GND-001', 'CHI-001',
+  'PLC-001', 'ZOB-001', 'ZBK-001', 'STW-001',
+];
+const retireProduct = db.prepare('UPDATE products SET active = 0 WHERE sku = ? AND active = 1');
+let retiredCount = 0;
+for (const sku of RETIRED_SKUS) retiredCount += retireProduct.run(sku).changes;
+if (retiredCount) console.log(retiredCount + ' retired SKUs deactivated.')
 
 // Discovery metadata: origin/cuisine/diet tags, spice level and a wholesale
 // price for restaurant accounts. Rebuilt on every seed so edits stay in sync.
@@ -264,37 +263,37 @@ const bundles = [
   {
     sku: 'EGS-BND', name: 'Egusi Soup Starter Kit', type: 'starter_pack', savings: 12, serves: 4,
     description: 'The heart of a proper Nigerian Sunday pot, already portioned so there is nothing left to hunt down. Two packs of ground melon seeds, unrefined red palm oil, stockfish, sun-dried crayfish, dehydrated spinach, ground pepper, beef seasoning and iru come together into a thick, golden, nutty soup. Just add meat or fish, simmer until the red oil floats on top, and serve with pounded yam, eba or fufu.',
-    items: [['EGU-001', 2], ['PAL-001', 1], ['CRY-001', 1], ['DSP-001', 1], ['DPP-001', 1], ['ONG-001', 1], ['STK-001', 1], ['IRU-001', 1]],
+    items: [['EGU-001', 2], ['PAL-001', 1], ['CRY-004', 1], ['DSP-001', 1], ['DPP-002', 1], ['ONG-001', 1], ['STK-001', 1], ['IRU-003', 1]],
   },
   {
     sku: 'JOL-BND', name: 'Jollof Rice Party Pack', type: 'party_pack', savings: 10, serves: 12,
     description: 'Everything you need to feed a crowd that will not stop talking about your jollof. A full bag of perfumed long-grain rice, two sachets of smoky jollof seasoning, a five-pepper blend, ground crayfish, beef cubes, red palm oil and roasted groundnuts for the peppered garnish. Cooks one giant party tray that comfortably serves twelve, with that unmistakable smoky bottom-pot flavour.',
-    items: [['RIC-001', 1], ['JOL-001', 2], ['PPR-002', 1], ['CRY-001', 1], ['ONG-001', 2], ['PAL-001', 1], ['GND-001', 1]],
+    items: [['RIC-001', 1], ['JOL-001', 2], ['PPR-002', 1], ['CRY-004', 1], ['ONG-001', 2], ['PAL-001', 1], ['GND-002', 1]],
   },
   {
     sku: 'FUF-BND', name: 'Fufu & Ogbono Night In', type: 'meal_pack', savings: 12, serves: 4,
     description: 'A cozy draw-soup supper for four, made simple. Smooth cassava fufu, ground ogbono seeds that thicken into that glossy, stretchy draw, crayfish, hot dried pepper, red palm oil and stockfish for deep savour. Simmer the ogbono with stock and meat, drop in the greens of your choice, then scoop it all up with warm fufu. Comfort food that needs almost no shopping.',
-    items: [['FUF-001', 2], ['OGB-001', 1], ['CRY-001', 1], ['DPP-001', 1], ['PAL-001', 1], ['STK-001', 1]],
+    items: [['FUF-001', 2], ['OGB-001', 1], ['CRY-004', 1], ['DPP-002', 1], ['PAL-001', 1], ['STK-001', 1]],
   },
   {
     sku: 'YAM-BND', name: 'Pounded Yam & Vegetable Pot', type: 'meal_pack', savings: 12, serves: 4,
     description: 'Silky pounded yam with a fragrant oha, uziza and spinach vegetable pot built to feed four. Instant pounded-yam flour, dried oha leaves, uziza for a warm peppery finish, fermented iru, crayfish, stockfish and dehydrated spinach for body and colour. A quick, deeply savoury weekday dinner that still feels like a Sunday spread.',
-    items: [['YAM-002', 2], ['OHA-001', 1], ['IRU-001', 1], ['CRY-001', 1], ['STK-001', 1], ['DSP-001', 1]],
+    items: [['YAM-002', 2], ['OHA-001', 1], ['IRU-003', 1], ['CRY-004', 1], ['STK-001', 1], ['DSP-001', 1]],
   },
   {
     sku: 'BRK-BND', name: 'Afro Breakfast Box', type: 'gift_box', savings: 10, serves: 2,
     description: 'A cheerful little box for slow weekend mornings or a thoughtful gift. Rich non-alcoholic malt drink, a chilled Chapman for later, crisp golden chin chin, roasted groundnuts, sweet plantain chips and deep-red hibiscus petals for brewing a ruby jug of zobo. Pairs perfectly with a pot of hot tea and nowhere to be.',
-    items: [['MAL-001', 1], ['CHP-001', 1], ['CHI-001', 1], ['GND-001', 1], ['PLC-001', 1], ['HIB-001', 1]],
+    items: [['MAL-001', 1], ['CHP-001', 1], ['CHI-003', 1], ['GND-002', 1], ['PLC-003', 1], ['HIB-001', 1]],
   },
   {
     sku: 'BRA-BND', name: 'South African Braai & Wine Box', type: 'gift_box', savings: 10, serves: 4,
     description: 'A taste of the Garden Route delivered to your door. A bold Pinotage and a crisp Chenin Blanc to pour alongside, traditional biltong, smoky suya spice to rub over the grill and slow-roasted groundnuts to snack on while the coals catch. Fire up the braai, invite friends over and let the wines breathe.',
-    items: [['PIN-001', 1], ['BIL-001', 1], ['SPC-001', 1], ['CHW-001', 1], ['GND-001', 1]],
+    items: [['PIN-001', 1], ['BIL-001', 1], ['SPC-001', 1], ['CHW-001', 1], ['GND-002', 1]],
   },
   {
     sku: 'GHA-BND', name: 'Ghana Banku & Pepper Box', type: 'meal_pack', savings: 12, serves: 6,
     description: 'A big Ghanaian feast for six, ready in one pot. Two packs of banku mix to steam into soft, tangy dumplings, ground pepper sauce staples, stockfish, dried prawns, crayfish and red palm oil. The prawns and stockfish build a deep, briny base, while the pepper sauce brings the heat you grind tilapia through. Serve banku, fish and a bowl of that pepper on the side.',
-    items: [['BNK-001', 2], ['PSP-001', 1], ['STK-001', 1], ['CRY-001', 1], ['SHR-001', 1], ['PAL-001', 1]],
+    items: [['BNK-001', 2], ['PSP-001', 1], ['STK-001', 1], ['CRY-004', 1], ['SHR-001', 1], ['PAL-001', 1]],
   },
   {
     sku: 'JWAR-BND', name: 'Jollof Rice Wars Box (NG vs GH)', type: 'taste_box', savings: 15, serves: 8,
@@ -314,17 +313,17 @@ const bundles = [
   {
     sku: 'STU-BND', name: 'Student Starter Bundle', type: 'starter_pack', savings: 12, serves: 2,
     description: 'A student-friendly first shop for a proper kitchen. White garri for quick eba and soaked garri, a big bag of rice, creamy honey beans, red palm oil, ground crayfish, jollof pepper mix, smoky jollof seasoning and beef cubes. Enough staples to cook real Nigerian food for two people for weeks on a tight budget — and everything keeps well in a shared kitchen.',
-    items: [['GAR-001', 1], ['RIC-001', 1], ['BEA-001', 1], ['PAL-001', 1], ['CRY-001', 1], ['PPR-002', 1], ['JOL-001', 1], ['ONG-001', 1]],
+    items: [['GAR-001', 1], ['RIC-001', 1], ['BEA-001', 1], ['PAL-001', 1], ['CRY-004', 1], ['PPR-002', 1], ['JOL-001', 1], ['ONG-001', 1]],
   },
   {
     sku: 'SUR-BND', name: 'Student Survival Box', type: 'starter_pack', savings: 15, serves: 1,
     description: 'The first-year essentials, sized for one and priced for a student wallet. Sour Ijebu garri to soak cold with groundnuts and sugar, creamy honey beans, red palm oil, tinned tomato paste, ground pepper, beef cubes, crunchy kuli kuli and roasted groundnuts. Restock-proof and near impossible to get wrong: five-minute suppers on exam nights, or a slow pot of beans when you have time to spare.',
-    items: [['IJE-001', 1], ['BEA-001', 1], ['PAL-001', 1], ['TMP-001', 1], ['PPR-002', 1], ['ONG-001', 1], ['KLK-002', 1], ['GND-001', 1]],
+    items: [['IJE-001', 1], ['BEA-001', 1], ['PAL-001', 1], ['TMP-001', 1], ['PPR-002', 1], ['ONG-001', 1], ['KLK-002', 1], ['GND-002', 1]],
   },
   {
     sku: 'SEX-BND', name: 'Exam-Week Quick Meals Box', type: 'meal_pack', savings: 12, serves: 2,
     description: 'Study fuel for the weeks when you have no time and even less energy. Everyday long-grain rice, a Ghanaian-style jollof base, tomato paste, beef cubes, ground crayfish, ground pepper, roasted groundnuts and kuli kuli. Almost every dish here is one pot and under twenty minutes, with barely any washing-up — so you can eat properly between revision sessions instead of skipping dinner.',
-    items: [['RIC-002', 1], ['JOL-002', 1], ['TMP-001', 1], ['ONG-001', 1], ['CRY-001', 1], ['PPR-002', 1], ['GND-001', 1], ['KLK-002', 1]],
+    items: [['RIC-002', 1], ['JOL-002', 1], ['TMP-001', 1], ['ONG-001', 1], ['CRY-004', 1], ['PPR-002', 1], ['GND-002', 1], ['KLK-002', 1]],
   },
   {
     sku: 'SBS-BND', name: 'Student Beans & Budget Box', type: 'meal_pack', savings: 12, serves: 2,
@@ -339,22 +338,22 @@ const bundles = [
   {
     sku: 'FAM-BND', name: 'Family Feast Pack', type: 'meal_pack', savings: 15, serves: 8,
     description: 'Feed the whole house without a second trip to the shops. Two big bags of rice for a party-size jollof or plain pot, creamy honey beans, frozen palm fruit for banga, two packs of ground egusi, crayfish, stockfish, a five-pepper blend, sweet plantain and beef seasoning. Built around eight generous servings, it is the pack for Sunday lunch, a family gathering or a week of serious meal prep.',
-    items: [['RIC-001', 2], ['BEA-001', 1], ['PAL-002', 1], ['EGU-001', 2], ['CRY-001', 1], ['STK-001', 1], ['PPR-002', 1], ['PLN-001', 1], ['ONG-001', 2]],
+    items: [['RIC-001', 2], ['BEA-001', 1], ['PAL-002', 1], ['EGU-001', 2], ['CRY-004', 1], ['STK-001', 1], ['PPR-002', 1], ['PLN-001', 1], ['ONG-001', 2]],
   },
   {
     sku: 'XMS-BND', name: 'Christmas Celebration Hamper', type: 'gift_box', savings: 15, serves: 6,
     description: 'A festive hamper built for the season of plenty. Perfumed rice and two jollof seasonings for the Christmas pot, golden chin chin, malt drink, zobo concentrate to dilute into a ruby jug, roasted groundnuts and plantain chips for nibbling, frozen palm fruit and cubes of goat meat for a slow-braised stew. Arrives as a generous gift box and easily feeds six around the table.',
-    items: [['RIC-001', 1], ['JOL-001', 2], ['CHI-001', 1], ['MAL-001', 1], ['ZBK-001', 1], ['GND-001', 1], ['PLC-001', 1], ['PAL-002', 1], ['GOA-001', 1]],
+    items: [['RIC-001', 1], ['JOL-001', 2], ['CHI-003', 1], ['MAL-001', 1], ['ZOB-002', 1], ['GND-002', 1], ['PLC-003', 1], ['PAL-002', 1], ['GOA-001', 1]],
   },
   {
     sku: 'HMP-BND', name: 'Lagos Pantry Hamper', type: 'gift_box', savings: 12, serves: 4,
     description: 'A generous taste of Lagos in one box. Nutty unpolished ofada rice, deeply savoury iru, dried crayfish, red palm oil, ground hot pepper, ground egusi, crunchy kuli kuli and tangy zobo. Everything needed for a fiery ofada stew, a proper egusi, or a snack board with drinks — a lovely introduction for anyone new to the kitchen or a treat for someone who misses home.',
-    items: [['OFR-001', 1], ['IRU-001', 1], ['CRY-002', 1], ['PAL-001', 1], ['DPP-001', 1], ['EGU-001', 1], ['KLK-002', 1], ['ZOB-001', 1]],
+    items: [['OFR-001', 1], ['IRU-003', 1], ['CRY-004', 1], ['PAL-001', 1], ['DPP-002', 1], ['EGU-001', 1], ['KLK-002', 1], ['ZOB-002', 1]],
   },
   {
     sku: 'NYC-BND', name: 'New Yam Festival Box', type: 'taste_box', savings: 12, serves: 6,
     description: 'Celebrate the new yam harvest at your own table. Two packs of instant pounded-yam flour for a smooth, stretchy swallow, dried oha leaves, fragrant uziza, fermented iru, ground crayfish, stockfish and unrefined red palm oil. Assemble a fragrant oha and uziza vegetable pot and serve it hot with pounded yam — a festival plate that feeds six and tastes like a celebration.',
-    items: [['PNY-001', 2], ['OHA-001', 1], ['UZI-001', 1], ['IRU-001', 1], ['CRY-001', 1], ['STK-001', 1], ['PAL-001', 1]],
+    items: [['PNY-001', 2], ['OHA-001', 1], ['UZI-001', 1], ['IRU-003', 1], ['CRY-004', 1], ['STK-001', 1], ['PAL-001', 1]],
   },
 ];
 const upsertBundle = db.prepare(`INSERT INTO bundles (sku, name, description, bundle_type, savings_percent, serves, active) VALUES (?,?,?,?,?,?,1)
@@ -399,7 +398,7 @@ const recipes = [
     title: 'Smoky Party Jollof', emoji: '🍛', prep_minutes: 60, servings: 6,
     description: 'The one-pot showstopper that wins every argument: smoky, spicy party rice cooked low and slow until the bottom catches just enough to perfume the whole pot. This is the jollof you make for birthdays, weddings and Sunday visitors, built on a rich pepper base and finished with a heap of fried plantain.',
     steps: '1. Blend the pepper mix with one onion and a little water until smooth, then reduce the purée in oil for 10 minutes until it darkens and the raw taste disappears.\n2. Stir in the jollof seasoning and crumbled beef cubes; cook 3 minutes so the spices bloom.\n3. Rinse the rice until the water runs clear and add it to the pot, turning gently to coat every grain in the base.\n4. Pour in hot stock or water to sit about 1cm above the rice, cover tightly and cook on the lowest heat for 25–30 minutes.\n5. Resist stirring. When the rice is tender, fluff with a fork, scatter over the ground crayfish and groundnuts, and let the bottom steam-catch for the signature smoky note.\n6. Rest 5 minutes, then serve with fried plantain and a spoon of pepper sauce on the side.',
-    items: [['RIC-001', 1, 'long-grain aromatic rice'], ['JOL-001', 2, 'party jollof seasoning'], ['PPR-002', 1, 'five-pepper blend'], ['ONG-001', 2, 'beef cubes'], ['GND-001', 1, 'peppered garnish']],
+    items: [['RIC-001', 1, 'long-grain aromatic rice'], ['JOL-001', 2, 'party jollof seasoning'], ['PPR-002', 1, 'five-pepper blend'], ['ONG-001', 2, 'beef cubes'], ['GND-002', 1, 'peppered garnish']],
   },
   {
     title: 'Rich Egusi Soup Night', emoji: '🥘', prep_minutes: 45, servings: 4,
@@ -411,19 +410,19 @@ const recipes = [
     title: 'Fufu & Ogbono Draw Soup', emoji: '🍲', prep_minutes: 40, servings: 4,
     description: 'A glossy, comforting draw soup that clings to every mouthful of smooth fufu. The ground ogbono thickens the broth into that beloved stretchy texture, while crayfish, stockfish and dried pepper build a deep, savoury base. Simple, warming and endlessly satisfying.',
     steps: '1. Soak the stockfish in warm water for 15 minutes to soften and rinse away excess salt.\n2. Boil the stockfish and any meat in seasoned water until tender, reserving the broth.\n3. Mix the ground ogbono with a little warm water, then add it to the simmering broth in small spoonfuls, stirring to avoid lumps.\n4. Add the crayfish, dried pepper and palm oil; simmer 12–15 minutes until the soup thickens and draws.\n5. Adjust the consistency with hot water — it should coat the back of a spoon, not run off it.\n6. Serve with warm fufu or eba, molding a small ball, dipping and swallowing without chewing.',
-    items: [['FUF-001', 2], ['OGB-001', 1], ['CRY-001', 1], ['DPP-001', 1], ['PAL-001', 1], ['STK-001', 1]],
+    items: [['FUF-001', 2], ['OGB-001', 1], ['CRY-004', 1], ['DPP-002', 1], ['PAL-001', 1], ['STK-001', 1]],
   },
   {
     title: 'Pounded Yam & Oha Vegetable Pot', emoji: '🍠', prep_minutes: 35, servings: 4,
     description: 'Silky pounded yam paired with a fragrant oha, uziza and iru leaf pot. The oha leaves go in late to keep their peppery aroma, while the uziza and iru give the soup its warm, slightly bitter depth. A lighter, greener alternative to a heavy egusi, and quick enough for a weeknight.',
     steps: '1. Rinse the dried oha and uziza leaves and soak the stockfish until softened; keep the soaking water for extra flavour.\n2. Simmer the stockfish in seasoned water with the iru and crayfish for 15 minutes.\n3. Add the palm oil and a little of the soaking water, then simmer 5 minutes to marry the flavours.\n4. Stir in the uziza and most of the oha, cook 3 minutes, then add the remaining oha off the heat so it stays bright and fragrant.\n5. Prepare the pounded yam to a smooth, stretchy consistency while the soup rests.\n6. Serve the soup hot beside the pounded yam and eat with your hands, scooping and dipping.',
-    items: [['YAM-002', 2], ['OHA-001', 1], ['UZI-001', 1], ['IRU-001', 1], ['CRY-001', 1], ['STK-001', 1]],
+    items: [['YAM-002', 2], ['OHA-001', 1], ['UZI-001', 1], ['IRU-003', 1], ['CRY-004', 1], ['STK-001', 1]],
   },
   {
     title: 'Zobo Cooler & Market Snacks', emoji: '🧃', prep_minutes: 15, servings: 4,
     description: 'A chilled pitcher of deep-red zobo with roasted maize, crisp chin chin and sweet plantain chips for a relaxed afternoon. Bright, tangy and lightly spiced, it is the drink-and-nibbles spread you put out when friends drop by — no cooking required, just pouring and sharing.',
     steps: '1. Pour the zobo concentrate into a large jug and dilute with cold water to taste, about 1 part zobo to 3 parts water.\n2. Add sliced ginger or a squeeze of pineapple juice if you like, then chill for at least an hour.\n3. Roast the maize over a flame or under a hot grill until charred in spots, then cut into short lengths.\n4. Tip the chin chin and plantain chips into separate bowls and add the roasted groundnuts.\n5. Serve the zobo over plenty of ice with the snacks arranged around it for a help-yourself market-style spread.',
-    items: [['ZOB-001', 2], ['RMC-001', 1], ['GND-001', 1], ['CHI-001', 1], ['PLC-001', 1]],
+    items: [['ZOB-002', 2], ['RMC-001', 1], ['GND-002', 1], ['CHI-003', 1], ['PLC-003', 1]],
   },
   {
     title: 'Braai Evening', emoji: '🍷', prep_minutes: 25, servings: 4,
@@ -435,13 +434,13 @@ const recipes = [
     title: 'Five-Minute Student Garri Bowl', emoji: '🥣', prep_minutes: 5, servings: 1,
     description: 'The meal every Nigerian student knows by heart: cold, sour Ijebu garri soaked soft and crowned with roasted groundnuts, a spoon of sugar and a splash of cold milk or water. It is ready before the kettle boils, needs no hob and costs almost nothing — the ultimate study-night supper.',
     steps: '1. Spoon 3 heaped tablespoons of Ijebu garri into a bowl.\n2. Cover with cold water and leave to soak for 2–3 minutes until the grains soften and swell.\n3. Drain off a little of the water so it is pleasantly soupy, not watery.\n4. Sprinkle over a small handful of roasted groundnuts and a teaspoon of sugar, or kuli kuli crumbled for crunch.\n5. Add a splash of cold milk if you have it, stir once and eat straight away before it goes soggy.',
-    items: [['IJE-001', 1, 'sour Ijebu garri'], ['GND-001', 1, 'roasted groundnuts'], ['KLK-002', 1, 'kuli kuli, crumbled']],
+    items: [['IJE-001', 1, 'sour Ijebu garri'], ['GND-002', 1, 'roasted groundnuts'], ['KLK-002', 1, 'kuli kuli, crumbled']],
   },
   {
     title: 'One-Pot Student Jollof', emoji: '🍚', prep_minutes: 25, servings: 2,
     description: 'A scaled-down, no-fuss jollof for one or two: everyday long-grain rice simmered in a quick Ghanaian-style base with a handful of crayfish and a crumbled stock cube. One pot, one spoon and almost no washing-up — and the leftovers somehow taste even better the next day.',
     steps: '1. Rinse the rice under cold water until it runs clear, then drain well.\n2. In a single pot, whisk the jollof base and tomato paste with about a cup of water until smooth.\n3. Add the ground pepper, crayfish and crumbled stock cube, then stir in the rice.\n4. Pour in just enough water to sit about an inch above the rice, cover and simmer on the lowest heat for 18–20 minutes.\n5. Do not stir while it cooks. When the rice is tender, fluff gently with a fork and let the bottom catch a little for a smoky flavour.\n6. Serve straight from the pot with a sprinkle of roasted groundnuts on top.',
-    items: [['RIC-002', 1, 'everyday long-grain rice'], ['JOL-002', 1, 'Ghanaian-style jollof base'], ['TMP-001', 1, 'tomato paste'], ['CRY-001', 1, 'ground crayfish'], ['PPR-002', 1, 'ground pepper'], ['ONG-001', 1, 'beef cube'], ['GND-001', 1, 'to garnish']],
+    items: [['RIC-002', 1, 'everyday long-grain rice'], ['JOL-002', 1, 'Ghanaian-style jollof base'], ['TMP-001', 1, 'tomato paste'], ['CRY-004', 1, 'ground crayfish'], ['PPR-002', 1, 'ground pepper'], ['ONG-001', 1, 'beef cube'], ['GND-002', 1, 'to garnish']],
   },
   {
     title: 'Budget Ewa Agoyin & Garri', emoji: '🫘', prep_minutes: 40, servings: 3,
@@ -453,7 +452,7 @@ const recipes = [
     title: 'Egusi for One', emoji: '🥘', prep_minutes: 30, servings: 2,
     description: 'A small-pot egusi that skips the market run: ground melon seeds simmered with palm oil, crayfish and spinach, thickened exactly the way you like it. Rich, nutty and ready in half an hour, it is proof that a proper soup does not need a crowd. Serve with garri, semo or pounded yam.',
     steps: '1. Mix the ground egusi with a little warm water into a loose paste so it will not clump.\n2. Heat the palm oil in a pot, add the egusi paste and fry gently, stirring, until it starts to crumble and smell nutty, about 5 minutes.\n3. Add the crayfish, a crumbled stock cube and one or two cups of water; simmer 10 minutes until the red oil floats on top.\n4. Stir in the soaked dehydrated spinach and simmer 3 more minutes.\n5. Taste for salt, adjust the thickness with a splash of hot water, and serve hot with your favourite swallow.',
-    items: [['EGU-001', 1, 'ground egusi'], ['PAL-001', 1, 'red palm oil'], ['CRY-001', 1, 'ground crayfish'], ['DSP-001', 1, 'dehydrated spinach'], ['ONG-001', 1, 'beef cube']],
+    items: [['EGU-001', 1, 'ground egusi'], ['PAL-001', 1, 'red palm oil'], ['CRY-004', 1, 'ground crayfish'], ['DSP-001', 1, 'dehydrated spinach'], ['ONG-001', 1, 'beef cube']],
   },
 ];
 const insertRecipe = db.prepare('INSERT INTO recipes (title, description, steps, prep_minutes, servings, emoji, active) VALUES (?,?,?,?,?,?,1)');
