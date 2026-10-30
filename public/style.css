@@ -186,7 +186,7 @@ main { max-width: 1320px; padding: 0 40px; margin: 0 auto; }
 /* ---------- Hero ---------- */
 .hero { position: relative; width: 100%; overflow: hidden; display: block; margin: 0 0 44px; padding-bottom: 52px; background: radial-gradient(1100px 640px at 22% 0%, #27563e 0%, #16301f 55%, #0f2418 100%); color: #fff; }
 .hero-photo { display: block; width: min(1240px, calc(100% - 80px)); margin: 0 auto; border-radius: 22px; overflow: hidden; box-shadow: 0 18px 40px rgb(5 14 9 / 45%); }
-.hero-photo img { display: block; width: 100%; height: clamp(240px, 38vw, 520px); object-fit: cover; }
+.hero-photo img { display: block; width: 100%; height: clamp(240px, 38vw, 520px); object-fit: cover; object-position: center 38%; }
 .hero-copy { position: relative; z-index: 2; width: min(1240px, calc(100% - 80px)); margin: 0 auto; padding: 60px 0 34px; }
 .eyebrow { margin: 0 0 10px; color: var(--clay); font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
 .hero .eyebrow { color: var(--gold); }
@@ -613,7 +613,7 @@ footer p, footer > span { margin: 0; color: #e0c1c1; font-size: 10px; }
   .hero h1 { font-size: clamp(36px, 9vw, 50px); }
   .hero-sub { font-size: 14px; }
   .hero-photo { width: calc(100% - 36px); border-radius: 16px; }
-  .hero-photo img { height: clamp(210px, 52vw, 340px); }
+  .hero-photo img { height: clamp(300px, 92vw, 500px); object-position: center 42%; }
   .hero-note { right: 18px; font-size: 8px; }
   .bundle-grid { grid-auto-flow: column; grid-auto-columns: minmax(232px, 74%); grid-template-columns: none; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; scrollbar-width: none; }
   .bundle-grid::-webkit-scrollbar { display: none; }
