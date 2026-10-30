@@ -1224,17 +1224,12 @@ function renderDepartments() {
   grid.replaceChildren(
     departmentTile('', t('nav.everything'), 0),
     ...categoryList.map((category) => departmentTile(category.id, category.name, counts.get(category.name) || 0)),
-    departmentTile('', '', 0, { pack: true, glyph: '🎁' }),
   );
 }
 
 $('department-grid')?.addEventListener('click', (event) => {
   const tile = event.target.closest('.department-tile');
   if (!tile) return;
-  if (tile.dataset.pack) {
-    $('packs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    return;
-  }
   selectDepartment(tile.dataset.category);
 });
 
@@ -1418,19 +1413,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Category filter links in sticky nav
-document.querySelectorAll('.service-nav a[data-cat-filter]').forEach(a => {
-  a.addEventListener('click', (e) => {
-    e.preventDefault();
-    const cat = a.getAttribute('data-cat-filter');
-    const sel = $('cat');
-    if (sel) {
-      sel.value = cat;
-      sel.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-    $('shop')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-});
 // Mobile menu toggle
 $('mobile-menu-btn')?.addEventListener('click', () => {
   document.querySelector('.service-nav')?.classList.toggle('open');

@@ -2,14 +2,14 @@
 //
 // While we build out the full range, the shop only sells Nigerian and Ghanaian
 // goods. Products with no country tag stay in (the international soft drinks,
-// energy drinks and nectars that every household here buys), and three
-// departments are parked for now.
+// energy drinks and nectars that every household here buys), and Beverages,
+// Frozen and three other departments are parked for now (2026-10-29).
 //
 // This is a *read-time* filter: nothing is deleted, staff still see and manage
 // the whole catalogue, and widening the range again is a one-line change here.
 
 export const ACTIVE_ORIGIN_CODES = ['NG', 'GH'];
-export const HIDDEN_CATEGORY_NAMES = ['Fresh Produce', 'Health & Beauty', 'Oils & Condiments'];
+export const HIDDEN_CATEGORY_NAMES = ['Fresh Produce', 'Health & Beauty', 'Oils & Condiments', 'Beverages', 'Frozen'];
 
 const sqlList = (values) => values.map((value) => `'${String(value).replace(/'/g, "''")}'`).join(', ');
 
