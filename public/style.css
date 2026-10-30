@@ -47,11 +47,14 @@ h1, h2, h3 { font-optical-sizing: auto; }
     var(--indigo) 64px 76px, var(--gold) 76px 88px);
 }
 
-.announcement { position: relative; background: #0f2418; color: #f2ead8; }
+.announcement { position: relative; min-height: 0; background: #0f2418; color: #f2ead8; transition: opacity .2s ease; }
 .announcement::before { content: ''; display: block; height: 4px; background: repeating-linear-gradient(90deg, var(--clay) 0 26px, var(--ochre) 26px 38px, var(--green) 38px 64px, var(--indigo) 64px 76px, var(--gold) 76px 88px); }
-.announcement-inner { min-height: 32px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; padding: 4px 18px; font-size: 11px; font-weight: 600; letter-spacing: .01em; text-align: center; }
+.announcement-inner { min-height: 28px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; padding: 3px 40px 2px 18px; font-size: 11px; font-weight: 600; letter-spacing: .01em; text-align: center; }
 .announcement-inner span[aria-hidden] { color: var(--gold); font-size: 13px; }
 .announcement-dot { color: var(--ochre); }
+.announce-close { position: absolute; top: 4px; right: 6px; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 0; border-radius: 999px; background: transparent; color: #f2ead8; font-size: 12px; cursor: pointer; opacity: .7; }
+.announce-close:hover, .announce-close:focus-visible { opacity: 1; background: rgb(255 255 255 / 12%); }
+.announcement.closed { display: none; }
 
 .site-header {
   position: sticky;
@@ -63,14 +66,31 @@ h1, h2, h3 { font-optical-sizing: auto; }
   box-shadow: 0 10px 30px rgb(6 18 11 / 35%);
   border-bottom: 1.5px solid rgb(244 207 122 / 35%);
 }
-.mobile-menu-btn { display: none; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.4); color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 16px; cursor: pointer; }
+.mobile-menu-btn { display: none; gap: 6px; align-items: center; background: rgb(244 207 122 / 14%); border: 1px solid rgb(244 207 122 / 45%); color: #ffd98f; border-radius: 999px; padding: 7px 14px; font-size: 12px; font-weight: 700; letter-spacing: .04em; cursor: pointer; }
+.site-header.is-scrolled .announcement { display: none; }
+.site-header.is-scrolled .service-nav { display: block; max-height: 0; padding-block: 0; overflow: hidden; }
+.header-bar {
+  min-height: 66px;
+  padding: 8px max(40px, calc((100vw - 1240px) / 2));
+  display: grid;
+  grid-template-columns: 1fr minmax(260px, 480px) 1fr;
+  align-items: center;
+  gap: 32px;
+  transition: min-height .2s ease;
+}
+.site-header.is-scrolled .header-bar { min-height: 56px; }
 @media (max-width: 980px) {
   .mobile-menu-btn { display: inline-flex; align-items: center; }
   .service-nav { display: none; padding: 10px 16px 14px; }
   .service-nav.open { display: block; }
   .service-nav-inner { flex-direction: column; align-items: stretch; gap: 8px; }
-  .header-bar { grid-template-columns: auto auto 1fr auto; gap: 10px; padding: 10px 16px; }
-  .search-box { grid-column: 1 / -1; order: 3; }
+  .header-bar { grid-template-columns: auto 1fr auto; gap: 10px; padding: 9px 14px; }
+  .site-header.is-scrolled .service-nav { display: none; }
+  .site-header.is-scrolled .service-nav.open { display: block; }
+  .mobile-menu-btn { grid-column: 3; grid-row: 1; }
+  .brand { grid-column: 1; grid-row: 1; }
+  .search-box { grid-column: 1 / -1; grid-row: 2; order: 3; }
+  .header-actions { grid-column: 2; grid-row: 1; justify-content: flex-end; }
 }
 .header-bar {
   min-height: 72px;
@@ -575,11 +595,15 @@ footer p, footer > span { margin: 0; color: #e0c1c1; font-size: 10px; }
   .story-art { min-height: 160px; }
 }
 @media (max-width: 760px) {
-  .header-bar { grid-template-columns: 1fr auto; gap: 12px; padding: 13px 18px; }
-  .search-box { grid-column: 1 / -1; grid-row: 2; }
+  .header-bar { grid-template-columns: auto 1fr auto; gap: 10px; padding: 9px 14px; min-height: 58px; }
+  .search-box { grid-column: 1 / -1; grid-row: 2; height: 40px; padding: 0 10px; gap: 8px; }
+  .search-go { padding: 8px 13px; }
   .header-actions { grid-column: 2; grid-row: 1; }
-  .service-nav { padding: 8px 18px 14px; }
-  .service-nav-inner { gap: 10px; }
+  .mobile-menu-btn { grid-column: 3; grid-row: 1; }
+  .service-nav { padding: 8px 14px 12px; }
+  .service-nav.open { max-height: 60vh; overflow-y: auto; }
+  .service-nav .pref-select { display: inline-flex; width: 100%; }
+  .service-nav .pref-select select { width: 100%; }
   .department-grid { grid-auto-flow: column; grid-auto-columns: minmax(152px, 38%); grid-template-columns: none; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; scrollbar-width: none; }
   .department-grid::-webkit-scrollbar { display: none; }
   .department-tile { scroll-snap-align: start; }
@@ -609,17 +633,21 @@ footer p, footer > span { margin: 0; color: #e0c1c1; font-size: 10px; }
   footer { padding: 24px 18px; flex-wrap: wrap; }
 }
 @media (max-width: 480px) {
-  .announcement-inner { font-size: 10px; gap: 6px; }
+  .announcement-inner { font-size: 10px; gap: 6px; padding-right: 34px; }
   .announcement-dot { display: none; }
-  .site-header { min-height: 74px; }
-  .header-bar { min-height: 74px; padding: 13px 18px; }
-  .service-nav { padding: 8px 18px 14px; }
-  .service-nav-inner { gap: 8px; }
+  .header-bar { min-height: 56px; padding: 8px 12px; gap: 8px; }
+  .service-nav { padding: 8px 12px 12px; }
   .service-nav a { font-size: 11px; padding: 6px 14px; }
-  .brand { font-size: 22px; }
-  .brand-mark { width: 38px; height: 38px; }
-  .brand small { font-size: 7px; letter-spacing: .14em; }
-  .header-actions { gap: 9px; }
+  .brand { font-size: 20px; }
+  .brand-mark { width: 36px; height: 36px; }
+  .brand small { font-size: 6.5px; letter-spacing: .14em; }
+  .mobile-menu-btn { padding: 6px 11px; font-size: 11px; }
+  .header-actions { gap: 7px; }
+  .search-box { height: 38px; }
+  .search-go { padding: 8px 11px; font-size: 10px; }
+  #acct { max-width: 120px; font-size: 10px; }
+  #acct button { font-size: 10px; }
+  .cart-link { padding: 6px 10px; }
   .install-app { min-height: 32px; padding: 0 9px; font-size: 10px; }
   #acct { max-width: 140px; font-size: 10px; }
   #acct button { font-size: 10px; }

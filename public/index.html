@@ -45,14 +45,15 @@
 	<!-- Announcement moved into sticky header for compactness -->
 
 	<header class="site-header site-header-sticky">
-		<div class="announcement">
+		<div class="announcement" id="announcement">
 			<div class="announcement-inner">
 				<span aria-hidden="true">✳</span>
 				<span>Free delivery over €50 within Bochum • Store pickup in Bochum • We deliver throughout Germany</span>
 			</div>
+			<button class="announce-close" id="announce-close" type="button" aria-label="Dismiss announcement">✕</button>
 		</div>
 		<div class="header-bar">
-			<button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Menu">☰</button>
+			<button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Open menu" aria-expanded="false">☰<span data-i18n="nav.menu">Menu</span></button>
 			<a class="brand" href="/" aria-label="AFROMART home">
 				<svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#afromart-emblem"></use></svg>
 				<span class="brand-words brand-bold">AFRO<span class="brand-red">MART</span><small data-i18n="brand.tagline">AUTHENTIC AFRICAN FOODS</small></span>

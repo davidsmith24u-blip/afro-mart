@@ -1415,8 +1415,45 @@ if ('serviceWorker' in navigator) {
 
 // Mobile menu toggle
 $('mobile-menu-btn')?.addEventListener('click', () => {
-  document.querySelector('.service-nav')?.classList.toggle('open');
+  const nav = document.querySelector('.service-nav');
+  if (!nav) return;
+  nav.classList.toggle('open');
+  $('mobile-menu-btn').setAttribute('aria-expanded', nav.classList.contains('open') ? 'true' : 'false');
 });
+// Close the drawer after choosing a destination
+document.querySelectorAll('.service-nav a').forEach((a) => a.addEventListener('click', () => {
+  document.querySelector('.service-nav')?.classList.remove('open');
+  $('mobile-menu-btn')?.setAttribute('aria-expanded', 'false');
+}));
+// Slim header while scrolling: drop the announcement and service nav so the sticky
+// bar becomes logo + search + bag. Restores near the top.
+const headerEl = document.querySelector('.site-header');
+const updateHeaderScroll = () => headerEl?.classList.toggle('is-scrolled', window.scrollY > 24);
+window.addEventListener('scroll', updateHeaderScroll, { passive: true });
+updateHeaderScroll();
+// Dismissible announcement bar (remembered for the session).
+const announcement = $('announcement');
+let announcementWasClosed = false;
+try { announcementWasClosed = sessionStorage.getItem('afroAnnouncementClosed') === '1'; } catch { /* private mode */ }
+if (announcement && announcementWasClosed) announcement.classList.add('closed');
+$('announce-close')?.addEventListener('click', () => {
+  announcement?.classList.add('closed');
+  try { sessionStorage.setItem('afroAnnouncementClosed', '1'); } catch { /* private mode */ }
+  updateHeaderScroll();
+});
+// The currency switcher lives in the menu drawer on small screens so the top row
+// stays logo + bag + menu only.
+const currencyMq = matchMedia('(max-width: 760px)');
+const currencyLabel = document.querySelector('.header-actions .pref-select');
+const drawerForCurrency = document.querySelector('.service-nav-inner');
+const acctSlot = document.querySelector('.header-actions #acct');
+const moveCurrency = (mq) => {
+  if (!currencyLabel || !drawerForCurrency) return;
+  if (mq.matches) drawerForCurrency.appendChild(currencyLabel);
+  else acctSlot?.parentNode.insertBefore(currencyLabel, acctSlot);
+};
+moveCurrency(currencyMq);
+currencyMq.addEventListener?.('change', moveCurrency);
 
 (async () => {
   try {
