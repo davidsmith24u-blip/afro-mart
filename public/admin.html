@@ -2,36 +2,207 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AFROMART – Staff dashboard</title><link rel="icon" href="/app-icon.svg" type="image/svg+xml"><link rel="stylesheet" href="/style.css"></head>
 <body class="admin-page">
-<header><h1>AFROMART Staff</h1><a href="/">Storefront</a></header>
-<main>
-<p id="msg" class="err"></p>
-<section id="login"><input id="email" placeholder="Email"> <input id="pw" type="password" placeholder="Password"> <button id="go">Log in</button></section>
-<div id="dash" hidden>
-<section><h2>Summary</h2><div id="summary" class="grid"></div></section>
-<section><h2>Orders</h2><div id="orders"></div></section>
-<section><h2>Low stock</h2><button id="reorder">Create purchase orders for low stock</button><div id="low"></div></section>
-<section><h2>Purchase orders</h2><div id="pos"></div></section>
-<section><h2>Inventory</h2><div id="inv"></div></section>
-<section><h2>Suppliers</h2><div id="sups"></div></section>
-<section><h2>Bundles</h2><div id="bundles"></div></section>
-<section><h2>Subscriptions</h2><button id="process-subs">Process due subscriptions</button><div id="subs"></div></section>
-<section><h2>Delivery areas</h2><div id="delivery"></div></section>
-<section><h2>Recipes</h2><div id="recipes"></div></section>
-<section><h2>Catering quotes</h2><div id="quotes"></div></section>
-<section><h2>Wholesale accounts</h2><div id="customers"></div></section>
-<section><h2>Product reviews</h2><p class="muted">Approve a review to publish it on the storefront.</p><div id="reviews"></div></section>
-<section><h2>Product images</h2><p class="muted">Upload a photo or paste an image URL, then save it to a product. Products with no photo fall back to a category placeholder in the shop, but Google needs a real one for a product rich result — so those are listed first, and the count is in the summary above.</p><div id="images"></div></section>
-<section><h2>AI product copy</h2><p class="muted">Draft a fresh description in English, German and French, then apply the English text to the product.</p>
-  <div class="ai-copy">
-    <select id="ai-product"></select>
-    <input id="ai-keywords" placeholder="Optional details to mention (e.g. stone-free, 1 kg, family size)">
-    <button id="ai-generate">Write with AI</button>
+<header>
+  <h1>AFROMART Staff</h1>
+  <div class="admin-header-actions">
+    <span id="admin-user"></span>
+    <a href="/">Storefront</a>
+    <button id="logout" type="button">Log out</button>
   </div>
-  <div id="ai-copy-out" class="ai-copy-out"></div>
+</header>
+<main>
+<p id="msg" class="err" role="status" aria-live="polite"></p>
+<section id="login" class="admin-auth">
+  <h2>Staff sign in</h2>
+  <p class="muted">Use the administrator or staff email and password for this store.</p>
+  <form id="login-form">
+    <input id="email" type="email" placeholder="Email" autocomplete="username" required>
+    <input id="pw" type="password" placeholder="Password" autocomplete="current-password" required>
+    <button id="go" type="submit">Log in</button>
+  </form>
 </section>
-<section><h2>Back-in-stock alerts</h2><button id="notify-restock">Notify waiting customers</button><div id="stock-alerts"></div></section>
-<section><h2>Saved carts</h2><button id="remind-carts">Send abandoned-cart reminders</button><div id="carts"></div></section>
-<section><h2>Audit log</h2><p class="muted">The 100 most recent privileged actions.</p><div id="audit"></div></section>
+<section id="setup" class="admin-auth" hidden>
+  <h2>Create the first administrator</h2>
+  <p class="muted">This store has no staff accounts yet. Create the owner account now — it can add staff later.</p>
+  <form id="setup-form">
+    <input id="setup-name" type="text" placeholder="Full name" autocomplete="name" required>
+    <input id="setup-email" type="email" placeholder="Email" autocomplete="username" required>
+    <input id="setup-pw" type="password" placeholder="Password (8+ characters)" autocomplete="new-password" minlength="8" required>
+    <input id="setup-pw2" type="password" placeholder="Confirm password" autocomplete="new-password" minlength="8" required>
+    <button type="submit">Create administrator</button>
+  </form>
+</section>
+<div id="dash" hidden>
+  <div class="admin-shell">
+    <nav class="admin-nav" aria-label="Dashboard sections">
+      <div class="admin-nav-group">
+        <strong>Overview</strong>
+        <button type="button" data-panel="overview">Summary</button>
+      </div>
+      <div class="admin-nav-group">
+        <strong>Orders</strong>
+        <button type="button" data-panel="orders-section">Orders</button>
+        <button type="button" data-panel="quotes-section">Catering quotes</button>
+        <button type="button" data-panel="delivery-section">Delivery areas</button>
+      </div>
+      <div class="admin-nav-group">
+        <strong>Shop</strong>
+        <button type="button" data-panel="products">Products &amp; availability</button>
+        <button type="button" data-panel="images-section">Product images</button>
+        <button type="button" data-panel="ai-copy-section">AI product copy</button>
+        <button type="button" data-panel="bundles-section">Bundles</button>
+        <button type="button" data-panel="recipes-section">Recipes</button>
+        <button type="button" data-panel="reviews-section">Reviews</button>
+      </div>
+      <div class="admin-nav-group">
+        <strong>Stock</strong>
+        <button type="button" data-panel="low-stock">Low stock</button>
+        <button type="button" data-panel="purchase-orders">Purchase orders</button>
+        <button type="button" data-panel="suppliers">Suppliers</button>
+      </div>
+      <div class="admin-nav-group">
+        <strong>Customers</strong>
+        <button type="button" data-panel="customers-section">Wholesale accounts</button>
+        <button type="button" data-panel="subscriptions-section">Subscriptions</button>
+        <button type="button" data-panel="stock-alerts-section">Back-in-stock alerts</button>
+        <button type="button" data-panel="carts-section">Saved carts</button>
+      </div>
+      <div class="admin-nav-group">
+        <strong>System</strong>
+        <button type="button" data-panel="account-section">My account</button>
+        <button type="button" data-panel="audit-section">Audit log</button>
+      </div>
+    </nav>
+    <div class="admin-content">
+      <section id="overview" class="admin-panel is-active" aria-labelledby="overview-title">
+        <h2 id="overview-title">Summary</h2>
+        <div id="summary" class="grid"></div>
+      </section>
+
+      <section id="orders-section" class="admin-panel" aria-labelledby="orders-title">
+        <h2 id="orders-title">Orders</h2>
+        <div class="admin-table-wrap" id="orders"></div>
+      </section>
+
+      <section id="quotes-section" class="admin-panel" aria-labelledby="quotes-title">
+        <h2 id="quotes-title">Catering quotes</h2>
+        <div class="admin-table-wrap" id="quotes"></div>
+      </section>
+
+      <section id="delivery-section" class="admin-panel" aria-labelledby="delivery-title">
+        <h2 id="delivery-title">Delivery areas</h2>
+        <div class="admin-table-wrap" id="delivery"></div>
+      </section>
+
+      <section id="products" class="admin-panel" aria-labelledby="products-title">
+        <h2 id="products-title">Products &amp; store availability</h2>
+        <p class="muted">Hide a product to remove it from the storefront immediately — its shop card, product page, search results and feeds stop showing it. Use the out-of-stock filter to find everything that cannot be sold today.</p>
+        <div class="admin-toolbar">
+          <input id="product-search" type="search" placeholder="Search product or SKU" aria-label="Search products">
+          <select id="product-filter" aria-label="Filter products">
+            <option value="all">All products</option>
+            <option value="visible">Visible on store</option>
+            <option value="hidden">Hidden from store</option>
+            <option value="out">Out of stock</option>
+          </select>
+          <button id="hide-out-of-stock" type="button" class="secondary-button" disabled>Hide out-of-stock</button>
+        </div>
+        <p id="product-status" class="muted" role="status" aria-live="polite"></p>
+        <div id="product-list" class="admin-table-wrap"></div>
+      </section>
+
+      <section id="images-section" class="admin-panel" aria-labelledby="images-title">
+        <h2 id="images-title">Product images</h2>
+        <p class="muted">Upload a photo or paste an image URL, then save it to a product. Products with no photo fall back to a category placeholder in the shop, but Google needs a real one for a product rich result — so those are listed first, and the count is in the summary above.</p>
+        <div id="images"></div>
+      </section>
+
+      <section id="ai-copy-section" class="admin-panel" aria-labelledby="ai-copy-title">
+        <h2 id="ai-copy-title">AI product copy</h2>
+        <p class="muted">Draft a fresh description in English, German and French, then apply the English text to the product.</p>
+        <div class="ai-copy">
+          <select id="ai-product"></select>
+          <input id="ai-keywords" placeholder="Optional details to mention (e.g. stone-free, 1 kg, family size)">
+          <button id="ai-generate">Write with AI</button>
+        </div>
+        <div id="ai-copy-out" class="ai-copy-out"></div>
+      </section>
+
+      <section id="bundles-section" class="admin-panel" aria-labelledby="bundles-title">
+        <h2 id="bundles-title">Bundles</h2>
+        <div class="admin-table-wrap" id="bundles"></div>
+      </section>
+
+      <section id="recipes-section" class="admin-panel" aria-labelledby="recipes-title">
+        <h2 id="recipes-title">Recipes</h2>
+        <div class="admin-table-wrap" id="recipes"></div>
+      </section>
+
+      <section id="reviews-section" class="admin-panel" aria-labelledby="reviews-title">
+        <h2 id="reviews-title">Product reviews</h2>
+        <p class="muted">Approve a review to publish it on the storefront.</p>
+        <div class="admin-table-wrap" id="reviews"></div>
+      </section>
+
+      <section id="low-stock" class="admin-panel" aria-labelledby="low-stock-title">
+        <h2 id="low-stock-title">Low stock</h2>
+        <p class="muted">Products at or below their reorder level.</p>
+        <button id="reorder">Create purchase orders for low stock</button>
+        <div class="admin-table-wrap" id="low"></div>
+      </section>
+
+      <section id="purchase-orders" class="admin-panel" aria-labelledby="purchase-orders-title">
+        <h2 id="purchase-orders-title">Purchase orders</h2>
+        <div class="admin-table-wrap" id="pos"></div>
+      </section>
+
+      <section id="suppliers" class="admin-panel" aria-labelledby="suppliers-title">
+        <h2 id="suppliers-title">Suppliers</h2>
+        <div class="admin-table-wrap" id="sups"></div>
+      </section>
+
+      <section id="customers-section" class="admin-panel" aria-labelledby="customers-title">
+        <h2 id="customers-title">Wholesale accounts</h2>
+        <div class="admin-table-wrap" id="customers"></div>
+      </section>
+
+      <section id="subscriptions-section" class="admin-panel" aria-labelledby="subscriptions-title">
+        <h2 id="subscriptions-title">Subscriptions</h2>
+        <button id="process-subs">Process due subscriptions</button>
+        <div class="admin-table-wrap" id="subs"></div>
+      </section>
+
+      <section id="stock-alerts-section" class="admin-panel" aria-labelledby="stock-alerts-title">
+        <h2 id="stock-alerts-title">Back-in-stock alerts</h2>
+        <p class="muted">Customers waiting for a product to return.</p>
+        <button id="notify-restock">Notify waiting customers</button>
+        <div class="admin-table-wrap" id="stock-alerts"></div>
+      </section>
+
+      <section id="carts-section" class="admin-panel" aria-labelledby="carts-title">
+        <h2 id="carts-title">Saved carts</h2>
+        <button id="remind-carts">Send abandoned-cart reminders</button>
+        <div class="admin-table-wrap" id="carts"></div>
+      </section>
+
+      <section id="account-section" class="admin-panel" aria-labelledby="account-title">
+        <h2 id="account-title">My account</h2>
+        <p class="muted">Signed in as <strong id="account-email"></strong>. Change your password here; your current session stays signed in.</p>
+        <form id="password-form" class="admin-auth-inline">
+          <input id="current-pw" type="password" placeholder="Current password" autocomplete="current-password" required>
+          <input id="new-pw" type="password" placeholder="New password (8+ characters)" autocomplete="new-password" minlength="8" required>
+          <input id="new-pw2" type="password" placeholder="Confirm new password" autocomplete="new-password" minlength="8" required>
+          <button type="submit">Update password</button>
+        </form>
+      </section>
+
+      <section id="audit-section" class="admin-panel" aria-labelledby="audit-title">
+        <h2 id="audit-title">Audit log</h2>
+        <p class="muted">The 100 most recent privileged actions.</p>
+        <div class="admin-table-wrap" id="audit"></div>
+      </section>
+    </div>
+  </div>
 </div>
 </main>
 <script src="/admin.js" type="module"></script></body></html>

@@ -11,6 +11,7 @@
   "scripts": {
     "start": "node --disable-warning=ExperimentalWarning src/server.js",
     "seed": "node --disable-warning=ExperimentalWarning src/seed.js",
+    "admin:password": "node --disable-warning=ExperimentalWarning src/admin-password.js",
     "test": "node --disable-warning=ExperimentalWarning --test \"test/*.test.js\""
   }
 }

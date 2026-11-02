@@ -72,6 +72,29 @@ test('printable invoice: owner and staff can open it, others cannot', async () =
   assert.ok(trail.data.some((r) => r.action === 'order.status'));
 });
 
+test('product availability: hidden products leave the storefront but stay in the staff list', async () => {
+  const admin = (await call('POST', '/api/auth/login', { email: 'boss@x.com', password: 'adminpass1' })).data.token;
+  const prod = (await call('POST', '/api/products', { sku: 'VIS-1', name: 'Visibility Yam', price_cents: 500, stock: 3 }, admin)).data;
+  const publicListed = async () => (await call('GET', '/api/products?catalog=all&limit=200')).data.some((p) => p.id === prod.id);
+  const staffRow = async () => (await call('GET', '/api/products?limit=200', undefined, admin)).data.find((p) => p.id === prod.id);
+
+  assert.equal((await call('GET', `/api/products/${prod.id}`)).status, 200);
+  assert.equal(await publicListed(), true);
+
+  const hidden = await call('PUT', `/api/products/${prod.id}`, { active: false }, admin);
+  assert.equal(hidden.status, 200);
+  assert.equal(hidden.data.active, 0);
+
+  assert.equal((await call('GET', `/api/products/${prod.id}`)).status, 404);
+  assert.equal(await publicListed(), false);
+  assert.equal((await staffRow()).active, 0);
+
+  await call('PUT', `/api/products/${prod.id}`, { active: true }, admin);
+  assert.equal((await call('GET', `/api/products/${prod.id}`)).status, 200);
+  assert.equal(await publicListed(), true);
+  assert.equal((await staffRow()).active, 1);
+});
+
 test('rate limiting throttles repeated login attempts', async () => {
   const ip = { 'x-forwarded-for': '203.0.113.7' };
   let last = 0;

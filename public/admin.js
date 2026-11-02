@@ -3,6 +3,10 @@ const money = (c) => (c / 100).toLocaleString('de-DE', { style: 'currency', curr
 let token = localStorage.getItem('token');
 // Kept outside load() so a save/upload round-trip doesn't reset the worklist filter.
 let onlyMissingPhotos = false;
+// Product availability worklist state.
+let productSearch = '';
+let productFilter = 'all';
+let allProducts = [];
 const el = (tag, text, attrs = {}) => Object.assign(Object.assign(document.createElement(tag), { textContent: text ?? '' }), attrs);
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -12,7 +16,11 @@ async function api(path, opts = {}) {
   });
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
-  if (!res.ok) throw new Error((data && data.error) || 'Request failed');
+  if (!res.ok) {
+    const error = new Error((data && data.error) || 'Request failed');
+    error.status = res.status;
+    throw error;
+  }
   return data;
 }
 function table(cols, rows, action) {
@@ -23,7 +31,13 @@ function table(cols, rows, action) {
   t.append(h);
   for (const r of rows) {
     const tr = el('tr');
-    for (const c of cols) tr.append(el('td', r[c]));
+    for (const c of cols) {
+      const td = el('td');
+      const value = r[c];
+      if (value instanceof Node) td.append(value);
+      else td.textContent = value ?? '';
+      tr.append(td);
+    }
     if (action) { const td = el('td'); const a = action(r); if (a) td.append(a); tr.append(td); }
     t.append(tr);
   }
@@ -31,9 +45,74 @@ function table(cols, rows, action) {
 }
 const guard = (fn) => async () => { try { const note = await fn(); $('msg').textContent = typeof note === 'string' ? note : ''; } catch (e) { $('msg').textContent = e.message; } };
 
-const load = guard(async () => {
+// Which products the availability panel should show for the current search/filter.
+function productMatches(p) {
+  const q = productSearch.trim().toLowerCase();
+  if (q && !`${p.name} ${p.sku} ${p.category || ''}`.toLowerCase().includes(q)) return false;
+  if (productFilter === 'visible') return !!p.active;
+  if (productFilter === 'hidden') return !p.active;
+  if (productFilter === 'out') return p.stock <= 0;
+  return true;
+}
+
+function renderProductTable() {
+  const shown = allProducts.filter(productMatches);
+  const outOfStock = allProducts.filter((p) => p.active && p.stock <= 0);
+  const hidden = allProducts.filter((p) => !p.active).length;
+  const status = $('product-status');
+  status.textContent = allProducts.length
+    ? `Showing ${shown.length} of ${allProducts.length} products · ${hidden} hidden · ${outOfStock.length} visible but out of stock.`
+    : 'No products yet.';
+  const bulk = $('hide-out-of-stock');
+  bulk.disabled = outOfStock.length === 0;
+  bulk.textContent = outOfStock.length ? `Hide ${outOfStock.length} out-of-stock` : 'No out-of-stock items';
+
+  if (!shown.length) {
+    $('product-list').replaceChildren(el('p', 'No products match this search or filter.', { className: 'muted' }));
+    return;
+  }
+  const rows = shown.map((p) => ({
+    sku: p.sku,
+    name: p.name,
+    category: p.category || '—',
+    price: p.price,
+    stock: el('span', String(p.stock), { className: p.stock <= 0 ? 'state-pill is-out' : '' }),
+    state: el('span', p.active ? 'Visible' : 'Hidden', { className: p.active ? 'state-pill is-visible' : 'state-pill is-hidden' }),
+    raw: p,
+  }));
+  $('product-list').replaceChildren(table(['sku', 'name', 'category', 'price', 'stock', 'state'], rows, (r) => {
+    const btn = el('button', r.raw.active ? 'Hide from store' : 'Show on store', { type: 'button' });
+    btn.className = r.raw.active ? 'danger-button' : 'secondary-button';
+    btn.onclick = guard(async () => {
+      await api(`/api/products/${r.raw.id}`, { method: 'PUT', body: { active: !r.raw.active } });
+      await load();
+      return r.raw.active ? `${r.raw.name} is now hidden from the storefront.` : `${r.raw.name} is visible on the store again.`;
+    });
+    return btn;
+  }));
+}
+
+function showPanel(id, { updateHash = true } = {}) {
+  const target = document.getElementById(id) ? id : 'overview';
+  for (const btn of document.querySelectorAll('.admin-nav [data-panel]')) {
+    const on = btn.dataset.panel === target;
+    btn.classList.toggle('is-active', on);
+    if (on) btn.setAttribute('aria-current', 'page');
+    else btn.removeAttribute('aria-current');
+  }
+  for (const panel of document.querySelectorAll('.admin-panel')) panel.classList.toggle('is-active', panel.id === target);
+  if (updateHash && location.hash.slice(1) !== target) history.replaceState(null, '', `#${target}`);
+  if (window.innerWidth <= 900) document.querySelector('.admin-content')?.scrollIntoView({ block: 'start' });
+}
+
+async function load() {
   const s = await api('/api/reports/summary');
-  $('login').hidden = true; $('dash').hidden = false;
+  $('login').hidden = true; $('setup').hidden = true; $('dash').hidden = false;
+  try {
+    const me = await api('/api/me');
+    $('admin-user').textContent = me.email;
+    $('account-email').textContent = me.email;
+  } catch { $('admin-user').textContent = ''; }
   $('summary').replaceChildren(...Object.entries({
     Orders: s.orders, Revenue: money(s.revenue_cents), 'Est. profit': money(s.estimated_profit_cents),
     Customers: s.customers, 'Low stock items': s.low_stock_count, 'Inventory value': money(s.inventory_value_cents),
@@ -79,8 +158,9 @@ const load = guard(async () => {
     b.onclick = guard(async () => { await api(`/api/purchase-orders/${p.id}/receive`, { method: 'POST' }); await load(); });
     return b;
   }));
-  const prods = (await api('/api/products')).map((p) => ({ ...p, price: money(p.price_cents) }));
-  $('inv').replaceChildren(table(['sku', 'name', 'category', 'price', 'stock'], prods));
+  allProducts = (await api('/api/products')).map((p) => ({ ...p, price: money(p.price_cents) }));
+  renderProductTable();
+  const prods = allProducts;
   $('sups').replaceChildren(table(['id', 'name', 'country', 'contact_name', 'email', 'phone'], await api('/api/suppliers')));
   const rawBundles = await api('/api/bundles?all=1');
   const bundleRows = rawBundles.map((b) => ({
@@ -283,16 +363,89 @@ const load = guard(async () => {
   $('carts').replaceChildren(table(['id', 'email', 'items', 'subtotal', 'updated_at', 'reminded', 'recovered'], cartRows));
 
   $('audit').replaceChildren(table(['id', 'created_at', 'actor_email', 'action', 'entity', 'entity_id', 'detail'], await api('/api/audit?limit=100')));
-});
+}
 
-$('go').onclick = guard(async () => {
-  const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: $('email').value, password: $('pw').value }) });
-  const d = await r.json();
-  if (!r.ok) throw new Error(d.error);
-  token = d.token; localStorage.setItem('token', token);
+// Show the sign-in form, or the first-run setup form when nobody can sign in yet.
+async function showAuth() {
+  try {
+    const res = await fetch('/api/auth/setup');
+    const data = await res.json();
+    const needed = Boolean(data.needed);
+    $('setup').hidden = !needed;
+    $('login').hidden = needed;
+    (needed ? $('setup-name') : $('email')).focus();
+  } catch {
+    $('setup').hidden = true;
+    $('login').hidden = false;
+  }
+}
+
+async function signIn(email, password) {
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Could not sign in');
+  token = data.token;
+  localStorage.setItem('token', token);
   await load();
-});
+}
+
+async function startSession() {
+  if (!token) { await showAuth(); return; }
+  try {
+    const me = await api('/api/me');
+    if (me.role === 'customer') {
+      const error = new Error('That account does not have staff access. Sign in with an administrator or staff account.');
+      error.status = 403;
+      throw error;
+    }
+  } catch (error) {
+    if (error.status === 401) { localStorage.removeItem('token'); token = null; }
+    $('msg').textContent = error.message;
+    await showAuth();
+    return;
+  }
+  try { await load(); } catch (error) { $('msg').textContent = error.message; }
+}
+
+$('login-form').onsubmit = (event) => {
+  event.preventDefault();
+  guard(async () => { await signIn($('email').value, $('pw').value); })();
+};
+
+$('setup-form').onsubmit = (event) => {
+  event.preventDefault();
+  guard(async () => {
+    if ($('setup-pw').value !== $('setup-pw2').value) throw new Error('Passwords do not match');
+    const res = await fetch('/api/auth/setup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: $('setup-name').value, email: $('setup-email').value, password: $('setup-pw').value }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Could not create the administrator');
+    token = data.token;
+    localStorage.setItem('token', token);
+    await load();
+    return `Welcome, ${data.user.name}. Your administrator account is ready.`;
+  })();
+};
+
+$('password-form').onsubmit = (event) => {
+  event.preventDefault();
+  guard(async () => {
+    if ($('new-pw').value !== $('new-pw2').value) throw new Error('New passwords do not match');
+    await api('/api/me/password', {
+      method: 'PATCH',
+      body: { current_password: $('current-pw').value, new_password: $('new-pw').value },
+    });
+    $('password-form').reset();
+    return 'Password updated.';
+  })();
+};
 $('reorder').onclick = guard(async () => { await api('/api/inventory/reorder', { method: 'POST' }); await load(); });
 $('process-subs').onclick = guard(async () => {
   const r = await api('/api/subscriptions/process', { method: 'POST' });
@@ -342,4 +495,34 @@ $('ai-generate').onclick = guard(async () => {
   }));
   return `Generated ${data.name} copy in ${locales.length} languages.`;
 });
-if (token) load();
+
+// Product availability worklist: filter instantly, then hide/show per product or in bulk.
+$('product-search').oninput = (e) => { productSearch = e.target.value; renderProductTable(); };
+$('product-filter').onchange = (e) => { productFilter = e.target.value; renderProductTable(); };
+$('hide-out-of-stock').onclick = guard(async () => {
+  const targets = allProducts.filter((p) => p.active && p.stock <= 0);
+  if (!targets.length) return 'Every out-of-stock product is already hidden.';
+  if (!window.confirm(`Hide ${targets.length} out-of-stock product${targets.length === 1 ? '' : 's'} from the storefront?`)) return '';
+  await Promise.all(targets.map((p) => api(`/api/products/${p.id}`, { method: 'PUT', body: { active: false } })));
+  await load();
+  return `Hidden ${targets.length} out-of-stock product${targets.length === 1 ? '' : 's'} from the store.`;
+});
+
+// Grouped dashboard navigation with hash support, so a section can be linked to.
+for (const btn of document.querySelectorAll('.admin-nav [data-panel]')) {
+  btn.onclick = () => showPanel(btn.dataset.panel);
+}
+window.addEventListener('hashchange', () => showPanel(location.hash.slice(1) || 'overview', { updateHash: false }));
+$('logout').onclick = async () => {
+  localStorage.removeItem('token');
+  token = null;
+  $('dash').hidden = true;
+  $('admin-user').textContent = '';
+  $('account-email').textContent = '';
+  $('msg').textContent = 'You are logged out.';
+  history.replaceState(null, '', location.pathname);
+  await showAuth();
+};
+
+showPanel(location.hash.slice(1) || 'overview', { updateHash: false });
+startSession();

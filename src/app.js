@@ -222,7 +222,48 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     return { token: tokenFor(user), user: publicUser(user) };
   });
 
+  // First-run setup: a fresh database (or a deploy without ADMIN_EMAIL) has no
+  // staff account, so nobody can sign in. Report that state and let the owner
+  // create the first administrator once. As soon as one exists this closes.
+  route('GET', '/api/auth/setup', () => ({
+    needed: !get("SELECT 1 FROM users WHERE role IN ('admin','staff')"),
+  }));
+
+  route('POST', '/api/auth/setup', (ctx) => {
+    if (get("SELECT 1 FROM users WHERE role IN ('admin','staff')")) {
+      throw new HttpError(403, 'An administrator already exists');
+    }
+    const email = str(ctx.body.email, 'email', { max: 254 }).toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw bad('email is invalid');
+    const name = str(ctx.body.name, 'name') || 'Administrator';
+    const password = str(ctx.body.password, 'password', { max: 200 });
+    if (password.length < 8) throw bad('password must be at least 8 characters');
+    if (get('SELECT 1 FROM users WHERE email = ?', email)) throw new HttpError(409, 'Email already registered');
+    const id = transaction(db, () => {
+      // Re-check inside the transaction so two setup requests cannot both win.
+      if (get("SELECT 1 FROM users WHERE role IN ('admin','staff')")) {
+        throw new HttpError(403, 'An administrator already exists');
+      }
+      return run('INSERT INTO users (email, name, password_hash, role) VALUES (?,?,?,?)',
+        email, name, hashPassword(password), 'admin').lastInsertRowid;
+    });
+    const user = get('SELECT * FROM users WHERE id = ?', id);
+    auditLog(ctx, 'admin.setup', 'user', user.id, user.email);
+    return reply(201, { token: tokenFor(user), user: publicUser(user) });
+  });
+
   route('GET', '/api/me', (ctx) => publicUser(requireUser(ctx)));
+
+  route('PATCH', '/api/me/password', (ctx) => {
+    const user = requireUser(ctx);
+    const current = str(ctx.body.current_password, 'current password', { max: 200 });
+    const next = str(ctx.body.new_password, 'new password', { max: 200 });
+    if (next.length < 8) throw bad('new password must be at least 8 characters');
+    if (!verifyPassword(current, user.password_hash)) throw new HttpError(403, 'Current password is incorrect');
+    run('UPDATE users SET password_hash = ? WHERE id = ?', hashPassword(next), user.id);
+    auditLog(ctx, 'user.password', 'user', user.id, user.email);
+    return { ok: true };
+  });
 
   route('GET', '/api/me/referral', (ctx) => {
     const user = requireUser(ctx);
@@ -957,7 +998,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
         return await serveStatic(url.pathname, res);
       }
       const ip = clientIp(req);
-      const isAuthWrite = req.method === 'POST' && (pathname === '/api/auth/login' || pathname === '/api/auth/register');
+      const isAuthWrite = req.method === 'POST' && (pathname === '/api/auth/login' || pathname === '/api/auth/register' || pathname === '/api/auth/setup');
       // LLM calls cost money and time, so they get their own much tighter bucket.
       const isAiWrite = req.method === 'POST' && pathname.startsWith('/api/assistant/');
       const withinLimit = isAuthWrite
