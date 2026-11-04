@@ -754,8 +754,11 @@ footer p, footer > span { margin: 0; color: #e0c1c1; font-size: 10px; }
 .product-modal { position: relative; width: min(920px, 100%); max-height: 92vh; overflow-y: auto; display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); background: var(--paper); border-radius: 24px; box-shadow: 0 24px 60px rgb(42 20 20 / 30%); }
 .modal-close { position: absolute; top: 12px; right: 14px; z-index: 2; width: 34px; height: 34px; border: none; border-radius: 50%; background: rgb(255 255 255 / 85%); color: var(--ink); font-size: 22px; line-height: 1; cursor: pointer; }
 .modal-close:hover { background: #fff; }
-.modal-art { display: grid; place-items: center; padding: 24px; background: linear-gradient(160deg, #fbe8c9, #f4c9a0); }
+.modal-art { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; background: linear-gradient(160deg, #fbe8c9, #f4c9a0); }
 .modal-photo { width: 100%; height: auto; max-height: 340px; object-fit: cover; border-radius: 18px; }
+.modal-thumbs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.modal-thumb { width: 54px; height: 54px; object-fit: cover; border-radius: 10px; border: 2px solid transparent; opacity: 0.72; cursor: pointer; transition: opacity 0.15s ease, border-color 0.15s ease; }
+.modal-thumb:hover, .modal-thumb.is-active { opacity: 1; border-color: var(--clay); }
 .modal-body { padding: 26px 26px 30px; display: flex; flex-direction: column; gap: 8px; }
 .modal-body h2 { margin: 2px 0 0; font: 600 26px/1.15 var(--serif); }
 .modal-description { margin: 6px 0 2px; color: var(--muted); font-size: 13px; line-height: 1.6; }

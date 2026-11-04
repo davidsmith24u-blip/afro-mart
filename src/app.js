@@ -128,8 +128,33 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     if (b.reorder_quantity !== undefined) set('reorder_quantity', int(b.reorder_quantity, 'reorder_quantity', { min: 1 }));
     if (b.expiry_date !== undefined) set('expiry_date', str(b.expiry_date, 'expiry_date', { max: 10, required: false }));
     if (b.image_url !== undefined) set('image_url', b.image_url === null ? null : str(b.image_url, 'image_url', { max: 500, required: false }));
+    if (b.image_urls !== undefined) {
+      if (b.image_urls === null) set('image_urls', null);
+      else {
+        if (!Array.isArray(b.image_urls)) throw bad('image_urls must be an array');
+        if (b.image_urls.length > 8) throw bad('image_urls allows at most 8 images');
+        const urls = b.image_urls.map((u) => str(u, 'image_urls', { max: 500, required: false })).filter(Boolean);
+        set('image_urls', urls.length ? JSON.stringify(urls) : null);
+      }
+    }
     if (b.active !== undefined) set('active', b.active ? 1 : 0);
     return out;
+  };
+
+  // `image_urls` is stored as JSON text so the column stays a simple SQLite
+  // string; the API always returns it as an array for clients.
+  const productImages = (row) => {
+    if (!row) return row;
+    let urls = [];
+    if (Array.isArray(row.image_urls)) urls = row.image_urls;
+    else if (typeof row.image_urls === 'string' && row.image_urls) {
+      try {
+        const parsed = JSON.parse(row.image_urls);
+        if (Array.isArray(parsed)) urls = parsed.filter((u) => typeof u === 'string');
+      } catch { /* ignore malformed legacy value */ }
+    }
+    row.image_urls = urls;
+    return row;
   };
 
   const orderWithItems = (o) => ({
@@ -372,7 +397,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const offset = ctx.query.get('offset') ? Math.max(Number(ctx.query.get('offset')) || 0, 0) : 0;
     const rows = all(
       `SELECT p.id, p.sku, p.name, p.description, p.category_id, c.name AS category, p.price_cents, p.stock,
-              p.expiry_date, p.active, p.spice_level, p.image_url${wholesale ? ', p.wholesale_price_cents' : ''}${staff ? ', p.cost_cents, p.reorder_level, p.reorder_quantity, p.supplier_id' : ''},
+              p.expiry_date, p.active, p.spice_level, p.image_url, p.image_urls${wholesale ? ', p.wholesale_price_cents' : ''}${staff ? ', p.cost_cents, p.reorder_level, p.reorder_quantity, p.supplier_id' : ''},
               (SELECT ROUND(AVG(r.rating), 1) FROM product_reviews r WHERE r.product_id = p.id AND r.status = 'approved') AS rating_average,
               (SELECT COUNT(*) FROM product_reviews r WHERE r.product_id = p.id AND r.status = 'approved') AS rating_count
        FROM products p LEFT JOIN categories c ON c.id = p.category_id
@@ -381,6 +406,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     attachTags(db, rows);
     for (const row of rows) {
       // The crawlable product page (see src/seo.js) — the storefront links to it.
+      productImages(row);
       row.path = productPath(row);
       if (wholesale) {
         row.is_wholesale = true;
@@ -395,12 +421,13 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
     const wholesale = ctx.user && ctx.user.account_type === 'restaurant';
     const p = get(
       `SELECT p.id, p.sku, p.name, p.description, p.category_id, c.name AS category, p.price_cents, p.stock,
-              p.expiry_date, p.active, p.spice_level, p.image_url${wholesale ? ', p.wholesale_price_cents' : ''},
+              p.expiry_date, p.active, p.spice_level, p.image_url, p.image_urls${wholesale ? ', p.wholesale_price_cents' : ''},
               (SELECT ROUND(AVG(r.rating), 1) FROM product_reviews r WHERE r.product_id = p.id AND r.status = 'approved') AS rating_average,
               (SELECT COUNT(*) FROM product_reviews r WHERE r.product_id = p.id AND r.status = 'approved') AS rating_count
        FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?`, ctx.params.id);
     if (!p || (!p.active && !staff)) throw notFound();
     const [row] = attachTags(db, [p]);
+    productImages(row);
     row.path = productPath(row);
     if (wholesale) {
       row.is_wholesale = true;
@@ -419,7 +446,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       const created = get('SELECT * FROM products WHERE id = ?', lastInsertRowid);
       try { const row = get(`SELECT p.*, c.name AS category FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?`, created.id); applyProductMeta(db, row, { preserve: true }); } catch {}
       auditLog(ctx, 'product.create', 'product', lastInsertRowid, f.sku);
-      return reply(201, get('SELECT * FROM products WHERE id = ?', lastInsertRowid));
+      return reply(201, productImages(get('SELECT * FROM products WHERE id = ?', lastInsertRowid)));
     } catch (e) {
       if (/FOREIGN KEY/.test(e.message)) throw bad('Unknown category or supplier');
       throw e;
@@ -441,7 +468,7 @@ export function createApp(db, { secret = randomBytes(32).toString('hex') } = {})
       if (/FOREIGN KEY/.test(e.message)) throw bad('Unknown category or supplier');
       throw e;
     }
-    return get('SELECT * FROM products WHERE id = ?', ctx.params.id);
+    return productImages(get('SELECT * FROM products WHERE id = ?', ctx.params.id));
   });
 
   // ---- Orders ----

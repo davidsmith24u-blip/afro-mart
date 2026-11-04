@@ -165,8 +165,9 @@ uses an LLM to parse messy input and phrase replies; otherwise it falls back to 
 matching, so the endpoints keep working with no provider configured. `GET /api/config` reports
 `ai: {enabled, provider, model}`. Assistant calls are limited to 30 requests/minute per IP.
 
-Products now include `image_url`, `rating_average` and `rating_count`; staff set `image_url` via
-`POST/PUT /api/products`. API responses are best-effort rate limited per client IP (900 requests/minute;
+Products now include `image_url`, `image_urls` (an array of extra gallery angles), `rating_average` and
+`rating_count`; staff set `image_url` and `image_urls` via `POST/PUT /api/products` (`image_urls` accepts
+up to 8 URL strings). API responses are best-effort rate limited per client IP (900 requests/minute;
 30 authentication attempts per 5 minutes), returning `429` with `Retry-After` when exceeded.
 
 ### Payments

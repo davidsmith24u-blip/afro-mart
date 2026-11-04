@@ -427,9 +427,35 @@ function openProduct(product) {
   modal.append(close);
 
   const art = el('div', undefined, { className: 'modal-art' });
-  const photo = el('img', undefined, { className: 'modal-photo', src: productPhoto(product), alt: `${product.name} product photo`, decoding: 'async' });
+  const photos = [];
+  const seenPhotos = new Set();
+  for (const url of [product.image_url, ...(product.image_urls || [])]) {
+    if (typeof url === 'string' && url && !seenPhotos.has(url)) {
+      seenPhotos.add(url);
+      photos.push(url);
+    }
+  }
+  const photo = el('img', undefined, { className: 'modal-photo', src: photos[0] || productPhoto(product), alt: `${product.name} product photo`, decoding: 'async' });
   photo.onerror = () => photo.remove();
   art.append(photo);
+  if (photos.length > 1) {
+    const thumbs = el('div', undefined, { className: 'modal-thumbs' });
+    photos.forEach((url, index) => {
+      const thumb = el('img', undefined, {
+        className: `modal-thumb${index === 0 ? ' is-active' : ''}`,
+        src: url,
+        alt: `${product.name} view ${index + 1}`,
+        loading: 'lazy',
+        decoding: 'async',
+      });
+      thumb.onclick = () => {
+        photo.src = url;
+        for (const node of thumbs.children) node.classList.toggle('is-active', node === thumb);
+      };
+      thumbs.append(thumb);
+    });
+    art.append(thumbs);
+  }
 
   const body = el('div', undefined, { className: 'modal-body' });
   body.append(el('p', product.category || 'Market favorite', { className: 'product-category' }));

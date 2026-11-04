@@ -45,6 +45,14 @@ test('full shop flow: catalog, order, stock, loyalty, reorder, reports', async (
   assert.equal((await call('GET', '/api/payment-methods')).status, 404);
   assert.equal((await call('GET', `/api/products/${prod.id}`)).data.stock, 12);
 
+  const gallery = ['https://example.com/a.jpg', 'https://example.com/b.jpg'];
+  const withGallery = await call('PUT', `/api/products/${prod.id}`, { image_urls: gallery }, admin);
+  assert.equal(withGallery.status, 200);
+  assert.deepEqual(withGallery.data.image_urls, gallery);
+  assert.deepEqual((await call('GET', `/api/products/${prod.id}`)).data.image_urls, gallery);
+  assert.deepEqual((await call('GET', '/api/products')).data[0].image_urls, gallery);
+  assert.equal((await call('PUT', `/api/products/${prod.id}`, { image_urls: 'nope' }, admin)).status, 400);
+
   const invalidCarrier = await call('POST', '/api/orders', {
     shipping_address: 'x', delivery_service: 'fedex', items: [{ product_id: prod.id, quantity: 1 }],
   }, cust);

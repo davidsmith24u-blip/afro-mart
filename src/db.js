@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS products (
   active INTEGER NOT NULL DEFAULT 1,
   spice_level INTEGER NOT NULL DEFAULT 0 CHECK (spice_level >= 0 AND spice_level <= 5),
   wholesale_price_cents INTEGER,
-  image_url TEXT
+  image_url TEXT,
+  image_urls TEXT
 );
 CREATE TABLE IF NOT EXISTS product_tags (
   product_id INTEGER NOT NULL REFERENCES products(id),
@@ -404,6 +405,9 @@ export function openDb(path = ':memory:') {
   }
   if (!productColumns.includes('image_url')) {
     db.exec('ALTER TABLE products ADD COLUMN image_url TEXT');
+  }
+  if (!productColumns.includes('image_urls')) {
+    db.exec('ALTER TABLE products ADD COLUMN image_urls TEXT');
   }
   const bundleColumns = db.prepare('PRAGMA table_info(bundles)').all().map((column) => column.name);
   if (!bundleColumns.includes('serves')) {
