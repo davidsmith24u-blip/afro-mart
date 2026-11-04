@@ -128,9 +128,9 @@ h1, h2, h3 { font-optical-sizing: auto; }
 #acct { display: flex; align-items: center; gap: 10px; text-align: right; }
 #acct a { text-decoration: underline; text-underline-offset: 3px; }
 #acct button { border: 0; padding: 0; background: none; color: var(--clay); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
-.cart-link { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; background: var(--clay); color: #fff7ec; font-weight: 700; box-shadow: var(--shadow-sm); }
-.cart-icon { font-size: 15px; }
-#cart-count { min-width: 21px; height: 21px; display: grid; place-items: center; padding: 0 5px; border-radius: 999px; background: var(--gold); color: var(--clay-deep); font-size: 11px; }
+.cart-link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; background: var(--clay); color: #fff7ec; font-size: 11px; font-weight: 700; box-shadow: var(--shadow-sm); }
+.cart-icon { font-size: 14px; }
+#cart-count { min-width: 19px; height: 19px; display: grid; place-items: center; padding: 0 4px; border-radius: 999px; background: var(--gold); color: var(--clay-deep); font-size: 10px; }
 .install-app { min-height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 13px; border: 1px solid var(--green); border-radius: 999px; background: transparent; color: var(--green); font-size: 11px; font-weight: 700; }
 .install-app[hidden] { display: none; }
 .install-app span { font-size: 16px; }
